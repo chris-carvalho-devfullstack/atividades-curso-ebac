@@ -1,0 +1,225 @@
+/* Reset e box-sizing */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Contêiner centralizado */
+.task-form-body {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 30px 25px;
+    text-align: center;
+    background: linear-gradient(145deg, #e0f7fa, #ffffff);
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.task-form-header {
+    text-align: center;
+    padding: 25px 20px;
+    background-color: #f8f9fa;       /* fundo neutro, clean */
+    color: #333;                     /* texto escuro suave */
+    border-radius: 15px 15px 0 0;    /* cantos arredondados no topo */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* sombra discreta */
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.task-form-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.task-form-header p {
+    font-size: 1rem;
+    color: #666;      /* subtítulo mais suave */
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Pequeno efeito de hover sutil */
+.task-form-header:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+
+
+/* Título */
+.task-form-body h1 {
+    margin-bottom: 20px;
+    font-family: Arial, sans-serif;
+    color: #333;
+}
+
+/* Barra de progresso */
+.progress-container {
+    width: 100%;
+    height: 25px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    width: 0%;  
+    height: 100%;
+    background-color: #f44336;
+    transition: width 0.5s ease, background-color 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+/* Pulsação ao completar 100% */
+@keyframes pulse {
+    0% { transform: scaleX(1); }
+    50% { transform: scaleX(1.05); }
+    100% { transform: scaleX(1); }
+}
+
+.progress-bar.completed {
+    animation: pulse 0.6s ease-in-out 2;
+    box-shadow: 0 0 10px #4CAF50;
+}
+
+/* Formulário */
+#task-form {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#task-input {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+#task-form button {
+    padding: 12px 25px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+}
+
+#task-form button:hover {
+    transform: scale(1.05);
+}
+
+/* Lista de tarefas */
+#task-list {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+}
+
+#task-list li {
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    background-color: #fefefe;
+    border-radius: 8px;
+    border-left: 5px solid #4CAF50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* Texto da tarefa */
+.task-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 1;
+}
+
+/* Botões */
+.button-group {
+    display: flex;
+    gap: 5px;
+}
+
+.remove-btn,
+.edit-btn {
+    font-weight: bold;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.remove-btn {
+    background-color: #e57373;
+}
+
+.remove-btn:hover {
+    background-color: #d32f2f;
+}
+
+.edit-btn {
+    background-color: #64b5f6;
+}
+
+.edit-btn:hover {
+    background-color: #1976d2;
+}
+
+/* Tarefas concluídas */
+.completed::before {
+    content: "✔";
+    color: #4CAF50;
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+.completed {
+    text-decoration: line-through;
+    color: #888;
+}
+
+/* Input de edição */
+.edit-task {
+    flex: 1;
+    padding: 5px;
+    font-size: 16px;
+}
+
+footer {
+    text-align: center;          /* centraliza o conteúdo */
+    margin-top: 40px;            /* dá mais espaço acima */
+    padding: 15px 10px;          /* espaçamento interno */
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;             /* tamanho de fonte confortável */
+    color: #888;                 /* tom de cinza mais suave */
+    background-color: #f5f5f5;   /* fundo claro discreto */
+    border-top: 1px solid #ddd;  /* separação sutil do conteúdo acima */
+    border-radius: 0 0 10px 10px; /* cantos arredondados na base */
+}
+
+footer a {
+    color: #4CAF50;              /* cor do link combinando com a lista de tarefas */
+    text-decoration: none;        /* remove sublinhado */
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+footer a:hover {
+    color: #388E3C;              /* muda a cor ao passar o mouse */
+    text-decoration: underline;   /* efeito sutil */
+}
+
