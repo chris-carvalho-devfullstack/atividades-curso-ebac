@@ -1,59 +1,68 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lista de Tarefas</title>
-<link rel="stylesheet" href="main.css">
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="main.css">
 </head>
 <body>
+    <header class="task-form-header">
+        <h1>Gerenciador de Tarefas</h1>
+        <p>Organize suas tarefas diárias de forma eficiente!</p>
+    </header>
 
-<header class="task-form-header">
-    <h1>Gerenciador de Tarefas</h1>
-    <p>Organize suas tarefas diárias de forma eficiente!</p>
-</header>
+    <main class="task-form-body">
+        <h1>LISTA DE TAREFAS</h1>
 
-<main class="task-form-body">
-    <h1>LISTA DE TAREFAS</h1>
+        <!-- Barra de progresso -->
+        <div class="progress-container">
+            <div class="progress-bar">0%</div>
+        </div>
 
-    <!-- Barra de progresso -->
-    <div class="progress-container">
-        <div class="progress-bar">0%</div>
-    </div>
+        <!-- Formulário -->
+        <form id="task-form">
+            <input type="text" id="task-input" placeholder="Digite uma nova tarefa" required>
+            <select id="task-priority">
+                <option value="low">Baixa</option>
+                <option value="medium">Média</option>
+                <option value="high">Alta</option>
+            </select>
+            <input type="date" id="task-date">
+            <button type="submit">Adicionar</button>
+        </form>
 
-    <!-- Formulário de nova tarefa -->
-    <form id="task-form">
-        <input type="text" id="task-input" placeholder="Digite uma nova tarefa" required>
-        <select id="task-priority">
-            <option value="high">Alta</option>
-            <option value="medium" selected>Média</option>
-            <option value="low">Baixa</option>
-        </select>
-        <button type="submit">Adicionar Tarefa</button>
-    </form>
+        <!-- Pesquisa e Filtro lado a lado -->
+        <div class="search-box">
+            <div class="input-with-icon">
+                <i class="fa fa-search"></i>
+                <input type="text" id="search" placeholder="Pesquisar tarefa...">
+            </div>
+            <div class="select-with-icon">
+                <i class="fa fa-filter"></i>
+                <select id="filter-priority">
+                    <option value="all">Todas as prioridades</option>
+                    <option value="high">Alta</option>
+                    <option value="medium">Média</option>
+                    <option value="low">Baixa</option>
+                </select>
+            </div>
+        </div>
 
-    <!-- Campo de pesquisa -->
-    <input type="text" id="search-input" class="search-input" placeholder="Pesquisar tarefa...">
-    <select id="filter-priority">
-        <option value="all">Todas as prioridades</option>
-        <option value="high">Alta</option>
-        <option value="medium">Média</option>
-        <option value="low">Baixa</option>
-    </select>
+        <ul id="task-list"></ul>
+    </main>
 
-    <ul id="task-list"></ul>
-</main>
+    <footer>
+        <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
+        <p>Desenvolvedor: Christian de Carvalho</p>
+        <p>GitHub: <a href="https://github.com/chris-carvalho-devfullstack" target="_blank">chris-carvalho-devfullstack</a></p>
+        <copyright>&copy;2025</copyright>
+    </footer>
 
-<footer>
-    <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
-    <p>Desenvolvedor: Christian de Carvalho</p>
-    <p>GitHub: <a href="https://github.com/chris-carvalho-devfullstack" target="_blank">chris-carvalho-devfullstack</a></p>
-    <copyright>&copy;2025</copyright>
-</footer>
-
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-<script src="main.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
