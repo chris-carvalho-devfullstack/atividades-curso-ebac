@@ -1,5 +1,6 @@
 $(document).ready(function () {
     let tasks = [];
+    let currentTaskLi = null;
 
     function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
 
@@ -48,7 +49,7 @@ $(document).ready(function () {
         // Botão Google Agenda apenas se houver dueDate
         if (task.dueDate) {
             let googleBtn = $('<button class="google-calendar-btn" type="button" data-tooltip="Agendar no Google Agenda"></button>');
-            let img = $('<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Google_Calendar_icon_%282020%29.svg/512px-Google_Calendar_icon_%282020%29.svg.png" alt="Google Agenda" style="width:20px; height:20px;">');
+            let img = $('<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Google_Calendar_icon_%282020%29.svg/512px-Google_Calendar_icon_%282020%29.svg.png" alt="Google Agenda">');
             googleBtn.append(img);
             btnGroup.append(googleBtn);
             googleBtn.on('click', function () { exportTaskToGoogleLink(task); });
@@ -137,17 +138,37 @@ $(document).ready(function () {
         }
     });
 
-    /* ---------- ADD SUBTAREFA ---------- */
+    /* ---------- ADD SUBTAREFA VIA MODAL ---------- */
     $(document).on('click', '.add-subtask-btn', function () {
-        let li = $(this).closest('li'); let task = tasks.find(t => t.id === li.attr('data-id'));
-        let subtaskText = prompt("Digite o nome da subtarefa:"); if (!subtaskText) return;
+        currentTaskLi = $(this).closest('li');
+        let taskText = currentTaskLi.find('label').first().text();
+        $('#subtask-input').val('');
+        $('#subtask-input').attr('placeholder', `Digite a subtarefa da "${taskText}"`);
+        $('#subtask-modal-title').text(`Adicionar subtarefa da "${taskText}"`);
+        $('#subtask-modal').fadeIn();
+        $('#subtask-input').focus();
+    });
+
+    $('#subtask-cancel-btn, .close').click(function () {
+        $('#subtask-modal').fadeOut();
+        currentTaskLi = null;
+    });
+
+    $('#subtask-add-btn').click(function () {
+        let subtaskText = $('#subtask-input').val().trim();
+        if (!subtaskText) return;
+        let task = tasks.find(t => t.id === currentTaskLi.attr('data-id'));
         let subtask = { id: generateId(), text: subtaskText, completed: false };
-        task.subtasks.push(subtask); addSubtaskHTML(li.find('.subtask-list'), subtask); saveTasks();
+        task.subtasks.push(subtask);
+        addSubtaskHTML(currentTaskLi.find('.subtask-list'), subtask);
+        saveTasks();
 
         if (task.subtasks.length === 1) {
             let toggleSubBtn = $('<button type="button" class="toggle-subtasks-btn">▼</button>');
-            li.find('.button-group').prepend(toggleSubBtn);
+            currentTaskLi.find('.button-group').prepend(toggleSubBtn);
         }
+
+        $('#subtask-modal').fadeOut();
     });
 
     /* ---------- TOGGLE SUBTASKS ---------- */
@@ -182,7 +203,7 @@ $(document).ready(function () {
 
     /* ---------- FILTRO / PESQUISA ---------- */
     function applyFilter() {
-        let searchVal = $('#search-input').val().toLowerCase();
+        let searchVal = $('#search').val().toLowerCase();
         let priorityVal = $('#filter-priority').val();
         $('#task-list>li').each(function () {
             let task = $(this);
@@ -193,7 +214,7 @@ $(document).ready(function () {
             task.toggle(matchText && matchPriority);
         });
     }
-    $('#search-input').on('keyup', applyFilter);
+    $('#search').on('keyup', applyFilter);
     $('#filter-priority').on('change', applyFilter);
 
     /* ---------- BARRA DE PROGRESSO ---------- */

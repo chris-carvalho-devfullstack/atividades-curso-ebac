@@ -60,11 +60,26 @@
         <p>Desenvolvedor: Christian de Carvalho</p>
         <p>GitHub: <a href="https://github.com/chris-carvalho-devfullstack" target="_blank">chris-carvalho-devfullstack</a></p>
         <copyright>&copy;2025</copyright>
+        <a href="pomodoro.html" class="pomodoro-link"><i class="fa fa-clock"></i> Ir para Pomodoro Timer</a>
     </footer>
 
     <!-- JS -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="main.js"></script>
+
+    <!-- Modal de Subtarefa -->
+<div id="subtask-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="subtask-modal-title">Adicionar Subtarefa</h2>
+        <input type="text" id="subtask-input" placeholder="Digite a subtarefa">
+        <div class="modal-buttons">
+            <button id="subtask-add-btn" class="btn">Adicionar</button>
+            <button id="subtask-cancel-btn" class="btn">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="pomodoro.css">
+</head>
+<body>
+    <header class="pomodoro-header">
+        <h1>Pomodoro Timer</h1>
+        <p>Escolha uma tarefa e foque com a técnica Pomodoro!</p>
+    </header>
+
+    <main class="pomodoro-main">
+        <div class="task-selector">
+            <label for="pomodoro-task">Escolha uma tarefa:</label>
+            <select id="pomodoro-task">
+                <option value="">Nenhuma tarefa selecionada</option>
+            </select>
+        </div>
+
+        <div class="timer-container">
+            <svg class="timer-svg" width="250" height="250">
+                <circle class="bg-circle" cx="125" cy="125" r="100"></circle>
+                <circle class="progress-circle" cx="125" cy="125" r="100"></circle>
+            </svg>
+            <div class="timer-text">
+                <h2 id="timer">25:00</h2>
+                <p id="current-task">Tarefa atual: Nenhuma</p>
+            </div>
+        </div>
+
+        <div class="timer-controls">
+            <button id="start-btn"><i class="fa fa-play"></i> Iniciar</button>
+            <button id="pause-btn"><i class="fa fa-pause"></i> Pausar</button>
+            <button id="reset-btn"><i class="fa fa-rotate-left"></i> Resetar</button>
+        </div>
+    </main>
+
+    <footer>
+        <p>Desenvolvido por Christian de Carvalho</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="pomodoro.js"></script>
+</body>
+</html>
