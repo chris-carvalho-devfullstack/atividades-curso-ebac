@@ -9,6 +9,19 @@
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
+    <!-- Menu superior -->
+    <nav>
+  <ul>
+    <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
+    <li><a href="#"><i class="fa-solid fa-list-check"></i> Tarefas</a></li>
+    <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
+    <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
+    <li><a href="#"><i class="fa-solid fa-gear"></i> Configurações</a></li>
+    <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
+  </ul>
+</nav>
+
+
     <header class="task-form-header">
         <h1>Gerenciador de Tarefas</h1>
         <p>Organize suas tarefas diárias de forma eficiente!</p>
@@ -27,14 +40,21 @@
             <input type="text" id="task-input" placeholder="Digite uma nova tarefa" required>
             <select id="task-priority">
                 <option value="low">Baixa</option>
-                <option value="medium">Média</option>
+                <option value="medium" selected>Média</option>
                 <option value="high">Alta</option>
             </select>
             <input type="date" id="task-date">
+            <select id="task-category">
+                <option value="geral" selected>Geral</option>
+                <option value="trabalho">Trabalho</option>
+                <option value="pessoal">Pessoal</option>
+                <option value="estudo">Estudo</option>
+                <option value="outros">Outros</option>
+            </select>
             <button type="submit">Adicionar</button>
         </form>
 
-        <!-- Pesquisa e Filtro lado a lado -->
+        <!-- Pesquisa e filtros -->
         <div class="search-box">
             <div class="input-with-icon">
                 <i class="fa fa-search"></i>
@@ -47,6 +67,17 @@
                     <option value="high">Alta</option>
                     <option value="medium">Média</option>
                     <option value="low">Baixa</option>
+                </select>
+            </div>
+            <div class="select-with-icon">
+                <i class="fa fa-tags"></i>
+                <select id="filter-category">
+                    <option value="all">Todas as categorias</option>
+                    <option value="geral">Geral</option>
+                    <option value="trabalho">Trabalho</option>
+                    <option value="pessoal">Pessoal</option>
+                    <option value="estudo">Estudo</option>
+                    <option value="outros">Outros</option>
                 </select>
             </div>
         </div>
@@ -63,23 +94,22 @@
         <a href="pomodoro.html" class="pomodoro-link"><i class="fa fa-clock"></i> Ir para Pomodoro Timer</a>
     </footer>
 
+    <!-- Modal de Subtarefa -->
+    <div id="subtask-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="subtask-modal-title">Adicionar Subtarefa</h2>
+            <input type="text" id="subtask-input" placeholder="Digite a subtarefa">
+            <div class="modal-buttons">
+                <button id="subtask-add-btn" class="btn">Adicionar</button>
+                <button id="subtask-cancel-btn" class="btn">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JS -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="main.js"></script>
-
-    <!-- Modal de Subtarefa -->
-<div id="subtask-modal" class="modal" style="display:none;">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2 id="subtask-modal-title">Adicionar Subtarefa</h2>
-        <input type="text" id="subtask-input" placeholder="Digite a subtarefa">
-        <div class="modal-buttons">
-            <button id="subtask-add-btn" class="btn">Adicionar</button>
-            <button id="subtask-cancel-btn" class="btn">Cancelar</button>
-        </div>
-    </div>
-</div>
-
 </body>
 </html>

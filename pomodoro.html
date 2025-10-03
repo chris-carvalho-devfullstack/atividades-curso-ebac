@@ -1,49 +1,85 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro Timer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="pomodoro.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomodoro Avançado</title>
+<link rel="stylesheet" href="pomodoro.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-    <header class="pomodoro-header">
-        <h1>Pomodoro Timer</h1>
-        <p>Escolha uma tarefa e foque com a técnica Pomodoro!</p>
-    </header>
+    <!-- Menu superior -->
+    <nav>
+  <ul>
+    <li><a href="index.html"active"><i class="fa-solid fa-house"></i> Início</a></li>
+    <li><a href="#"><i class="fa-solid fa-list-check"></i> Tarefas</a></li>
+    <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
+    <li><a href="#"><i class="fa-solid fa-gear"></i> Configurações</a></li>
+    <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
+  </ul>
+</nav>
 
-    <main class="pomodoro-main">
-        <div class="task-selector">
-            <label for="pomodoro-task">Escolha uma tarefa:</label>
-            <select id="pomodoro-task">
-                <option value="">Nenhuma tarefa selecionada</option>
-            </select>
+<div class="pomodoro-header">
+    <h1>Pomodoro Avançado</h1>
+    <p>Selecione uma tarefa e acompanhe seus Pomodoros</p>
+</div>
+
+<div class="pomodoro-main">
+    <div class="task-selector">
+        <select id="pomodoro-task">
+            <option value="">Nenhuma tarefa selecionada</option>
+        </select>
+    </div>
+
+    <div class="timer-container">
+        <svg class="timer-svg" width="250" height="250">
+            <circle class="bg-circle" cx="125" cy="125" r="100"></circle>
+            <circle class="progress-circle" cx="125" cy="125" r="100"></circle>
+        </svg>
+        <div class="timer-text">
+            <h2 id="timer">25:00</h2>
+            <p id="session-type">Sessão: Pomodoro</p>
         </div>
+    </div>
 
-        <div class="timer-container">
-            <svg class="timer-svg" width="250" height="250">
-                <circle class="bg-circle" cx="125" cy="125" r="100"></circle>
-                <circle class="progress-circle" cx="125" cy="125" r="100"></circle>
-            </svg>
-            <div class="timer-text">
-                <h2 id="timer">25:00</h2>
-                <p id="current-task">Tarefa atual: Nenhuma</p>
-            </div>
-        </div>
+    <div class="timer-controls">
+        <button id="start-btn"><i class="fa fa-play"></i> Iniciar</button>
+        <button id="pause-btn"><i class="fa fa-pause"></i> Pausar</button>
+        <button id="reset-btn"><i class="fa fa-rotate-left"></i> Resetar</button>
+        <button id="skip-btn"><i class="fa fa-forward"></i> Pular</button>
+    </div>
 
-        <div class="timer-controls">
-            <button id="start-btn"><i class="fa fa-play"></i> Iniciar</button>
-            <button id="pause-btn"><i class="fa fa-pause"></i> Pausar</button>
-            <button id="reset-btn"><i class="fa fa-rotate-left"></i> Resetar</button>
-        </div>
-    </main>
+    <p id="current-task">Tarefa atual: Nenhuma</p>
 
-    <footer>
-        <p>Desenvolvido por Christian de Carvalho</p>
-    </footer>
+    <h2>Histórico de Pomodoros</h2>
+    <table id="pomodoro-history">
+        <thead>
+            <tr>
+                <th>Tarefa</th>
+                <th>Sessão</th>
+                <th>Data/Hora</th>
+                <th>Duração (min)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <div class="history-controls" style="margin-top: 10px;">
+    <button id="reset-history-btn" style="background:#f44336;color:white;padding:8px 12px;border:none;border-radius:5px;margin-right:5px;cursor:pointer;">
+        <i class="fa fa-trash"></i> Resetar Histórico
+    </button>
+    <button id="export-history-btn" style="background:#4CAF50;color:white;padding:8px 12px;border:none;border-radius:5px;cursor:pointer;">
+        <i class="fa fa-download"></i> Exportar CSV
+    </button>
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="pomodoro.js"></script>
+</div>
+
+<footer>
+    Desenvolvido por Christian de Carvalho
+</footer>
+
+<audio id="alarm-sound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="pomodoro.js"></script>
 </body>
 </html>
