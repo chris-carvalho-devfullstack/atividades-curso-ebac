@@ -59,7 +59,7 @@ body {
     stroke: #4CAF50;
     stroke-width: 15;
     stroke-linecap: round;
-    stroke-dasharray: 628; /* 2*PI*R, R=100 */
+    stroke-dasharray: 628;
     stroke-dashoffset: 628;
     transition: stroke-dashoffset 1s linear;
 }
@@ -131,12 +131,11 @@ nav {
     padding: 12px 20px;
     border-radius: 0 0 15px 15px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    position: sticky; /* sempre no topo */
+    position: sticky;
     top: 0;
     z-index: 1000;
 }
 
-/* Lista de itens */
 nav ul {
     list-style: none;
     display: flex;
@@ -147,7 +146,6 @@ nav ul {
     padding: 0;
 }
 
-/* Links */
 nav ul li a {
     color: white;
     font-size: 1rem;
@@ -161,24 +159,20 @@ nav ul li a {
     gap: 8px;
 }
 
-/* Ícones */
 nav ul li a i {
     font-size: 1.1rem;
 }
 
-/* Hover */
 nav ul li a:hover {
     background: rgba(255,255,255,0.2);
     transform: scale(1.05);
 }
 
-/* Ativo */
 nav ul li a.active {
     background: white;
     color: #4CAF50;
 }
 
-/* Responsivo */
 @media (max-width: 700px) {
     nav ul {
         flex-direction: column;
@@ -187,4 +181,70 @@ nav ul li a.active {
     nav {
         border-radius: 0;
     }
+}
+
+/* ================= BOTÃO MODO ESCURO ================= */
+.dark-mode-btn {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 8px 9px;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    transition: background 0.3s, transform 0.2s;
+    z-index: 2000;
+}
+
+.dark-mode-btn:hover {
+    background: #388e3c;
+    transform: scale(1.05);
+}
+
+/* ================= ESTILOS DO MODO ESCURO ================= */
+body.dark-mode {
+    background: #121212;
+    color: #f0f0f0;
+}
+
+body.dark-mode .pomodoro-header {
+    background: #1e1e1e;
+    color: #ddd;
+}
+
+body.dark-mode .pomodoro-main {
+    background: #1e1e1e;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+}
+
+body.dark-mode .timer-text h2 {
+    color: #81c784;
+}
+
+body.dark-mode .timer-text p {
+    color: #bbb;
+}
+
+body.dark-mode #pomodoro-history th {
+    background-color: #333;
+    color: #81c784;
+}
+
+body.dark-mode #pomodoro-history td {
+    background-color: #1e1e1e;
+    color: #eee;
+}
+
+body.dark-mode footer {
+    background: #1a1a1a;
+    color: #aaa;
+    border-top: 1px solid #333;
+}
+
+body.dark-mode nav {
+    background: linear-gradient(135deg, #333, #222);
 }

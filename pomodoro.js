@@ -133,43 +133,42 @@ $(document).ready(function() {
     }
 
     // Resetar histórico
-$('#reset-history-btn').click(function() {
-    if(confirm("Tem certeza que deseja apagar todo o histórico?")) {
-        history = [];
-        localStorage.setItem('pomodoroHistory', JSON.stringify(history));
-        updateHistoryTable();
-    }
-});
-
-// Exportar histórico em CSV
-$('#export-history-btn').click(function() {
-    if(history.length === 0){
-        alert("Não há histórico para exportar!");
-        return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Tarefa,Sessão,Data/Hora,Duração (min)\n";
-    history.forEach(entry => {
-        let row = [
-            entry.task,
-            entry.sessionType === 'pomodoro' ? 'Pomodoro' :
-            entry.sessionType === 'shortBreak' ? 'Pausa Curta' : 'Pausa Longa',
-            entry.date,
-            entry.duration
-        ].join(",");
-        csvContent += row + "\n";
+    $('#reset-history-btn').click(function() {
+        if(confirm("Tem certeza que deseja apagar todo o histórico?")) {
+            history = [];
+            localStorage.setItem('pomodoroHistory', JSON.stringify(history));
+            updateHistoryTable();
+        }
     });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `pomodoro_history_${new Date().toLocaleDateString()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-});
+    // Exportar histórico em CSV
+    $('#export-history-btn').click(function() {
+        if(history.length === 0){
+            alert("Não há histórico para exportar!");
+            return;
+        }
 
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Tarefa,Sessão,Data/Hora,Duração (min)\n";
+        history.forEach(entry => {
+            let row = [
+                entry.task,
+                entry.sessionType === 'pomodoro' ? 'Pomodoro' :
+                entry.sessionType === 'shortBreak' ? 'Pausa Curta' : 'Pausa Longa',
+                entry.date,
+                entry.duration
+            ].join(",");
+            csvContent += row + "\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `pomodoro_history_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
 
     $('#start-btn').click(startTimer);
     $('#pause-btn').click(pauseTimer);
@@ -181,4 +180,25 @@ $('#export-history-btn').click(function() {
     updateCurrentTask();
     updateSessionTypeDisplay();
     updateHistoryTable();
+
+    // ====== MODO ESCURO ======
+    const toggleBtn = document.getElementById("dark-mode-toggle");
+    const body = document.body;
+
+    if (localStorage.getItem("darkMode") === "enabled") {
+        body.classList.add("dark-mode");
+        toggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    }
+
+    toggleBtn.addEventListener("click", () => {
+        body.classList.toggle("dark-mode");
+
+        if (body.classList.contains("dark-mode")) {
+            localStorage.setItem("darkMode", "enabled");
+            toggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+        } else {
+            localStorage.setItem("darkMode", "disabled");
+            toggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        }
+    });
 });
