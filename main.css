@@ -1,8 +1,50 @@
-/* Reset e box-sizing */
+/* ======================= RESET E BASE ======================= */
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
+html, body { height:100%; }
+body { font-family:'Arial',sans-serif; background:#f0f2f5; color:#333; -webkit-font-smoothing:antialiased; }
 
-/* Cabeçalho */
+/* ======================= MENU TOPO ======================= */
+nav {
+    background: linear-gradient(135deg, #4CAF50, #43a047);
+    padding: 12px 20px;
+    border-radius: 0 0 15px 15px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: transform 0.4s ease-in-out;
+}
+nav.hidden { transform: translateY(-100%); }
+nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+    margin: 0;
+    padding: 0;
+}
+nav ul li a {
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+nav ul li a i { font-size: 1.1rem; }
+nav ul li a:hover { background: rgba(255,255,255,0.12); transform: scale(1.03); }
+nav ul li a.active { background: #fff; color: #4CAF50; }
+@media (max-width:700px){
+    nav ul { flex-direction: column; gap:12px; }
+    nav { border-radius:0; }
+}
+
+/* ======================= CABEÇALHO FORM ======================= */
 .task-form-header {
     text-align:center;
     padding:25px 20px;
@@ -14,9 +56,9 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
 .task-form-header h1 { font-size:1.8rem; margin-bottom:8px; font-weight:600; }
 .task-form-header p { font-size:1rem; color:#666; margin:0; font-weight:400; }
 
-/* Container */
+/* ======================= CONTAINER ======================= */
 .task-form-body {
-    max-width:750px; /* aumenta para caber categoria */
+    max-width:750px;
     margin:50px auto;
     padding:30px 25px;
     background:linear-gradient(145deg,#e0f7fa,#fff);
@@ -25,7 +67,7 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
 }
 .task-form-body h1 { margin-bottom:20px; color:#333; text-align:center; }
 
-/* Barra de progresso */
+/* ======================= BARRA DE PROGRESSO ======================= */
 .progress-container {
     width:100%;
     height:25px;
@@ -46,8 +88,21 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
     transition:width 0.5s ease, background-color 0.3s ease;
     border-radius:10px;
 }
+@keyframes gradientMove {
+    0% { background-position:0% 50%; }
+    50% { background-position:100% 50%; }
+    100% { background-position:0% 50%; }
+}
+.progress-bar.high-progress {
+    background: linear-gradient(270deg, #4CAF50, #81C784, #A5D6A7, #4CAF50);
+    background-size: 600% 100%;
+    animation: gradientMove 2.5s ease infinite;
+    color: white;
+    text-decoration: none;
+}
+.progress-bar.completed { text-decoration:none !important; color:white !important; }
 
-/* Formulário */
+/* ======================= FORMULÁRIO ======================= */
 #task-form {
     display:flex;
     flex-wrap: wrap;
@@ -56,21 +111,15 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
     justify-content:center;
     align-items:center;
 }
-
-#task-form input[type="text"], 
-#task-form select, 
-#task-form input[type="date"] {
-    flex: 0 0 130px; /* largura fixa suficiente */
+#task-form input[type="text"], #task-form select, #task-form input[type="date"] {
+    flex: 0 0 130px;
     padding:10px;
     font-size:14px;
     border:1px solid #ccc;
     border-radius:8px;
+    background:#fff;
 }
-
-#task-form #task-input {
-    flex: 1 1 200px; /* maior para nome da tarefa */
-}
-
+#task-form #task-input, #task-form #task-text { flex:1 1 200px; }
 #task-form button {
     padding:10px 20px;
     font-size:14px;
@@ -83,7 +132,7 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
 }
 #task-form button:hover { transform:scale(1.05); background:#43a047; }
 
-/* Pesquisa e filtro */
+/* ======================= PESQUISA E FILTRO ======================= */
 .search-box {
     display:flex;
     gap:10px;
@@ -100,10 +149,10 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
 .input-with-icon input, .select-with-icon select {
     width:100%;
     padding:10px 10px 10px 30px;
-    border-radius:8px; border:1px solid #ccc;
+    border-radius:8px; border:1px solid #ccc; background:#fff;
 }
 
-/* Lista de tarefas */
+/* ======================= LISTA DE TAREFAS ======================= */
 #task-list { list-style:none; padding:0; text-align:left; }
 #task-list > li {
     padding:12px 15px;
@@ -114,32 +163,20 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
     flex-direction:column;
     gap:5px;
     transition: transform 0.2s, box-shadow 0.2s;
+    border-radius:8px;
 }
 #task-list > li:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-
-/* Tarefa principal */
 .task-main { display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap:10px; }
 .task-text { display:flex; align-items:center; gap:10px; flex:1; flex-wrap: wrap; }
 .button-group { display:flex; gap:5px; flex-shrink:0; }
 
-/* Categoria + prioridade alinhadas */
-.task-priority-category {
-    display:flex;
-    align-items:center;
-    gap:6px;
-}
-.priority-label {
-    font-size:0.85rem;
-    font-weight:bold;
-    padding:2px 6px;
-    border-radius:50%;
-    color:white;
-}
+/* ======================= PRIORIDADE E CATEGORIA ======================= */
+.task-priority-category { display:flex; align-items:center; gap:6px; }
+.priority-label { font-size:0.85rem; font-weight:bold; padding:2px 6px; border-radius:999px; color:white; }
 .priority-high { background:#f44336; }
 .priority-medium { background:#FFEB3B; color:#000; }
 .priority-low { background:#4CAF50; }
 
-/* Categoria visual com tooltip refinado */
 .task-category {
     font-size:0.75rem;
     font-weight:bold;
@@ -165,29 +202,21 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
     z-index:1000;
 }
 
-/* Botões */
+/* ======================= BOTÕES ======================= */
 .remove-btn,.edit-btn,.add-subtask-btn,.remove-subtask-btn,.google-calendar-btn {
     font-weight:bold;
     border:none;
-    border-radius:3px;
-    padding:4px 8px;
+    border-radius:6px;
+    padding:6px 8px;
     cursor:pointer;
     transition:background-color 0.3s, transform 0.2s;
 }
-.remove-btn { background:#e57373; } .remove-btn:hover { background:#d32f2f; }
-.edit-btn { background:#64b5f6; } .edit-btn:hover { background:#1976d2; }
-.add-subtask-btn { background:#ffb74d; } .add-subtask-btn:hover { background:#f57c00; }
-.remove-subtask-btn { background:#ef9a9a; } .remove-subtask-btn:hover { background:#d32f2f; }
-
-/* Botão Google Agenda */
-.google-calendar-btn {
-    background:none; padding:0 5px;
-    display:flex; align-items:center;
-    position:relative;
-}
-.google-calendar-btn img {
-    width:20px; height:20px;
-}
+.remove-btn { background:#e57373; color:#fff; } .remove-btn:hover { background:#d32f2f; }
+.edit-btn { background:#64b5f6; color:#fff; } .edit-btn:hover { background:#1976d2; }
+.add-subtask-btn { background:#ffb74d; color:#111; } .add-subtask-btn:hover { background:#f57c00; }
+.remove-subtask-btn { background:#ef9a9a; color:#fff; } .remove-subtask-btn:hover { background:#d32f2f; }
+.google-calendar-btn { background:none; padding:0 5px; display:flex; align-items:center; position:relative; }
+.google-calendar-btn img { width:20px; height:20px; display:block; }
 .google-calendar-btn:hover::after {
     content: attr(data-tooltip);
     position:absolute;
@@ -199,22 +228,20 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
     pointer-events:none; z-index:1000;
 }
 
-/* Data de vencimento */
+/* ======================= DATA DE VENCIMENTO ======================= */
 .task-date-label::before { content: "\1F4C5"; margin-right:4px; }
-.task-date-label { margin-left:8px; font-size:0.75rem; padding:2px 6px; border-radius:4px; color:white; background:#757575; }
+.task-date-label { margin-left:8px; font-size:0.75rem; padding:2px 6px; border-radius:4px; color:white; background:#757575; display:inline-block; }
 .due-soon .task-date-label { background:#ff9800; }
 .overdue .task-date-label { background:#f44336; }
 .due-soon { border-left-color:#ff9800 !important; }
 .overdue { border-left-color:#f44336 !important; }
 
-/* Tarefas concluídas */
+/* ======================= TAREFAS CONCLUÍDAS ======================= */
 .completed::before { content:"✔"; color:#4CAF50; margin-right:10px; font-weight:bold; }
 .completed { text-decoration:line-through; color:#888; }
-
-/* Input de edição */
 .edit-task { flex:1; padding:5px; font-size:16px; }
 
-/* Subtarefas */
+/* ======================= SUBTAREFAS ======================= */
 .subtask-list { list-style:none; padding-left:25px; margin-top:5px; }
 .subtask-list li {
     padding:8px 12px;
@@ -230,226 +257,106 @@ body { font-family:'Arial', sans-serif; background:#f0f2f5; color:#333; }
 }
 .subtask-list li:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.12); }
 .subtask-list li .task-text { flex:1; }
-
-/* Barra de progresso: manter cor do texto sempre branca */
-.progress-bar.completed { text-decoration:none !important; color:white !important; }
-
-/* Gradiente animado para progresso acima de 80% */
-@keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-.progress-bar.high-progress {
-    background: linear-gradient(270deg, #4CAF50, #81C784, #A5D6A7, #4CAF50);
-    background-size: 600% 100%;
-    animation: gradientMove 2.5s ease infinite;
-    color: white;
-    text-decoration: none;
-}
-
-/* Toggle subtarefas */
-.toggle-subtasks-btn {
-    font-weight: bold;
-    border: none;
-    background: none;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-    padding: 0 5px;
-    font-size: 1rem;
-}
+.toggle-subtasks-btn { font-weight: bold; border:none; background:none; cursor:pointer; transition: transform 0.3s ease; padding: 0 5px; font-size: 1rem; }
 .toggle-subtasks-btn.collapsed { transform: rotate(-90deg); }
 .toggle-subtasks-btn:hover { background: #1976d2; transform: scale(1.1); }
 
-/* Modal Subtarefa */
-.modal {
-    position: fixed;
-    z-index: 9999;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.5);
-    display: none;
-}
-.modal-content {
-    background-color: #fff;
-    margin: 10% auto;
-    padding: 20px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-.modal-content input {
-    width: 90%;
-    padding: 10px;
-    margin: 15px 0;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-.modal-buttons { display:flex; justify-content:center; gap:10px; }
-.modal-buttons .btn {
-    padding:8px 15px; border:none; border-radius:5px; cursor:pointer; font-weight:bold;
-}
-.modal-buttons .btn:hover { opacity:0.9; }
-.modal-content .close { position:absolute; right:15px; top:10px; font-size:25px; cursor:pointer; }
-
-/* Footer */
+/* ======================= FOOTER ======================= */
 footer { text-align:center; margin-top:40px; padding:15px 10px; font-family:'Arial',sans-serif; font-size:14px; color:#888; background:#f5f5f5; border-top:1px solid #ddd; border-radius:0 0 10px 10px; }
 footer a { color:#4CAF50; text-decoration:none; font-weight:bold; transition:color 0.3s; }
 footer a:hover { color:#388E3C; text-decoration:underline; }
 
-/* Media Queries para mobile */
+/* ======================= MODAIS ======================= */
+.modal {
+    position: fixed;
+    z-index: 10000;
+    left:0; top:0;
+    width:100%; height:100%;
+    display: none;
+    background-color: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: auto;
+}
+.modal.show { display: flex; }
+.modal .modal-content {
+    background-color: #fff;
+    width:100%;
+    max-width:720px;
+    border-radius:12px;
+    padding:20px;
+    text-align:left;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    position:relative;
+    animation: modalSlide 0.28s ease-out;
+}
+@keyframes modalSlide { from { transform: translateY(-18px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+.modal .modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.modal .modal-header h2 { margin:0; font-size:1.25rem; font-weight:700; }
+.modal .close, .modal .close-top-right { font-size:22px; cursor:pointer; border:none; background:transparent; color:#666; padding:6px; position:absolute; top:12px; right:12px; }
+.modal .close:hover, .modal .close-top-right:hover { color:#000; }
+.modal .modal-body { max-height: calc(100vh - 320px); overflow-y:auto; padding-right:6px; }
+.modal .modal-body ul { list-style:none; padding-left:0; margin:0; }
+.modal .modal-body li { padding:8px 10px; border-bottom:1px solid #f3f3f3; }
+.modal .modal-footer { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
+.modal .modal-footer button { padding:8px 14px; border-radius:8px; border:none; font-weight:700; cursor:pointer; transition: transform .12s, background-color .12s; }
+.modal .btn-primary { background:#4CAF50; color:#fff; } .modal .btn-primary:hover { background:#43a047; transform: translateY(-2px); }
+.modal .btn-danger { background:#f44336; color:#fff; } .modal .btn-danger:hover { background:#d32f2f; transform: translateY(-2px); }
+.modal .btn-neutral { background:#eee; color:#333; } .modal .btn-neutral:hover { background:#e0e0e0; transform: translateY(-2px); }
+.modal input[type="text"], .modal select, .modal input[type="date"], .modal textarea { width:100%; padding:10px; margin:8px 0; border-radius:8px; border:1px solid #ccc; font-size:14px; box-sizing:border-box; }
+#editTaskModal .modal-content, #viewTaskModal .modal-content { max-width:520px; }
+#calendarModal .modal-content { max-width:920px; }
+#viewTaskModal .modal-header { align-items:flex-start; }
+#viewTaskModal .modal-body .meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+#viewTaskModal .modal-body .meta span { background:#f5f5f5; padding:6px 10px; border-radius:8px; font-size:0.9rem; color:#333; }
+#viewTaskModal .modal-body .subtasks-list { margin-top:8px; padding-left:0; list-style:none; }
+#viewTaskModal .modal-body .subtasks-list li { padding:6px 8px; border-radius:6px; background:#fafafa; margin-bottom:6px; }
+#calendarModal .modal-header h2 { font-size:1.4rem; }
+#calendarModal .modal-body { margin-top:6px; }
+#calendarModal .modal-footer button { cursor:pointer; }
+.modal button, .modal .fc-event, .modal .fc-daygrid-day { cursor: pointer !important; }
+
+/* ======================= CALENDÁRIO ======================= */
+#toggle-calendar-btn {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+#toggle-calendar-btn:hover { background-color: #45a049; }
+#calendar-container {
+    max-width: 900px;
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fff;
+    display: none;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+#calendar { max-width:100%; margin:0 auto; height:600px; }
+#calendar .fc-event, #calendar .fc-daygrid-day, .fc-event { cursor:pointer !important; }
+#calendar .fc-event:hover { transform: translateY(-2px); transition: transform .12s; filter: brightness(.98); }
+#calendar-view { list-style:none; padding:0; margin:0; }
+.highlight { background: #fff7b3; transition: background-color 1s ease; }
+
+/* ======================= RESPONSIVIDADE ======================= */
 @media(max-width:700px){
     #task-form { flex-direction:column; }
     .search-box { flex-direction:column; }
     .task-main { flex-direction:column; align-items:flex-start; }
     .button-group { margin-top:5px; }
-    #task-form input[type="text"], #task-form select, #task-form input[type="date"] { flex:1 1 100%; }
-}
-
-/* ================= MENU TOPO ================= */
-nav {
-    background: linear-gradient(135deg, #4CAF50, #43a047);
-    padding: 12px 20px;
-    border-radius: 0 0 15px 15px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    position: sticky; /* sempre no topo */
-    top: 0;
-    z-index: 1000;
-}
-
-/* Lista de itens */
-nav ul {
-    list-style: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 25px;
-    margin: 0;
-    padding: 0;
-}
-
-/* Links */
-nav ul li a {
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
-    text-decoration: none;
-    padding: 8px 14px;
-    border-radius: 8px;
-    transition: background 0.3s, transform 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Ícones */
-nav ul li a i {
-    font-size: 1.1rem;
-}
-
-/* Hover */
-nav ul li a:hover {
-    background: rgba(255,255,255,0.2);
-    transform: scale(1.05);
-}
-
-/* Ativo */
-nav ul li a.active {
-    background: white;
-    color: #4CAF50;
-}
-
-/* Responsivo */
-@media (max-width: 700px) {
-    nav ul {
-        flex-direction: column;
-        gap: 12px;
-    }
-    nav {
-        border-radius: 0;
+    #task-form input[type="text"],
+    #task-form select,
+    #task-form input[type="date"] {
+        flex: 1 1 100%;
     }
 }
-
-/* Estado normal */
-nav {
-  transition: transform 0.4s ease-in-out;
-}
-
-/* Esconde o menu deslizando para cima */
-nav.hidden {
-  transform: translateY(-100%);
-}
-
-/* Modal edição de tarefa */
-#editTaskModal {
-    position: fixed;
-    z-index: 10000;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    display: none; /* inicialmente escondido */
-    background-color: rgba(0,0,0,0.5);
-}
-
-#editTaskModal.show { display: block; }
-
-#editTaskModal .modal-content {
-    background-color: #fff;
-    margin: 8% auto;
-    padding: 25px 20px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 450px;
-    text-align: center;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-    position: relative;
-    animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-#editTaskModal input, #editTaskModal select {
-    width: 90%;
-    padding: 10px;
-    margin: 12px 0;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-}
-
-#editTaskModal button {
-    padding: 8px 18px;
-    margin: 8px 5px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-weight:bold;
-    transition: background-color 0.2s, transform 0.2s;
-}
-
-#edit-save-btn { background: #4CAF50; color:white; }
-#edit-save-btn:hover { background:#43a047; transform: scale(1.05); }
-
-#edit-cancel-btn { background:#f44336; color:white; }
-#edit-cancel-btn:hover { background:#d32f2f; transform: scale(1.05); }
-
-#editTaskModal .close-edit {
-    position:absolute;
-    top:12px; right:15px;
-    font-size:26px;
-    font-weight:bold;
-    cursor:pointer;
-    color:#666;
-    transition: color 0.2s;
-}
-#editTaskModal .close-edit:hover { color:#000; }
-
-
-
-
 

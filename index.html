@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Tarefas</title>
+
+    <!-- FullCalendar CSS e JS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.js"></script>
+
+    <!-- Font Awesome, jQuery UI e CSS próprio -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="main.css">
@@ -11,16 +17,15 @@
 <body>
     <!-- Menu superior -->
     <nav>
-  <ul>
-    <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
-    <li><a href="#"><i class="fa-solid fa-list-check"></i> Tarefas</a></li>
-    <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
-    <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
-    <li><a href="#"><i class="fa-solid fa-gear"></i> Configurações</a></li>
-    <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
-  </ul>
-</nav>
-
+        <ul>
+            <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
+            <li><a href="#"><i class="fa-solid fa-list-check"></i> Tarefas</a></li>
+            <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
+            <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
+            <li><a href="#"><i class="fa-solid fa-gear"></i> Configurações</a></li>
+            <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
+        </ul>
+    </nav>
 
     <header class="task-form-header">
         <h1>Gerenciador de Tarefas</h1>
@@ -37,7 +42,7 @@
 
         <!-- Formulário -->
         <form id="task-form">
-            <input type="text" id="task-input" placeholder="Digite uma nova tarefa" required>
+            <input type="text" id="task-text" placeholder="Digite uma nova tarefa" required>
             <select id="task-priority">
                 <option value="low">Baixa</option>
                 <option value="medium" selected>Média</option>
@@ -84,6 +89,89 @@
 
         <!-- Lista de tarefas -->
         <ul id="task-list"></ul>
+
+        <!-- Botão para alternar entre lista e calendário -->
+        <button id="toggle-calendar-btn">📅 Mostrar calendário</button>
+
+        <!-- Contêiner do calendário -->
+        <div id="calendar-container">
+            <div id="calendar"></div>
+        </div>
+
+        <!-- ================== VIEW TASK MODAL ================== -->
+        <div id="viewTaskModal" class="modal">
+          <div class="modal-content">
+            <button class="close-top-right">&times;</button>
+            <div class="modal-header">
+              <h2 id="view-task-title">Título da Tarefa</h2>
+            </div>
+            <div class="modal-body">
+              <div class="meta">
+                <span><strong>Prioridade:</strong> <span id="view-task-priority"></span></span>
+                <span><strong>Categoria:</strong> <span id="view-task-category"></span></span>
+                <span><strong>Data:</strong> <span id="view-task-date"></span></span>
+                <span><strong>Status:</strong> <span id="view-task-status"></span></span>
+              </div>
+              <div>
+                <strong>Subtarefas:</strong>
+                <ul id="view-task-subtasks" class="subtasks-list"></ul>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="view-edit-btn" class="btn-primary">Editar</button>
+              <button id="view-delete-btn" class="btn-danger">Apagar</button>
+              <button id="view-close-btn" class="btn-neutral">Fechar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================== SUBTASK MODAL ================== -->
+        <div id="subtask-modal" class="modal">
+          <div class="modal-content">
+            <button class="close-top-right">&times;</button>
+            <div class="modal-header">
+              <h2 id="subtask-modal-title">Adicionar Subtarefa</h2>
+            </div>
+            <div class="modal-body">
+              <input type="text" id="subtask-input" placeholder="Digite a subtarefa">
+            </div>
+            <div class="modal-footer">
+              <button id="subtask-add-btn" class="btn-primary">Adicionar</button>
+              <button id="subtask-cancel-btn" class="btn-neutral">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================== EDIT TASK MODAL ================== -->
+        <div id="editTaskModal" class="modal">
+          <div class="modal-content">
+            <button class="close-top-right">&times;</button>
+            <div class="modal-header">
+              <h2>Editar Tarefa</h2>
+            </div>
+            <div class="modal-body">
+              <input type="text" id="edit-task-name" placeholder="Nome da tarefa">
+              <select id="edit-task-priority">
+                <option value="low">Baixa</option>
+                <option value="medium" selected>Média</option>
+                <option value="high">Alta</option>
+              </select>
+              <select id="edit-task-category">
+                <option value="geral">Geral</option>
+                <option value="trabalho">Trabalho</option>
+                <option value="pessoal">Pessoal</option>
+                <option value="estudo">Estudo</option>
+                <option value="outros">Outros</option>
+              </select>
+              <input type="date" id="edit-task-date">
+            </div>
+            <div class="modal-footer">
+              <button id="edit-save-btn" class="btn-primary">Salvar</button>
+              <button id="edit-cancel-btn" class="btn-neutral">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
     </main>
 
     <footer>
@@ -93,45 +181,6 @@
         <copyright>&copy;2025</copyright>
         <a href="pomodoro.html" class="pomodoro-link"><i class="fa fa-clock"></i> Ir para Pomodoro Timer</a>
     </footer>
-
-    <!-- Modal de Subtarefa -->
-    <div id="subtask-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2 id="subtask-modal-title">Adicionar Subtarefa</h2>
-            <input type="text" id="subtask-input" placeholder="Digite a subtarefa">
-            <div class="modal-buttons">
-                <button id="subtask-add-btn" class="btn">Adicionar</button>
-                <button id="subtask-cancel-btn" class="btn">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Edição de Tarefa -->
-<div id="editTaskModal" class="modal">
-  <div class="modal-content">
-    <span class="close-edit">&times;</span>
-    <h3>Editar Tarefa</h3>
-    <input type="text" id="edit-task-name" placeholder="Nome da tarefa">
-    <select id="edit-task-priority">
-      <option value="low">Baixa</option>
-      <option value="medium" selected>Média</option>
-      <option value="high">Alta</option>
-    </select>
-    <select id="edit-task-category">
-      <option value="geral">Geral</option>
-      <option value="trabalho">Trabalho</option>
-      <option value="pessoal">Pessoal</option>
-      <option value="estudo">Estudo</option>
-      <option value="outros">Outros</option>
-    </select>
-    <input type="date" id="edit-task-date">
-    <button id="edit-save-btn">Salvar</button>
-    <button id="edit-cancel-btn">Cancelar</button>
-  </div>
-</div>
-
-
 
     <!-- JS -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
