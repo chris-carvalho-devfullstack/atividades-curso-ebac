@@ -383,4 +383,73 @@ nav.hidden {
   transform: translateY(-100%);
 }
 
+/* Modal edição de tarefa */
+#editTaskModal {
+    position: fixed;
+    z-index: 10000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    display: none; /* inicialmente escondido */
+    background-color: rgba(0,0,0,0.5);
+}
+
+#editTaskModal.show { display: block; }
+
+#editTaskModal .modal-content {
+    background-color: #fff;
+    margin: 8% auto;
+    padding: 25px 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    position: relative;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+#editTaskModal input, #editTaskModal select {
+    width: 90%;
+    padding: 10px;
+    margin: 12px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+#editTaskModal button {
+    padding: 8px 18px;
+    margin: 8px 5px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+#edit-save-btn { background: #4CAF50; color:white; }
+#edit-save-btn:hover { background:#43a047; transform: scale(1.05); }
+
+#edit-cancel-btn { background:#f44336; color:white; }
+#edit-cancel-btn:hover { background:#d32f2f; transform: scale(1.05); }
+
+#editTaskModal .close-edit {
+    position:absolute;
+    top:12px; right:15px;
+    font-size:26px;
+    font-weight:bold;
+    cursor:pointer;
+    color:#666;
+    transition: color 0.2s;
+}
+#editTaskModal .close-edit:hover { color:#000; }
+
+
+
+
 

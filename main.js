@@ -4,14 +4,6 @@ $(document).ready(function () {
 
     function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
 
-    const categoryIcons = {
-        geral: 'fa-circle-info',
-        trabalho: 'fa-briefcase',
-        pessoal: 'fa-user',
-        estudo: 'fa-book',
-        outros: 'fa-tags'
-    };
-
     /* ---------- ADD TAREFA ---------- */
     $('#task-form').submit(function (e) {
         e.preventDefault();
@@ -47,35 +39,26 @@ $(document).ready(function () {
         let checkbox = $('<input type="checkbox" class="task-checkbox">').prop('checked', task.completed);
         let label = $('<label></label>').text(task.text);
         if (task.completed) label.addClass('completed');
-
         textDiv.append(checkbox, label);
 
-        // Div envolvendo prioridade + categoria
         let prioCatDiv = $('<div class="task-priority-category"></div>');
-
-        // Prioridade
         let priorityLabel = $('<span class="priority-label"></span>')
             .addClass('priority-' + task.priority)
             .text(task.priority.charAt(0).toUpperCase() + task.priority.slice(1));
         prioCatDiv.append(priorityLabel);
 
-        // Categoria
         let categorySpan = $('<span class="task-category"></span>')
             .text(task.category.charAt(0).toUpperCase() + task.category.slice(1))
             .attr('data-tooltip', 'Categoria: ' + task.category.charAt(0).toUpperCase() + task.category.slice(1));
         prioCatDiv.append(categorySpan);
-
         textDiv.append(prioCatDiv);
 
-        // Data
         if (task.dueDate) {
             let dateLabel = $('<span class="task-date-label"></span>').text(task.dueDate);
             textDiv.append(dateLabel);
         }
 
-        // Botões
         let btnGroup = $('<div class="button-group"></div>');
-
         if (task.subtasks.length > 0) {
             let toggleSubBtn = $('<button type="button" class="toggle-subtasks-btn">▼</button>');
             btnGroup.append(toggleSubBtn);
@@ -97,7 +80,6 @@ $(document).ready(function () {
         taskDiv.append(textDiv, btnGroup);
         li.append(taskDiv);
 
-        // Subtarefas
         let subtaskList = $('<ul class="subtask-list"></ul>');
         task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st));
         li.append(subtaskList);
@@ -165,28 +147,6 @@ $(document).ready(function () {
         updateProgress();
         if (task.subtasks.length === 0) {
             taskLi.find('.toggle-subtasks-btn').remove();
-        }
-    });
-
-    /* ---------- EDITAR ---------- */
-    $(document).on('click', '.edit-btn', function () {
-        let li = $(this).closest('li');
-        let label = li.find('label').first();
-        let input = $('<input type="text" class="edit-task">').val(label.text());
-        label.replaceWith(input);
-        input.focus();
-        input.on('keypress', e => { if (e.which === 13) saveEdit(input, li); });
-        input.on('blur', () => saveEdit(input, li));
-
-        function saveEdit(input, li) {
-            let newText = input.val().trim();
-            if (!newText) newText = 'Tarefa';
-            let label = $('<label></label>').text(newText);
-            input.replaceWith(label);
-            let task = tasks.find(t => t.id === li.attr('data-id'));
-            task.text = newText;
-            saveTasks();
-            applyFilter();
         }
     });
 
@@ -359,25 +319,72 @@ $(document).ready(function () {
         window.open(url, '_blank');
     }
 
-    // Controle de mostrar/esconder menu ao rolar
-let lastScrollTop = 0;
-const nav = document.querySelector("nav");
+    /* ---------- EDITAR TAREFA VIA MODAL ---------- */
+    $(document).on('click', '.edit-btn', function () {
+        let li = $(this).closest('li');
+        currentTaskLi = li;
 
-window.addEventListener("scroll", () => {
-  let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        let task = tasks.find(t => t.id === li.attr('data-id'));
+        if (!task) return;
 
-  if (currentScroll > lastScrollTop && currentScroll > 100) {
-    // Só esconde se rolar para baixo e já tiver passado 100px
-    nav.classList.add("hidden");
-  } else if (currentScroll < lastScrollTop) {
-    // Mostra ao rolar para cima
-    nav.classList.remove("hidden");
-  }
+        $('#edit-task-name').val(task.text);
+        $('#edit-task-priority').val(task.priority);
+        $('#edit-task-category').val(task.category);
+        $('#edit-task-date').val(task.dueDate);
 
-  lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
-});
+        $('#editTaskModal').fadeIn();
+        $('#edit-task-name').focus();
+    });
 
+    $('#edit-save-btn').click(function () {
+        if (!currentTaskLi) return;
+
+        let task = tasks.find(t => t.id === currentTaskLi.attr('data-id'));
+        if (!task) return;
+
+        task.text = $('#edit-task-name').val().trim() || 'Tarefa';
+        task.priority = $('#edit-task-priority').val();
+        task.category = $('#edit-task-category').val();
+        task.dueDate = $('#edit-task-date').val();
+
+        currentTaskLi.find('label').first().text(task.text);
+        currentTaskLi.removeClass('priority-low priority-medium priority-high');
+        currentTaskLi.addClass('priority-' + task.priority);
+        currentTaskLi.find('.priority-label').first().text(task.priority.charAt(0).toUpperCase() + task.priority.slice(1));
+
+        currentTaskLi.attr('data-category', task.category);
+        currentTaskLi.find('.task-category').first().text(task.category.charAt(0).toUpperCase() + task.category.slice(1));
+        currentTaskLi.find('.task-category').first().attr('data-tooltip', 'Categoria: ' + task.category.charAt(0).toUpperCase() + task.category.slice(1));
+
+        let dateLabel = currentTaskLi.find('.task-date-label');
+        if (task.dueDate) {
+            if (dateLabel.length) dateLabel.text(task.dueDate);
+            else currentTaskLi.find('.task-text').append($('<span class="task-date-label"></span>').text(task.dueDate));
+        } else dateLabel.remove();
+
+        updateTaskDueVisual(currentTaskLi, task);
+        saveTasks();
+        applyFilter();
+
+        $('#editTaskModal').fadeOut();
+        currentTaskLi = null;
+    });
+
+    $('#edit-cancel-btn, .close-edit').click(function () {
+        $('#editTaskModal').fadeOut();
+        currentTaskLi = null;
+    });
+
+    /* ---------- SCROLL NAV ---------- */
+    let lastScrollTop = 0;
+    const nav = document.querySelector("nav");
+
+    window.addEventListener("scroll", () => {
+        let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        if (currentScroll > lastScrollTop && currentScroll > 100) nav.classList.add("hidden");
+        else if (currentScroll < lastScrollTop) nav.classList.remove("hidden");
+        lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+    });
 
     loadTasks();
-    
 });

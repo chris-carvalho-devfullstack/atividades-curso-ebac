@@ -107,6 +107,32 @@
         </div>
     </div>
 
+    <!-- Modal de Edição de Tarefa -->
+<div id="editTaskModal" class="modal">
+  <div class="modal-content">
+    <span class="close-edit">&times;</span>
+    <h3>Editar Tarefa</h3>
+    <input type="text" id="edit-task-name" placeholder="Nome da tarefa">
+    <select id="edit-task-priority">
+      <option value="low">Baixa</option>
+      <option value="medium" selected>Média</option>
+      <option value="high">Alta</option>
+    </select>
+    <select id="edit-task-category">
+      <option value="geral">Geral</option>
+      <option value="trabalho">Trabalho</option>
+      <option value="pessoal">Pessoal</option>
+      <option value="estudo">Estudo</option>
+      <option value="outros">Outros</option>
+    </select>
+    <input type="date" id="edit-task-date">
+    <button id="edit-save-btn">Salvar</button>
+    <button id="edit-cancel-btn">Cancelar</button>
+  </div>
+</div>
+
+
+
     <!-- JS -->
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
