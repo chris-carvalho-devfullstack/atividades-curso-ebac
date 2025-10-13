@@ -42,6 +42,8 @@ onAuthStateChanged(auth, async (user) => {
             profileContactInput.value = data.contact || '';
             if (data.photoURL) {
                 profileImagePreview.src = data.photoURL;
+            } else {
+                profileImagePreview.src = 'https://via.placeholder.com/150'; // Fallback para placeholder
             }
         } else {
             console.log("Documento de perfil não encontrado, usuário pode ser novo.");
@@ -52,7 +54,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// 3. Salvar alterações no formulário
+// 3. Salvar alterações no formulário (nome e contato)
 profileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) {
@@ -62,22 +64,24 @@ profileForm.addEventListener('submit', async (e) => {
 
     const userDocRef = doc(db, 'users', currentUser.uid);
     try {
+        // Salva apenas os campos de texto, sem mexer na photoURL
         await setDoc(userDocRef, {
             displayName: profileNameInput.value,
             contact: profileContactInput.value,
-            // Mantém a photoURL existente se houver, para não apagar ao salvar o nome/contato
-            photoURL: profileImagePreview.src.includes('placeholder') ? null : profileImagePreview.src
-        }, { merge: true }); // 'merge: true' evita sobrescrever campos existentes
+        }, { merge: true }); // 'merge: true' cria o documento se não existir, ou atualiza os campos
 
         showMessage("Perfil atualizado com sucesso!");
     } catch (error) {
         console.error("Erro ao salvar perfil:", error);
-        showMessage("Ocorreu um erro ao salvar.", "error");
+        let friendlyMessage = "Ocorreu um erro ao salvar.";
+        if (error.code === 'permission-denied') {
+            friendlyMessage = "Erro de permissão. Verifique suas regras de segurança do Firestore.";
+        }
+        showMessage(friendlyMessage, "error");
     }
 });
 
 // 4. Lógica para upload da foto de perfil
-// Clicar no botão "Alterar Foto" aciona o input de arquivo
 changePictureBtn.addEventListener('click', () => {
     imageUploadInput.click();
 });
@@ -101,7 +105,7 @@ imageUploadInput.addEventListener('change', async (e) => {
         // Atualiza a imagem na tela
         profileImagePreview.src = downloadURL;
 
-        // Salva a nova URL no documento do usuário no Firestore
+        // Salva APENAS a nova URL no documento do usuário no Firestore
         const userDocRef = doc(db, 'users', currentUser.uid);
         await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
@@ -109,6 +113,12 @@ imageUploadInput.addEventListener('change', async (e) => {
 
     } catch (error) {
         console.error("Erro no upload da imagem:", error);
-        showMessage("Erro ao enviar a imagem.", "error");
+        let friendlyMessage = "Erro ao enviar a imagem.";
+        if (error.code === 'storage/unauthorized') {
+            friendlyMessage = "Erro de permissão. Verifique suas regras de segurança do Storage.";
+        } else if (error.code === 'permission-denied') { // Erro do Firestore ao salvar a URL
+            friendlyMessage = "Não foi possível salvar a URL. Verifique suas regras de segurança do Firestore.";
+        }
+        showMessage(friendlyMessage, "error");
     }
 });
