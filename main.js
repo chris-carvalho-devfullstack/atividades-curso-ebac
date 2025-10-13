@@ -4,25 +4,100 @@ $(document).ready(function () {
     let calendar = null;
     let calendarInitialized = false;
 
+    // ... (depois de let calendarInitialized = false;)
+
+    /* ---------- NOVA LÓGICA: Mostrar/Esconder Formulário e Filtros ---------- */
+    $('#toggle-form-btn').on('click', function() {
+        // Esconde o outro painel se estiver aberto
+        $('#filter-container').slideUp(200);
+
+        // Alterna o painel do formulário
+        $('#form-container').slideToggle(300, function() {
+            // Foca no input de texto quando o formulário aparece
+            if ($(this).is(':visible')) {
+                $('#task-text').focus();
+            }
+        });
+
+        // Atualiza o texto do botão para dar feedback ao usuário
+        const formVisible = $('#form-container').is(':visible');
+        if (!formVisible) {
+            $(this).html('<i class="fa-solid fa-times"></i> Fechar Formulário');
+        } else {
+            $(this).html('<i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa');
+        }
+    });
+
+    $('#toggle-filter-btn').on('click', function() {
+        // Esconde o outro painel se estiver aberto
+        $('#form-container').slideUp(200, function() {
+            // Reseta o texto do botão do formulário se ele foi fechado
+            $('#toggle-form-btn').html('<i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa');
+        });
+        
+        // Alterna o painel de filtros
+        $('#filter-container').slideToggle(300, function() {
+            // Foca no input de pesquisa quando os filtros aparecem
+            if ($(this).is(':visible')) {
+                $('#search-input').focus();
+            }
+        });
+    });
+
+    // Fecha os painéis se o usuário pressionar a tecla 'Escape'
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            if ($('#form-container').is(':visible')) {
+                $('#form-container').slideUp(300);
+                $('#toggle-form-btn').html('<i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa');
+            }
+            if ($('#filter-container').is(':visible')) {
+                $('#filter-container').slideUp(300);
+            }
+        }
+    });
+
+
+    // ... (o restante do seu código JS continua aqui, começando com /* ---------- UTIL: Funções de Modal Melhoradas ---------- */)
+
     function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
 
-    /* ---------- UTIL: abrir/fechar modais de forma consistente ---------- */
+    /* ---------- UTIL: Funções de Modal Melhoradas ---------- */
     function showModal(selector, options = {}) {
         const $modal = (typeof selector === 'string') ? $(selector) : selector;
         if (!$modal || $modal.length === 0) return;
-        $modal.addClass('show').attr('aria-hidden', 'false').show(); // CSS deve controlar visual, .show indica estado
-        // foco no primeiro elemento focável
-        setTimeout(() => {
-            const $focusable = $modal.find('input, textarea, select, button').filter(':visible').first();
-            if ($focusable.length) $focusable.focus();
-            // re-render do FullCalendar caso o calendário esteja dentro do modal/contêiner
-            if (calendar && $modal.find('#calendar').length) {
-                try { calendar.render(); } catch (e) { /* ignore */ }
-                setTimeout(() => { try { calendar.render(); } catch (e) {} }, 60);
-            }
-        }, 60);
 
-        // fechar ao clicar no overlay (fora do .modal-content)
+        $('body').css('overflow', 'hidden'); // Impede o scroll da página
+        $modal.addClass('show').attr('aria-hidden', 'false').show();
+
+        const $focusableElements = $modal.find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const $firstFocusable = $focusableElements.first();
+        const $lastFocusable = $focusableElements.last();
+
+        setTimeout(() => {
+            if ($firstFocusable.length) $firstFocusable.focus();
+        }, 100);
+
+        $modal.on('keydown.focusTrap', function (e) {
+            if (e.key === 'Tab' || e.keyCode === 9) {
+                if (e.shiftKey) { // Shift + Tab
+                    if (document.activeElement === $firstFocusable[0]) {
+                        $lastFocusable.focus();
+                        e.preventDefault();
+                    }
+                } else { // Tab
+                    if (document.activeElement === $lastFocusable[0]) {
+                        $firstFocusable.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+
+        if (calendar && $modal.find('#calendar').length) {
+            setTimeout(() => { try { calendar.render(); } catch (e) {} }, 60);
+        }
+
         $modal.off('click.modalOverlay').on('click.modalOverlay', function (evt) {
             if (evt.target === this && !(options && options.disableOverlayClose)) hideModal($modal);
         });
@@ -31,16 +106,26 @@ $(document).ready(function () {
     function hideModal(selector) {
         const $modal = (typeof selector === 'string') ? $(selector) : selector;
         if (!$modal || $modal.length === 0) return;
+
+        $('body').css('overflow', ''); // Restaura o scroll da página
         $modal.removeClass('show').attr('aria-hidden', 'true').hide();
         $modal.off('click.modalOverlay');
+        $modal.off('keydown.focusTrap'); // Desativa o focus trap
     }
 
-    // fechar modais com Esc
     $(document).on('keydown', function (e) {
         if (e.key === 'Escape' || e.keyCode === 27) {
             $('.modal.show').each(function () { hideModal($(this)); });
         }
     });
+
+    $('.modal .close, .modal .close-top-right').on('click', function() {
+        hideModal($(this).closest('.modal'));
+    });
+     $('#edit-cancel-btn').on('click', () => hideModal('#editTaskModal'));
+     $('#subtask-cancel-btn').on('click', () => hideModal('#subtask-modal'));
+     $('#view-close-btn').on('click', () => hideModal('#viewTaskModal'));
+
 
     /* ---------- ADD TAREFA ---------- */
     $('#task-form').submit(function (e) {
@@ -48,10 +133,11 @@ $(document).ready(function () {
         let text = $('#task-text').val().trim();
         let priority = $('#task-priority').val();
         let dueDate = $('#task-date').val();
+        let dueTime = $('#task-time').val();
         let category = $('#task-category').val() || 'geral';
         if (!text) return;
 
-        let task = { id: generateId(), text, completed: false, priority, dueDate, category, subtasks: [] };
+        let task = { id: generateId(), text, completed: false, priority, dueDate, dueTime, category, subtasks: [] };
         tasks.push(task);
         addTaskHTML(task);
         saveTasks();
@@ -61,6 +147,7 @@ $(document).ready(function () {
         $('#task-text').val('');
         $('#task-priority').val('medium');
         $('#task-date').val('');
+        $('#task-time').val('');
         $('#task-category').val('geral');
         applyFilter();
     });
@@ -93,7 +180,10 @@ $(document).ready(function () {
         textDiv.append(prioCatDiv);
 
         if (task.dueDate) {
-            let dateLabel = $('<span class="task-date-label"></span>').text(task.dueDate);
+            let dateText = new Date(task.dueDate + 'T00:00:00').toLocaleDateString();
+            let timeText = task.dueTime ? ` ${task.dueTime}` : '';
+            let dateTimeText = `📅 ${dateText}${timeText}`;
+            let dateLabel = $('<span class="task-datetime"></span>').text(dateTimeText);
             textDiv.append(dateLabel);
         }
 
@@ -172,11 +262,25 @@ $(document).ready(function () {
     $(document).on('click', '.remove-btn', function () {
         let li = $(this).closest('li');
         let taskId = li.attr('data-id');
-        tasks = tasks.filter(t => t.id !== taskId);
-        li.remove();
-        saveTasks();
-        updateProgress();
-        removeEventFromCalendar(taskId);
+        let task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+        
+        $('#confirm-title').text('Apagar Tarefa');
+        $('#confirm-text').text(`Deseja realmente apagar a tarefa "${task.text}"? Esta ação não pode ser desfeita.`);
+        showModal('#confirmModal');
+
+        $('#confirm-ok-btn').off('click').on('click', function() {
+            tasks = tasks.filter(t => t.id !== taskId);
+            li.remove();
+            saveTasks();
+            updateProgress();
+            removeEventFromCalendar(taskId);
+            hideModal('#confirmModal');
+        });
+
+        $('#confirm-cancel-btn').off('click').on('click', function() {
+            hideModal('#confirmModal');
+        });
     });
 
     $(document).on('click', '.remove-subtask-btn', function () {
@@ -198,12 +302,10 @@ $(document).ready(function () {
         currentTaskLi = $(this).closest('li');
         let taskText = currentTaskLi.find('label').first().text();
         $('#subtask-input').val('');
-        $('#subtask-input').attr('placeholder', `Digite a subtarefa da "${taskText}"`);
-        $('#subtask-modal-title').text(`Adicionar subtarefa da "${taskText}"`);
+        $('#subtask-input').attr('placeholder', `Digite a subtarefa para "${taskText}"`);
+        $('#subtask-modal-title').text(`Adicionar subtarefa para "${taskText}"`);
         showModal('#subtask-modal');
     });
-
-    $('#subtask-cancel-btn, #subtask-modal .close').click(function () { hideModal('#subtask-modal'); currentTaskLi = null; });
 
     $('#subtask-add-btn').click(function () {
         let subtaskText = $('#subtask-input').val().trim();
@@ -301,11 +403,14 @@ $(document).ready(function () {
     function updateTaskDueVisual(li, task) {
         li.removeClass('due-soon overdue');
         if (!task || !task.dueDate || task.completed) return;
-        let today = new Date(), due = new Date(task.dueDate);
-        today.setHours(0,0,0,0); due.setHours(0,0,0,0);
-        let diffDays = (due - today)/(1000*60*60*24);
-        if (diffDays < 0) li.addClass('overdue');
-        else if (diffDays <= 1) li.addClass('due-soon');
+        
+        const dueDateTimeString = task.dueDate + (task.dueTime ? 'T' + task.dueTime : 'T00:00:00');
+        const due = new Date(dueDateTimeString);
+        const now = new Date();
+        const diffHours = (due - now) / (1000 * 60 * 60);
+
+        if (diffHours < 0) li.addClass('overdue');
+        else if (diffHours <= 24) li.addClass('due-soon');
     }
 
     function checkAllDueDates() {
@@ -328,7 +433,6 @@ $(document).ready(function () {
                 applyFilter();
             } catch(e) { console.error('Erro ao carregar tarefas:', e); tasks=[]; }
         }
-        // tentar inicializar calendário e sincronizar
         if (!calendarInitialized) initCalendar();
         syncAllToCalendar();
     }
@@ -336,11 +440,16 @@ $(document).ready(function () {
     /* ---------- GOOGLE AGENDA ---------- */
     function exportTaskToGoogleLink(task) {
         if (!task.dueDate) { alert("A tarefa precisa ter uma data para exportar!"); return; }
-        let start = task.dueDate.replace(/-/g,'') + 'T090000Z';
-        let end = task.dueDate.replace(/-/g,'') + 'T100000Z';
+        
+        let startDateTime = task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T09:00:00');
+        let startDate = new Date(startDateTime);
+        let endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Adiciona 1 hora
+
+        let formatForGoogle = (date) => date.toISOString().replace(/-|:|\.\d+/g, '');
+        
         let url = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
                   `&text=${encodeURIComponent(task.text)}` +
-                  `&dates=${start}/${end}` +
+                  `&dates=${formatForGoogle(startDate)}/${formatForGoogle(endDate)}` +
                   `&details=${encodeURIComponent(task.subtasks.map(st=>st.text).join('\n'))}`;
         window.open(url,'_blank');
     }
@@ -353,34 +462,46 @@ $(document).ready(function () {
         $('#edit-task-priority').val(task.priority);
         $('#edit-task-category').val(task.category);
         $('#edit-task-date').val(task.dueDate);
+        $('#edit-task-time').val(task.dueTime);
         showModal('#editTaskModal');
     });
 
     $('#edit-save-btn').click(function(){
         if(!currentTaskLi) return;
         let task = tasks.find(t => t.id === currentTaskLi.attr('data-id')); if(!task) return;
+        
         task.text = $('#edit-task-name').val().trim() || 'Tarefa';
         task.priority = $('#edit-task-priority').val();
         task.category = $('#edit-task-category').val();
         task.dueDate = $('#edit-task-date').val();
+        task.dueTime = $('#edit-task-time').val();
+
         currentTaskLi.find('label').first().text(task.text);
         currentTaskLi.removeClass('priority-low priority-medium priority-high').addClass('priority-'+task.priority);
         currentTaskLi.find('.priority-label').first().text(task.priority.charAt(0).toUpperCase()+task.priority.slice(1));
         currentTaskLi.attr('data-category',task.category);
         currentTaskLi.find('.task-category').first().text(task.category.charAt(0).toUpperCase()+task.category.slice(1))
                      .attr('data-tooltip','Categoria: '+task.category.charAt(0).toUpperCase()+task.category.slice(1));
-        let dateLabel = currentTaskLi.find('.task-date-label');
-        if(task.dueDate){ if(dateLabel.length) dateLabel.text(task.dueDate); else currentTaskLi.find('.task-text').append($('<span class="task-date-label"></span>').text(task.dueDate)); }
-        else dateLabel.remove();
+        
+        let dateLabel = currentTaskLi.find('.task-datetime');
+        if (task.dueDate) {
+            let dateText = new Date(task.dueDate + 'T00:00:00').toLocaleDateString();
+            let timeText = task.dueTime ? ` ${task.dueTime}` : '';
+            let dateTimeText = `📅 ${dateText}${timeText}`;
+            if (dateLabel.length) dateLabel.text(dateTimeText);
+            else currentTaskLi.find('.task-text').append($('<span class="task-datetime"></span>').text(dateTimeText));
+        } else {
+            dateLabel.remove();
+        }
+
         updateTaskDueVisual(currentTaskLi,task);
         saveTasks(); applyFilter(); syncTaskToCalendar(task);
         hideModal('#editTaskModal'); currentTaskLi=null;
     });
 
-    $('#edit-cancel-btn, #editTaskModal .close-edit').click(function(){ hideModal('#editTaskModal'); currentTaskLi=null; });
 
     /* ---------- MODAL DE VISUALIZAÇÃO ---------- */
-    $(document).on('click', '#task-list li label', function(){
+    $(document).on('click', '#task-list li > .task-main > .task-text > label', function(){
         let li = $(this).closest('li');
         let task = tasks.find(t => t.id === li.attr('data-id'));
         if(!task) return;
@@ -388,7 +509,11 @@ $(document).ready(function () {
         $('#view-task-name').text(task.text);
         $('#view-task-priority').text(task.priority.charAt(0).toUpperCase()+task.priority.slice(1));
         $('#view-task-category').text(task.category.charAt(0).toUpperCase()+task.category.slice(1));
-        $('#view-task-date').text(task.dueDate||'Sem data');
+        
+        let dateText = task.dueDate ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString() : 'Sem data';
+        let timeText = task.dueTime ? ` às ${task.dueTime}` : '';
+        $('#view-task-date').text(dateText + timeText);
+
         let $subtasks = $('#view-task-subtasks').empty();
         if(task.subtasks.length){
             task.subtasks.forEach(st => $('<li></li>').text(st.text + (st.completed ? ' ✅' : '')).appendTo($subtasks));
@@ -398,25 +523,15 @@ $(document).ready(function () {
 
         $('#view-edit-btn').off('click').on('click',function(){
             hideModal('#viewTaskModal');
-            currentTaskLi=li;
-            $('#edit-task-name').val(task.text);
-            $('#edit-task-priority').val(task.priority);
-            $('#edit-task-category').val(task.category);
-            $('#edit-task-date').val(task.dueDate);
-            showModal('#editTaskModal');
+            li.find('.edit-btn').first().click();
         });
 
         $('#view-delete-btn').off('click').on('click',function(){
-            if(confirm('Deseja realmente apagar esta tarefa?')){
-                tasks = tasks.filter(t => t.id !== task.id);
-                li.remove();
-                saveTasks(); updateProgress(); removeEventFromCalendar(task.id);
-                hideModal('#viewTaskModal');
-            }
+            hideModal('#viewTaskModal');
+            li.find('.remove-btn').first().click();
         });
-
-        $('#view-close-btn, #viewTaskModal .close-view').off('click').on('click',function(){ hideModal('#viewTaskModal'); });
     });
+
 
     /* ---------- SCROLL NAV ---------- */
     let lastScrollTop = 0;
@@ -428,19 +543,21 @@ $(document).ready(function () {
         const calendarEl = document.getElementById('calendar');
         if(calendarEl && typeof FullCalendar!=='undefined' && FullCalendar.Calendar){
             calendar = new FullCalendar.Calendar(calendarEl,{
-                initialView:'dayGridMonth',
+                initialView:'timeGridWeek', // Melhor visualização padrão com horário
+                locale: 'pt-br',
                 headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,listWeek'},
-                events: tasks.filter(t=>t.dueDate).map(t=>({id:t.id,title:t.text,start:t.dueDate,color:t.completed?'#4CAF50':undefined})),
+                events: [], // Carregado via syncAllToCalendar
                 eventClick:function(info){
                     try{
                         const id=info.event.id;
                         const li=$(`#task-list li[data-id="${id}"]`);
                         if(li.length) {
-                            // abrir modal de visualização diretamente
+                            hideModal('.modal.show');
                             li.find('label').first().click();
-                            // destacar e rolar
-                            try { li.addClass('highlight'); setTimeout(()=>li.removeClass('highlight'),1000); } catch(e){}
                             try { li[0].scrollIntoView({behavior:'smooth', block:'center'}); } catch(e){}
+                            setTimeout(() => {
+                                try { li.addClass('highlight'); setTimeout(()=>li.removeClass('highlight'), 1200); } catch(e){}
+                            }, 300);
                         }
                     } catch(e){}
                 }
@@ -449,17 +566,32 @@ $(document).ready(function () {
         }
     }
 
-    function syncTaskToCalendar(task){
-        if(!calendar) return;
+    function syncTaskToCalendar(task) {
+        if (!calendar) return;
         let existing = calendar.getEventById(task.id);
-        if(task.dueDate){
-            if(existing){ existing.setProp('title',task.text); existing.setStart(task.dueDate); existing.setProp('color',task.completed?'#4CAF50':undefined); }
-            else calendar.addEvent({id:task.id,title:task.text,start:task.dueDate,color:task.completed?'#4CAF50':undefined});
-        } else if(existing){ existing.remove(); }
+        if (task.dueDate) {
+            let startDateTime = task.dueDate + (task.dueTime ? `T${task.dueTime}` : '');
+            let eventData = {
+                id: task.id,
+                title: task.text,
+                start: startDateTime,
+                allDay: !task.dueTime, // Evento de dia todo se não tiver hora
+                color: task.completed ? '#4CAF50' : undefined
+            };
+            if (existing) { existing.remove(); }
+            calendar.addEvent(eventData);
+        } else if (existing) {
+            existing.remove();
+        }
     }
 
     function removeEventFromCalendar(taskId){ if(calendar){ let ev=calendar.getEventById(taskId); if(ev) ev.remove(); } }
-    function syncAllToCalendar(){ if(calendar) { calendar.getEvents().forEach(e=>e.remove()); tasks.filter(t=>t.dueDate).forEach(t=>calendar.addEvent({id:t.id,title:t.text,start:t.dueDate,color:t.completed?'#4CAF50':undefined})); } }
+    function syncAllToCalendar(){
+        if(calendar) {
+            calendar.getEvents().forEach(e=>e.remove());
+            tasks.forEach(syncTaskToCalendar); // Reutiliza a função de sincronia individual
+        }
+    }
 
     $('#toggle-calendar-btn').on('click',function(){
         const $container=$('#calendar-container');
@@ -475,9 +607,5 @@ $(document).ready(function () {
 
     /* ---------- INICIALIZAÇÃO ---------- */
     loadTasks();
-    setInterval(checkAllDueDates,60*1000);
-
-    // expose for debugging (opcional)
-    window.__tasks = tasks;
-    window.__syncAllToCalendar = syncAllToCalendar;
+    setInterval(checkAllDueDates, 60 * 1000); // Verifica a cada minuto
 });

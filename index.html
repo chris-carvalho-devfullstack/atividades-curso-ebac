@@ -5,24 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Tarefas</title>
 
-    <!-- FullCalendar CSS e JS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.js"></script>
 
-    <!-- Font Awesome, jQuery UI e CSS próprio -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <!-- Menu superior -->
     <nav>
         <ul>
             <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
             <li><a href="#"><i class="fa-solid fa-list-check"></i> Tarefas</a></li>
             <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
             <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
-            <li><a href="#"><i class="fa-solid fa-gear"></i> Configurações</a></li>
+            <li><a href="profile.html"><i class="fa-solid fa-user"></i> Perfil</a></li>
             <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
             <li><button id="logout-btn" class="btn-logout"><i class="fa fa-right-from-bracket"></i> Sair</button></li>
         </ul>
@@ -36,152 +33,168 @@
     <main class="task-form-body">
         <h1>LISTA DE TAREFAS</h1>
 
-        <!-- Barra de progresso -->
         <div class="progress-container">
             <div class="progress-bar">0%</div>
         </div>
 
-        <!-- Formulário -->
-        <form id="task-form">
-            <input type="text" id="task-text" placeholder="Digite uma nova tarefa" required>
-            <select id="task-priority">
-                <option value="low">Baixa</option>
-                <option value="medium" selected>Média</option>
-                <option value="high">Alta</option>
-            </select>
-            <input type="date" id="task-date">
-            <select id="task-category">
-                <option value="geral" selected>Geral</option>
-                <option value="trabalho">Trabalho</option>
-                <option value="pessoal">Pessoal</option>
-                <option value="estudo">Estudo</option>
-                <option value="outros">Outros</option>
-            </select>
-            <button type="submit">Adicionar</button>
-        </form>
+        <div class="main-actions">
+            <button id="toggle-form-btn" class="btn-action-primary"><i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa</button>
+            <button id="toggle-filter-btn" class="btn-action-secondary"><i class="fa-solid fa-search"></i> Pesquisar e Filtrar</button>
+        </div>
 
-        <!-- Pesquisa e filtros -->
-        <div class="search-box">
-            <div class="input-with-icon">
-                <i class="fa fa-search"></i>
-                <input type="text" id="search-input" placeholder="Pesquisar tarefa...">
-            </div>
-            <div class="select-with-icon">
-                <i class="fa fa-filter"></i>
-                <select id="filter-priority">
-                    <option value="all">Todas as prioridades</option>
-                    <option value="high">Alta</option>
-                    <option value="medium">Média</option>
+        <div id="form-container" style="display: none;">
+            <form id="task-form">
+                <input type="text" id="task-text" placeholder="Digite uma nova tarefa" required>
+                <select id="task-priority">
                     <option value="low">Baixa</option>
+                    <option value="medium" selected>Média</option>
+                    <option value="high">Alta</option>
                 </select>
-            </div>
-            <div class="select-with-icon">
-                <i class="fa fa-tags"></i>
-                <select id="filter-category">
-                    <option value="all">Todas as categorias</option>
-                    <option value="geral">Geral</option>
+                <input type="date" id="task-date" title="Data de Vencimento">
+                <input type="time" id="task-time" title="Hora de Vencimento">
+                <select id="task-category">
+                    <option value="geral" selected>Geral</option>
                     <option value="trabalho">Trabalho</option>
                     <option value="pessoal">Pessoal</option>
                     <option value="estudo">Estudo</option>
                     <option value="outros">Outros</option>
                 </select>
+                <button type="submit">Adicionar</button>
+            </form>
+        </div>
+
+        <div id="filter-container" style="display: none;">
+            <div class="search-box">
+                <div class="input-with-icon">
+                    <i class="fa fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Pesquisar tarefa...">
+                </div>
+                <div class="select-with-icon">
+                    <i class="fa fa-filter"></i>
+                    <select id="filter-priority">
+                        <option value="all">Todas as prioridades</option>
+                        <option value="high">Alta</option>
+                        <option value="medium">Média</option>
+                        <option value="low">Baixa</option>
+                    </select>
+                </div>
+                <div class="select-with-icon">
+                    <i class="fa fa-tags"></i>
+                    <select id="filter-category">
+                        <option value="all">Todas as categorias</option>
+                        <option value="geral">Geral</option>
+                        <option value="trabalho">Trabalho</option>
+                        <option value="pessoal">Pessoal</option>
+                        <option value="estudo">Estudo</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <!-- Lista de tarefas -->
         <ul id="task-list"></ul>
 
-        <!-- Botão para alternar entre lista e calendário -->
         <button id="toggle-calendar-btn">📅 Mostrar calendário</button>
 
-        <!-- Contêiner do calendário -->
         <div id="calendar-container">
             <div id="calendar"></div>
         </div>
 
-        <!-- MODAIS (View/Edit/Subtask) permanecem iguais -->
-    
-        <!-- ================= MODAL DE VISUALIZAÇÃO (VIEW) ================= -->
-<div id="viewTaskModal" class="modal" aria-hidden="true">
-  <div class="modal-content">
-    <button class="close-view" aria-label="Fechar">&times;</button>
-    <div class="modal-header">
-      <h2>Visualizar Tarefa</h2>
-    </div>
-    <div class="modal-body">
-      <h3 id="view-task-name">Nome da tarefa</h3>
-      <div class="meta">
-        <span id="view-task-priority">Prioridade</span>
-        <span id="view-task-category">Categoria</span>
-        <span id="view-task-date">Sem data</span>
-      </div>
-      <h4>Subtarefas</h4>
-      <ul id="view-task-subtasks" class="subtasks-list">
-        <li>Nenhuma subtarefa</li>
-      </ul>
-    </div>
-    <div class="modal-footer">
-      <button id="view-edit-btn" class="btn-neutral">Editar</button>
-      <button id="view-delete-btn" class="btn-danger">Apagar</button>
-      <button id="view-close-btn" class="btn-neutral">Fechar</button>
-    </div>
-  </div>
-</div>
+        <div id="viewTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="view-modal-title" aria-hidden="true">
+          <div class="modal-content">
+            <button class="close-view close-top-right" aria-label="Fechar">&times;</button>
+            <div class="modal-header">
+              <h2 id="view-modal-title">Visualizar Tarefa</h2>
+            </div>
+            <div class="modal-body">
+              <h3 id="view-task-name">Nome da tarefa</h3>
+              <div class="meta">
+                <span id="view-task-priority">Prioridade</span>
+                <span id="view-task-category">Categoria</span>
+                <span id="view-task-date">Sem data</span>
+              </div>
+              <h4>Subtarefas</h4>
+              <ul id="view-task-subtasks" class="subtasks-list">
+                <li>Nenhuma subtarefa</li>
+              </ul>
+            </div>
+            <div class="modal-footer">
+              <button id="view-edit-btn" class="btn-neutral">Editar</button>
+              <button id="view-delete-btn" class="btn-danger">Apagar</button>
+              <button id="view-close-btn" class="btn-neutral">Fechar</button>
+            </div>
+          </div>
+        </div>
 
-<!-- ================= MODAL DE EDIÇÃO (EDIT) ================= -->
-<div id="editTaskModal" class="modal" aria-hidden="true">
-  <div class="modal-content">
-    <button class="close-edit" aria-label="Fechar">&times;</button>
-    <div class="modal-header">
-      <h2>Editar Tarefa</h2>
-    </div>
-    <div class="modal-body">
-      <label for="edit-task-name">Nome</label>
-      <input id="edit-task-name" type="text" placeholder="Nome da tarefa">
+        <div id="editTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" aria-hidden="true">
+          <div class="modal-content">
+            <button class="close-edit close-top-right" aria-label="Fechar">&times;</button>
+            <div class="modal-header">
+              <h2 id="edit-modal-title">Editar Tarefa</h2>
+            </div>
+            <div class="modal-body">
+              <label for="edit-task-name">Nome</label>
+              <input id="edit-task-name" type="text" placeholder="Nome da tarefa">
 
-      <label for="edit-task-priority">Prioridade</label>
-      <select id="edit-task-priority">
-        <option value="low">Baixa</option>
-        <option value="medium">Média</option>
-        <option value="high">Alta</option>
-      </select>
+              <label for="edit-task-priority">Prioridade</label>
+              <select id="edit-task-priority">
+                <option value="low">Baixa</option>
+                <option value="medium">Média</option>
+                <option value="high">Alta</option>
+              </select>
 
-      <label for="edit-task-category">Categoria</label>
-      <select id="edit-task-category">
-        <option value="geral">Geral</option>
-        <option value="trabalho">Trabalho</option>
-        <option value="pessoal">Pessoal</option>
-        <option value="estudo">Estudo</option>
-        <option value="outros">Outros</option>
-      </select>
+              <label for="edit-task-category">Categoria</label>
+              <select id="edit-task-category">
+                <option value="geral">Geral</option>
+                <option value="trabalho">Trabalho</option>
+                <option value="pessoal">Pessoal</option>
+                <option value="estudo">Estudo</option>
+                <option value="outros">Outros</option>
+              </select>
 
-      <label for="edit-task-date">Data</label>
-      <input id="edit-task-date" type="date">
-    </div>
-    <div class="modal-footer">
-      <button id="edit-save-btn" class="btn-primary">Salvar</button>
-      <button id="edit-cancel-btn" class="btn-neutral">Cancelar</button>
-    </div>
-  </div>
-</div>
+              <label for="edit-task-date">Data e Hora</label>
+              <div style="display: flex; gap: 10px;">
+                <input id="edit-task-date" type="date" style="flex: 1;">
+                <input id="edit-task-time" type="time" style="flex: 1;">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="edit-save-btn" class="btn-primary">Salvar</button>
+              <button id="edit-cancel-btn" class="btn-neutral">Cancelar</button>
+            </div>
+          </div>
+        </div>
 
-<!-- ================= MODAL DE SUBTAREFA (ADD SUBTASK) ================= -->
-<div id="subtask-modal" class="modal" aria-hidden="true">
-  <div class="modal-content">
-    <button class="close" aria-label="Fechar">&times;</button>
-    <div class="modal-header">
-      <h2 id="subtask-modal-title">Adicionar subtarefa</h2>
-    </div>
-    <div class="modal-body">
-      <input type="text" id="subtask-input" placeholder='Digite a subtarefa'>
-    </div>
-    <div class="modal-footer">
-      <button id="subtask-add-btn" class="btn-primary">Adicionar</button>
-      <button id="subtask-cancel-btn" class="btn-neutral">Cancelar</button>
-    </div>
-  </div>
-</div>
+        <div id="subtask-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subtask-modal-title" aria-hidden="true">
+          <div class="modal-content">
+            <button class="close close-top-right" aria-label="Fechar">&times;</button>
+            <div class="modal-header">
+              <h2 id="subtask-modal-title">Adicionar subtarefa</h2>
+            </div>
+            <div class="modal-body">
+              <input type="text" id="subtask-input" placeholder='Digite a subtarefa'>
+            </div>
+            <div class="modal-footer">
+              <button id="subtask-add-btn" class="btn-primary">Adicionar</button>
+              <button id="subtask-cancel-btn" class="btn-neutral">Cancelar</button>
+            </div>
+          </div>
+        </div>
 
+        <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true">
+          <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header">
+              <h2 id="confirm-title">Confirmar Ação</h2>
+            </div>
+            <div class="modal-body">
+              <p id="confirm-text">Você tem certeza?</p>
+            </div>
+            <div class="modal-footer">
+              <button id="confirm-ok-btn" class="btn-danger">Confirmar</button>
+              <button id="confirm-cancel-btn" class="btn-neutral">Cancelar</button>
+            </div>
+          </div>
+        </div>
 
     </main>
 
@@ -193,21 +206,11 @@
         <a href="pomodoro.html" class="pomodoro-link"><i class="fa fa-clock"></i> Ir para Pomodoro Timer</a>
     </footer>
 
-    <!-- JS -->
-    <!-- inicializa o Firebase (módulo) -->
-<script type="module" src="firebase-config.js"></script>
-
-<!-- listener de auth (módulo) -->
-<script type="module" src="auth-listener.js"></script>
-
-<!-- módulo que faz apenas logout (usa export auth) -->
-<script type="module" src="logout.js"></script>
-
-<!-- bibliotecas jQuery (main.js depende delas) -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-
-<!-- seu main.js (SEM type="module") -->
-<script src="main.js"></script>
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="auth-listener.js"></script>
+    <script type="module" src="logout.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>

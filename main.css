@@ -111,15 +111,19 @@ nav ul li a.active { background: #fff; color: #4CAF50; }
     justify-content:center;
     align-items:center;
 }
-#task-form input[type="text"], #task-form select, #task-form input[type="date"] {
-    flex: 0 0 130px;
+#task-form input, #task-form select {
     padding:10px;
     font-size:14px;
     border:1px solid #ccc;
     border-radius:8px;
     background:#fff;
 }
-#task-form #task-input, #task-form #task-text { flex:1 1 200px; }
+#task-form #task-text { flex: 1 1 200px; }
+#task-form #task-priority { flex: 0 1 100px; }
+#task-form #task-date { flex: 0 1 130px; }
+#task-form #task-time { flex: 0 1 100px; }
+#task-form #task-category { flex: 0 1 100px; }
+
 #task-form button {
     padding:10px 20px;
     font-size:14px;
@@ -131,6 +135,7 @@ nav ul li a.active { background: #fff; color: #4CAF50; }
     transition:transform 0.2s, background-color 0.2s;
 }
 #task-form button:hover { transform:scale(1.05); background:#43a047; }
+
 
 /* ======================= PESQUISA E FILTRO ======================= */
 .search-box {
@@ -228,11 +233,20 @@ nav ul li a.active { background: #fff; color: #4CAF50; }
     pointer-events:none; z-index:1000;
 }
 
-/* ======================= DATA DE VENCIMENTO ======================= */
-.task-date-label::before { content: "\1F4C5"; margin-right:4px; }
-.task-date-label { margin-left:8px; font-size:0.75rem; padding:2px 6px; border-radius:4px; color:white; background:#757575; display:inline-block; }
-.due-soon .task-date-label { background:#ff9800; }
-.overdue .task-date-label { background:#f44336; }
+/* ======================= DATA E HORA DE VENCIMENTO ======================= */
+.task-datetime {
+    margin-left:8px;
+    font-size:0.75rem;
+    padding: 2px 6px;
+    border-radius:4px;
+    color:white;
+    background:#757575;
+    display:inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.due-soon .task-datetime { background:#ff9800; }
+.overdue .task-datetime { background:#f44336; }
 .due-soon { border-left-color:#ff9800 !important; }
 .overdue { border-left-color:#f44336 !important; }
 
@@ -273,13 +287,17 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     left:0; top:0;
     width:100%; height:100%;
     display: none;
-    background-color: rgba(0,0,0,0.5);
     align-items: center;
     justify-content: center;
     padding: 20px;
     overflow: auto;
+    background-color: rgba(0,0,0,0); /* Inicia transparente */
+    transition: background-color 0.3s ease-in-out; /* Transição suave */
 }
-.modal.show { display: flex; }
+.modal.show {
+    display: flex;
+    background-color: rgba(0,0,0,0.5); /* Fica escuro quando ativo */
+}
 .modal .modal-content {
     background-color: #fff;
     width:100%;
@@ -304,7 +322,7 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 .modal .btn-primary { background:#4CAF50; color:#fff; } .modal .btn-primary:hover { background:#43a047; transform: translateY(-2px); }
 .modal .btn-danger { background:#f44336; color:#fff; } .modal .btn-danger:hover { background:#d32f2f; transform: translateY(-2px); }
 .modal .btn-neutral { background:#eee; color:#333; } .modal .btn-neutral:hover { background:#e0e0e0; transform: translateY(-2px); }
-.modal input[type="text"], .modal select, .modal input[type="date"], .modal textarea { width:100%; padding:10px; margin:8px 0; border-radius:8px; border:1px solid #ccc; font-size:14px; box-sizing:border-box; }
+.modal input[type="text"], .modal select, .modal input[type="date"], .modal input[type="time"], .modal textarea { width:100%; padding:10px; margin:8px 0; border-radius:8px; border:1px solid #ccc; font-size:14px; box-sizing:border-box; }
 #editTaskModal .modal-content, #viewTaskModal .modal-content { max-width:520px; }
 #calendarModal .modal-content { max-width:920px; }
 #viewTaskModal .modal-header { align-items:flex-start; }
@@ -350,13 +368,69 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 /* ======================= RESPONSIVIDADE ======================= */
 @media(max-width:700px){
     #task-form { flex-direction:column; }
+    #task-form input, #task-form select {
+        flex-basis: 100% !important;
+    }
     .search-box { flex-direction:column; }
     .task-main { flex-direction:column; align-items:flex-start; }
     .button-group { margin-top:5px; }
-    #task-form input[type="text"],
-    #task-form select,
-    #task-form input[type="date"] {
-        flex: 1 1 100%;
-    }
 }
 
+/* ======================= NOVOS BOTÕES DE AÇÃO ======================= */
+.main-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.btn-action-primary, .btn-action-secondary {
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn-action-primary {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn-action-primary:hover {
+    background-color: #43a047;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.btn-action-secondary {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.btn-action-secondary:hover {
+    background-color: #e7e7e7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* ======================= CONTAINERS COLAPSÁVEIS ======================= */
+#form-container, #filter-container {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+#task-form, .search-box {
+    margin-bottom: 0; /* Remove a margem original para o container cuidar disso */
+}
