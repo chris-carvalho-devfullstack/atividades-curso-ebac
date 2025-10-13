@@ -6,7 +6,6 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-s
 
 // =================================================================
 // COLE AQUI A CONFIGURAÇÃO DO SEU NOVO PROJETO FIREBASE
-// Substitua os valores abaixo pelos seus.
 // =================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyBsfGTZ1yypzWE4R_thDARSh61Osc6OUbU",
@@ -17,6 +16,11 @@ const firebaseConfig = {
   appId: "1:831715035671:web:2836e1701f80fc6f602a52"
 };
 // =================================================================
+
+// !! LINHA DE VERIFICAÇÃO !!
+// Esta linha vai imprimir o ID do projeto no console do navegador.
+console.log("Firebase config carregada. Projeto ID:", firebaseConfig.projectId);
+// !! FIM DA LINHA DE VERIFICAÇÃO !!
 
 // Inicializa os serviços do Firebase
 const app = initializeApp(firebaseConfig);
