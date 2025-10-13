@@ -30,8 +30,3 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-// ... (resto do seu código)
-
-export const storage = getStorage(app);
-
-// Forçando atualização no deploy - 13/10/2025
