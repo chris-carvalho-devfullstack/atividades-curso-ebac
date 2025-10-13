@@ -100,7 +100,88 @@
         </div>
 
         <!-- MODAIS (View/Edit/Subtask) permanecem iguais -->
-        <!-- ... (mantém todos os modais que você já tinha) ... -->
+    
+        <!-- ================= MODAL DE VISUALIZAÇÃO (VIEW) ================= -->
+<div id="viewTaskModal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <button class="close-view" aria-label="Fechar">&times;</button>
+    <div class="modal-header">
+      <h2>Visualizar Tarefa</h2>
+    </div>
+    <div class="modal-body">
+      <h3 id="view-task-name">Nome da tarefa</h3>
+      <div class="meta">
+        <span id="view-task-priority">Prioridade</span>
+        <span id="view-task-category">Categoria</span>
+        <span id="view-task-date">Sem data</span>
+      </div>
+      <h4>Subtarefas</h4>
+      <ul id="view-task-subtasks" class="subtasks-list">
+        <li>Nenhuma subtarefa</li>
+      </ul>
+    </div>
+    <div class="modal-footer">
+      <button id="view-edit-btn" class="btn-neutral">Editar</button>
+      <button id="view-delete-btn" class="btn-danger">Apagar</button>
+      <button id="view-close-btn" class="btn-neutral">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL DE EDIÇÃO (EDIT) ================= -->
+<div id="editTaskModal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <button class="close-edit" aria-label="Fechar">&times;</button>
+    <div class="modal-header">
+      <h2>Editar Tarefa</h2>
+    </div>
+    <div class="modal-body">
+      <label for="edit-task-name">Nome</label>
+      <input id="edit-task-name" type="text" placeholder="Nome da tarefa">
+
+      <label for="edit-task-priority">Prioridade</label>
+      <select id="edit-task-priority">
+        <option value="low">Baixa</option>
+        <option value="medium">Média</option>
+        <option value="high">Alta</option>
+      </select>
+
+      <label for="edit-task-category">Categoria</label>
+      <select id="edit-task-category">
+        <option value="geral">Geral</option>
+        <option value="trabalho">Trabalho</option>
+        <option value="pessoal">Pessoal</option>
+        <option value="estudo">Estudo</option>
+        <option value="outros">Outros</option>
+      </select>
+
+      <label for="edit-task-date">Data</label>
+      <input id="edit-task-date" type="date">
+    </div>
+    <div class="modal-footer">
+      <button id="edit-save-btn" class="btn-primary">Salvar</button>
+      <button id="edit-cancel-btn" class="btn-neutral">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL DE SUBTAREFA (ADD SUBTASK) ================= -->
+<div id="subtask-modal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <button class="close" aria-label="Fechar">&times;</button>
+    <div class="modal-header">
+      <h2 id="subtask-modal-title">Adicionar subtarefa</h2>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="subtask-input" placeholder='Digite a subtarefa'>
+    </div>
+    <div class="modal-footer">
+      <button id="subtask-add-btn" class="btn-primary">Adicionar</button>
+      <button id="subtask-cancel-btn" class="btn-neutral">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 
     </main>
 
