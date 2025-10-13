@@ -109,3 +109,10 @@
     color: #721c24;
     display: block;
 }
+
+/* Adicione ao final de profile.css */
+
+.btn-primary:disabled {
+    background-color: #a5d6a7; /* Um verde mais claro para indicar o estado de "carregando" */
+    cursor: wait; /* Muda o cursor do mouse para indicar que algo está acontecendo */
+}

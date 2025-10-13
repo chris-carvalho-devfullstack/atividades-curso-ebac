@@ -32,7 +32,6 @@ onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         profileEmailInput.value = user.email; // Preenche o email (desabilitado)
         
-        // 2. Buscar dados do perfil no Firestore
         const userDocRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(userDocRef);
 
@@ -43,13 +42,12 @@ onAuthStateChanged(auth, async (user) => {
             if (data.photoURL) {
                 profileImagePreview.src = data.photoURL;
             } else {
-                profileImagePreview.src = 'https://via.placeholder.com/150'; // Fallback para placeholder
+                profileImagePreview.src = 'https://via.placeholder.com/150';
             }
         } else {
             console.log("Documento de perfil não encontrado, usuário pode ser novo.");
         }
     } else {
-        // Se não houver usuário logado, o auth-listener.js já deve redirecionar
         console.log("Nenhum usuário logado.");
     }
 });
@@ -62,13 +60,16 @@ profileForm.addEventListener('submit', async (e) => {
         return;
     }
 
+    // **NOVO: Feedback visual no botão**
+    saveProfileBtn.disabled = true;
+    saveProfileBtn.textContent = 'Salvando...';
+
     const userDocRef = doc(db, 'users', currentUser.uid);
     try {
-        // Salva apenas os campos de texto, sem mexer na photoURL
         await setDoc(userDocRef, {
             displayName: profileNameInput.value,
             contact: profileContactInput.value,
-        }, { merge: true }); // 'merge: true' cria o documento se não existir, ou atualiza os campos
+        }, { merge: true });
 
         showMessage("Perfil atualizado com sucesso!");
     } catch (error) {
@@ -78,6 +79,10 @@ profileForm.addEventListener('submit', async (e) => {
             friendlyMessage = "Erro de permissão. Verifique suas regras de segurança do Firestore.";
         }
         showMessage(friendlyMessage, "error");
+    } finally {
+        // **NOVO: Restaura o botão em qualquer cenário (sucesso ou erro)**
+        saveProfileBtn.disabled = false;
+        saveProfileBtn.textContent = 'Salvar Alterações';
     }
 });
 
@@ -86,26 +91,20 @@ changePictureBtn.addEventListener('click', () => {
     imageUploadInput.click();
 });
 
-// Quando um arquivo é selecionado
 imageUploadInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file || !currentUser) return;
 
-    // Caminho no Firebase Storage: profile_pictures/UID_DO_USUARIO/nome_do_arquivo
     const storageRef = ref(storage, `profile_pictures/${currentUser.uid}/${file.name}`);
     
     showMessage("Enviando imagem...", "neutral");
 
     try {
-        // Faz o upload do arquivo
         const snapshot = await uploadBytes(storageRef, file);
-        // Pega a URL de download da imagem
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        // Atualiza a imagem na tela
         profileImagePreview.src = downloadURL;
 
-        // Salva APENAS a nova URL no documento do usuário no Firestore
         const userDocRef = doc(db, 'users', currentUser.uid);
         await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
@@ -115,9 +114,9 @@ imageUploadInput.addEventListener('change', async (e) => {
         console.error("Erro no upload da imagem:", error);
         let friendlyMessage = "Erro ao enviar a imagem.";
         if (error.code === 'storage/unauthorized') {
-            friendlyMessage = "Erro de permissão. Verifique suas regras de segurança do Storage.";
-        } else if (error.code === 'permission-denied') { // Erro do Firestore ao salvar a URL
-            friendlyMessage = "Não foi possível salvar a URL. Verifique suas regras de segurança do Firestore.";
+            friendlyMessage = "Erro de permissão no Storage.";
+        } else if (error.code === 'permission-denied') {
+            friendlyMessage = "Erro de permissão para salvar a URL no Firestore.";
         }
         showMessage(friendlyMessage, "error");
     }
