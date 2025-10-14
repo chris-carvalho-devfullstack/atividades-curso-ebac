@@ -116,3 +116,14 @@
     background-color: #a5d6a7; /* Um verde mais claro para indicar o estado de "carregando" */
     cursor: wait; /* Muda o cursor do mouse para indicar que algo está acontecendo */
 }
+
+/* Adicione estas classes no final de profile.css */
+
+.btn-primary.btn-success {
+    background-color: #28a745; /* Verde para sucesso */
+    cursor: default;
+}
+
+.btn-primary.btn-error {
+    background-color: #dc3545; /* Vermelho para erro */
+}
