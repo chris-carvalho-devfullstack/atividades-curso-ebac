@@ -1,91 +1,71 @@
-/* friends.css */
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amigos - Gerenciador de Tarefas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="friends.css">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="./index.html"><i class="fa-solid fa-house"></i> Início</a></li>
+            <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
+            <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
+            <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
+            <li><a href="friends.html" class="active"><i class="fa-solid fa-users"></i> Amigos</a></li> 
+            <li id="nav-login-btn" style="display: none;"><a href="login.html" class="btn-login-nav"><i class="fa-solid fa-right-to-bracket"></i> Entrar</a></li>
+            <li class="profile-menu-container" style="display: none;">
+                <div class="profile-menu-toggle">
+                    <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
+                    <span id="nav-profile-name">Carregando...</span>
+                    <i class="fa-solid fa-caret-down"></i>
+                </div>
+                <ul class="profile-submenu">
+                    <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
+                    <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
+                    <li><a href="#" id="logout-btn-submenu"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+    
+    <header class="task-form-header">
+        <h1>Gerenciamento de Amigos</h1>
+        <p>Conecte-se com outros usuários para acompanhar o progresso mútuo.</p>
+    </header>
 
-.friends-container {
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 20px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
+    <main class="friends-container">
+        
+        <div class="tabs">
+            <button class="tab-link active" data-tab="friends">Meus Amigos</button>
+            <button class="tab-link" data-tab="requests">
+                Pedidos Recebidos <span class="badge" style="display:none;"></span>
+            </button>
+        </div>
 
-.tabs {
-    display: flex;
-    border-bottom: 2px solid #eee;
-    margin-bottom: 20px;
-}
+        <div id="friends" class="tab-content active">
+            <ul class="user-list" id="friends-list">
+                <li style="justify-content:center;">Carregando seus amigos...</li>
+            </ul>
+        </div>
 
-.tab-link {
-    padding: 10px 20px;
-    cursor: pointer;
-    border: none;
-    background: none;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #888;
-    position: relative;
-    transition: color 0.3s;
-}
+        <div id="requests" class="tab-content">
+            <ul class="user-list" id="requests-list">
+                <li style="justify-content:center;">Carregando pedidos de amizade...</li>
+            </ul>
+        </div>
+    </main>
 
-.tab-link.active {
-    color: #4CAF50;
-    border-bottom: 2px solid #4CAF50;
-}
+    <footer>
+        <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
+    </footer>
 
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-.badge {
-    background-color: #f44336;
-    color: white;
-    padding: 2px 6px;
-    font-size: 0.7rem;
-    border-radius: 10px;
-    margin-left: 5px;
-}
-
-.user-list {
-    list-style: none;
-    padding: 0;
-}
-
-.user-list li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.user-info img {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.user-info .username {
-    font-weight: bold;
-}
-
-.user-actions button {
-    margin-left: 5px;
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-}
-
-.btn-accept { background-color: #4CAF50; color: white; }
-.btn-reject { background-color: #f44336; color: white; }
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="auth-listener.js"></script>
+    <script type="module" src="nav-profile.js"></script>
+    <script type="module" src="friends.js"></script>
+</body>
+</html>

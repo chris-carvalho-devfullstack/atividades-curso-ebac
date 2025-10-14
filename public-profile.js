@@ -17,10 +17,16 @@ const linkedin = document.getElementById('public-linkedin');
 const addFriendBtn = document.getElementById('add-friend-btn');
 
 async function loadPublicProfile(profileUid) {
+    const currentUser = auth.currentUser;
+
     if (!profileUid) {
         fullname.textContent = "Usuário não encontrado.";
         return;
     }
+    
+    // Esconde o botão por padrão e desabilita temporariamente
+    addFriendBtn.style.display = 'none';
+    addFriendBtn.disabled = true;
 
     try {
         const docRef = doc(db, "users", profileUid);
@@ -48,24 +54,64 @@ async function loadPublicProfile(profileUid) {
             }
             
             // --- Lógica do Botão "Adicionar Amigo" ---
-            const currentUser = auth.currentUser;
+            
+            // 1. Ocultar se for o próprio perfil ou se não houver usuário logado
+            if (!currentUser || currentUser.uid === profileUid) {
+                addFriendBtn.style.display = 'none';
+                return;
+            }
 
-            // Mostra o botão apenas se houver um usuário logado E ele não estiver vendo o próprio perfil.
-            if (currentUser && currentUser.uid !== profileUid) {
-                addFriendBtn.style.display = 'block';
+            // 2. Mostrar o botão e verificar o status da amizade
+            addFriendBtn.style.display = 'block';
+            
+            // Referências de status
+            const isFriendRef = doc(db, "users", currentUser.uid, "friends", profileUid);
+            const isFriendSnap = await getDoc(isFriendRef);
+            
+            const requestSentRef = doc(db, "users", profileUid, "friendRequests", currentUser.uid);
+            const requestSentSnap = await getDoc(requestSentRef);
 
-                addFriendBtn.addEventListener('click', async () => {
-                    const requestRef = doc(db, "users", profileUid, "friendRequests", currentUser.uid);
-                    await setDoc(requestRef, {
+            const requestReceivedRef = doc(db, "users", currentUser.uid, "friendRequests", profileUid);
+            const requestReceivedSnap = await getDoc(requestReceivedRef);
+
+            if (isFriendSnap.exists()) {
+                // JÁ SÃO AMIGOS
+                addFriendBtn.textContent = "Amigos";
+                addFriendBtn.disabled = true;
+                addFriendBtn.style.backgroundColor = '#4CAF50';
+            } else if (requestSentSnap.exists()) {
+                // PEDIDO JÁ FOI ENVIADO POR MIM
+                addFriendBtn.textContent = "Pedido Enviado";
+                addFriendBtn.disabled = true;
+                addFriendBtn.style.backgroundColor = '#FF9800'; // Cor para pendente
+            } else if (requestReceivedSnap.exists()) {
+                // PEDIDO RECEBIDO (posso aceitar)
+                addFriendBtn.textContent = "Aceitar Pedido";
+                addFriendBtn.disabled = false;
+                addFriendBtn.style.backgroundColor = '#2196F3'; // Cor para recebido
+                // Redireciona para a página de pedidos
+                addFriendBtn.onclick = () => { window.location.href = 'friends.html'; }; 
+            } else {
+                // STATUS PADRÃO: Pode enviar pedido
+                addFriendBtn.textContent = "Adicionar Amigo";
+                addFriendBtn.disabled = false;
+                addFriendBtn.style.backgroundColor = ''; // Volta à cor padrão (btn-primary)
+
+                // Event Listener para enviar o pedido
+                addFriendBtn.onclick = async () => {
+                    addFriendBtn.disabled = true;
+                    addFriendBtn.textContent = "Enviando...";
+                    
+                    const newRequestRef = doc(db, "users", profileUid, "friendRequests", currentUser.uid);
+                    await setDoc(newRequestRef, {
                         from: currentUser.uid,
                         timestamp: serverTimestamp()
                     });
+                    
                     alert("Pedido de amizade enviado!");
-                    addFriendBtn.disabled = true;
                     addFriendBtn.textContent = "Pedido Enviado";
-                });
-            } else {
-                addFriendBtn.style.display = 'none';
+                    addFriendBtn.style.backgroundColor = '#FF9800';
+                };
             }
 
         } else {
