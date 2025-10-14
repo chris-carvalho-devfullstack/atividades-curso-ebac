@@ -1,37 +1,57 @@
 // firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
 // =================================================================
-// CONFIGURAÇÃO DO SEU PROJETO FIREBASE (copiada do console)
+// CONFIGURAÇÃO DO FIREBASE
 // =================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyBsfGTZ1yypzWE4R_thDARSh61Osc6OUbU",
   authDomain: "gerenciador-tarefas-fd5be.firebaseapp.com",
   projectId: "gerenciador-tarefas-fd5be",
-  storageBucket: "gerenciador-tarefas-fd5be.firebasestorage.app", // 👈 mantenha esse novo domínio
+  storageBucket: "gerenciador-tarefas-fd5be.appspot.com", // ✅ Corrigido
   messagingSenderId: "831715035671",
   appId: "1:831715035671:web:2836e1701f80fc6f602a52"
 };
 // =================================================================
 
-// !! LINHA DE VERIFICAÇÃO !!
-console.log("Firebase config carregada. Projeto ID:", firebaseConfig.projectId);
-// !! FIM DA LINHA DE VERIFICAÇÃO !!
-
-// Inicializa os serviços do Firebase
+// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
 
-// Exporta as instâncias dos serviços para serem usadas em outros arquivos
+// Instâncias
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const provider = new GoogleAuthProvider();
 
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+// -----------------------------
+// Funções de login e logout
+// -----------------------------
+export async function loginGoogle() {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    console.log("Usuário logado:", result.user.displayName, result.user.email);
+    return result.user;
+  } catch (error) {
+    console.error("Erro ao fazer login com Google:", error.code, error.message);
+  }
+}
 
-async function testarFirestore() {
+export async function logout() {
+  try {
+    await signOut(auth);
+    console.log("Usuário deslogado com sucesso!");
+  } catch (error) {
+    console.error("Erro ao deslogar:", error);
+  }
+}
+
+// -----------------------------
+// Teste rápido do Firestore
+// -----------------------------
+export async function testarFirestore() {
   try {
     const snapshot = await getDocs(collection(db, "test"));
     console.log("Firestore conectado! Documentos:", snapshot.docs.length);
@@ -40,5 +60,5 @@ async function testarFirestore() {
   }
 }
 
+// Chamada de teste
 testarFirestore();
-
