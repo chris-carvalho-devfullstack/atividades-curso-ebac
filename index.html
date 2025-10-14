@@ -181,13 +181,37 @@
         </div>
 
         <div id="subtask-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subtask-modal-title" aria-hidden="true">
-          <div class="modal-content">
+          <div class="modal-content" style="max-width: 520px;">
             <button class="close close-top-right" aria-label="Fechar">&times;</button>
             <div class="modal-header">
-              <h2 id="subtask-modal-title">Adicionar subtarefa</h2>
+              <h2 id="subtask-modal-title">Adicionar Subtarefa</h2>
             </div>
             <div class="modal-body">
-              <input type="text" id="subtask-input" placeholder='Digite a subtarefa'>
+              <label for="subtask-input">Nome</label>
+              <input type="text" id="subtask-input" placeholder='Digite a subtarefa' required>
+
+              <label for="subtask-priority">Prioridade</label>
+              <select id="subtask-priority">
+                <option value="low">Baixa</option>
+                <option value="medium" selected>Média</option>
+                <option value="high">Alta</option>
+              </select>
+
+              <label for="subtask-category">Categoria</label>
+              <select id="subtask-category">
+                <option value="geral" selected>Geral</option>
+                <option value="trabalho">Trabalho</option>
+                <option value="pessoal">Pessoal</option>
+                <option value="estudo">Estudo</option>
+                <option value="outros">Outros</option>
+              </select>
+
+              <label for="subtask-date">Data e Hora</label>
+              <div style="display: flex; gap: 10px;">
+                <input id="subtask-date" type="date" style="flex: 1;">
+                <input id="subtask-time" type="time" style="flex: 1;">
+              </div>
+              
             </div>
             <div class="modal-footer">
               <button id="subtask-add-btn" class="btn-primary">Adicionar</button>
@@ -225,6 +249,6 @@
     <script type="module" src="nav-profile.js"></script> 
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <script type="module" src="main.js"></script> 
+    <script type="module" src="main.js"></script>
 </body>
 </html>

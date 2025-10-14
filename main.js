@@ -1,5 +1,5 @@
 // ===============================================
-// 1. IMPORTAÇÕES DO FIREBASE (ADICIONADO writeBatch)
+// 1. IMPORTAÇÕES DO FIREBASE 
 // ===============================================
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
@@ -13,7 +13,7 @@ import {
     updateDoc, 
     deleteDoc, 
     serverTimestamp,
-    writeBatch // <--- NOVO
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // ===============================================
@@ -22,6 +22,10 @@ import {
 let CURRENT_USER_UID = null;
 let tasks = []; 
 let currentTaskLi = null;
+let currentSubtaskData = { 
+    taskId: null, subtaskId: null, isEdit: false, parentId: null,
+    priority: 'medium', category: 'geral', dueDate: '', dueTime: '' 
+}; 
 let calendar = null;
 let calendarInitialized = false;
 
@@ -30,13 +34,60 @@ function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
 
 
 // ===============================================
-// 3. FUNÇÕES DE OPERAÇÃO DO FIRESTORE (MODIFICADO)
+// 3. FUNÇÕES RECURSIVAS DE MANIPULAÇÃO DE DADOS 
 // ===============================================
 
-// NOVO HELPER: Calcula o novo índice para colocar a tarefa no topo
+/**
+ * Funções auxiliares para encontrar e atualizar sub-tarefas em qualquer nível.
+ */
+function updateNestedSubtasks(subtasks, targetId, callbackFn) {
+    if (!subtasks) return [];
+    
+    return subtasks.map(subtask => {
+        if (subtask.id === targetId) {
+            return callbackFn(subtask);
+        }
+        
+        if (subtask.subtasks && subtask.subtasks.length > 0) {
+            subtask.subtasks = updateNestedSubtasks(subtask.subtasks, targetId, callbackFn);
+        }
+        return subtask;
+    });
+}
+
+/**
+ * Função auxiliar para encontrar a sub-tarefa aninhada pelo ID.
+ */
+function findNestedSubtask(subtasks, targetId) {
+    if (!subtasks) return null;
+    
+    for (const subtask of subtasks) {
+        if (subtask.id === targetId) {
+            return subtask;
+        }
+        if (subtask.subtasks && subtask.subtasks.length > 0) {
+            const found = findNestedSubtask(subtask.subtasks, targetId);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+/**
+ * Checa o status de conclusão de forma recursiva para a tarefa principal.
+ */
+const checkCompletionStatusRecursively = (subtasks) => {
+    if (!subtasks || subtasks.length === 0) return true;
+    return subtasks.every(st => st.completed && checkCompletionStatusRecursively(st.subtasks));
+};
+
+
+// ===============================================
+// 4. FUNÇÕES DE OPERAÇÃO DO FIRESTORE
+// ===============================================
+
 function getNewTaskOrderIndex() {
     if (tasks.length === 0) return 1.0; 
-    // Subtrai 1.0 do menor índice atual (tasks[0], já que a lista é ordenada por orderIndex ASC)
     return tasks[0].orderIndex - 1.0; 
 }
 
@@ -44,14 +95,13 @@ async function addTaskToFirestore(task) {
     if (!CURRENT_USER_UID) return;
     try {
         const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
-        
-        // ADICIONA O orderIndex para que a nova tarefa vá para o topo
         const newOrderIndex = getNewTaskOrderIndex();
         
         await addDoc(tasksRef, { 
             ...task, 
             createdAt: serverTimestamp(),
-            orderIndex: newOrderIndex // <--- NOVO CAMPO
+            orderIndex: newOrderIndex,
+            subtasks: task.subtasks || [] 
         });
         console.log("✅ Tarefa adicionada com sucesso ao Firestore!");
     } catch (error) {
@@ -86,14 +136,12 @@ async function saveSubtasksToFirestore(taskId, subtasks) {
 
 
 // ===============================================
-// 4. ESCUTA EM TEMPO REAL (MODIFICADO)
+// 5. ESCUTA EM TEMPO REAL
 // ===============================================
 function loadTasksRealTime() {
     if (!CURRENT_USER_UID) return;
     
     const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
-    
-    // ORDENA AGORA POR orderIndex (ascendente)
     const q = query(tasksRef, orderBy("orderIndex", "asc")); 
 
     onSnapshot(q, (snapshot) => {
@@ -104,6 +152,8 @@ function loadTasksRealTime() {
             const task = doc.data();
             task.id = doc.id; 
             if (!task.category) task.category = 'geral'; 
+            
+            if (!task.subtasks) task.subtasks = []; 
             
             tasks.push(task); 
             addTaskHTML(task); 
@@ -121,7 +171,7 @@ function loadTasksRealTime() {
 
 
 // ===============================================
-// 6. FUNÇÃO DE MIGRAÇÃO (MODIFICADO)
+// 6. FUNÇÃO DE MIGRAÇÃO
 // ===============================================
 
 function migrateLocalTasksToFirestore() {
@@ -136,7 +186,6 @@ function migrateLocalTasksToFirestore() {
 
         const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
         
-        // Define o índice inicial para sequenciar as tarefas do local storage
         let orderIndex = 0; 
 
         localTasks.forEach(async (task) => {
@@ -145,25 +194,24 @@ function migrateLocalTasksToFirestore() {
              await addDoc(tasksRef, {
                 ...taskData,
                 createdAt: serverTimestamp(),
-                orderIndex: orderIndex++ // <--- ADICIONA orderIndex sequencial
+                orderIndex: orderIndex++
             });
         });
 
         localStorage.removeItem('tasks');
         console.log("Migração concluída e LocalStorage limpo.");
-        alert("🎉 Tarefas antigas do LocalStorage foram migradas para o Firebase! Recarregue a página se elas ainda não aparecerem.");
+        alert("🎉 Tarefas antigas do LocalStorage foram migradas para o Firebase! Recarregue a página se elas ainda não aparecerão.");
 
     } catch (e) { 
         console.error('Erro durante a migração do LocalStorage:', e);
     }
 }
 
-
 // ===============================================
-// 7. FUNÇÕES DE RENDERIZAÇÃO E UTILIDADE (ELEVADAS)
+// 7. FUNÇÕES DE RENDERIZAÇÃO E UTILIDADE 
 // ===============================================
 
-/* ---------- ADD TAREFA HTML (ELEVADA) ---------- */
+/* ---------- ADD TAREFA HTML ---------- */
 function addTaskHTML(task) {
     let li = $('<li></li>')
         .attr('data-id', task.id)
@@ -211,14 +259,20 @@ function addTaskHTML(task) {
 
     let editBtn = $('<button class="edit-btn" type="button">✎</button>');
     let removeBtn = $('<button class="remove-btn" type="button">🗑️</button>');
-    let addSubBtn = $('<button class="add-subtask-btn" type="button">➕ Sub</button>');
+    
+    // Botão Adicionar Sub (referencia a tarefa principal)
+    let addSubBtn = $('<button class="add-subtask-btn" type="button">➕ Sub</button>')
+        .attr('data-task-id', task.id); 
+    
     btnGroup.append(editBtn, removeBtn, addSubBtn);
 
     taskDiv.append(textDiv, btnGroup);
     li.append(taskDiv);
 
+    // Renderiza a lista de sub-tarefas (chamada recursiva)
     let subtaskList = $('<ul class="subtask-list"></ul>');
-    task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st));
+    // Chama a função recursiva para a lista principal
+    task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st, task.id)); 
     li.append(subtaskList);
     initSubtaskSortable(subtaskList);
 
@@ -226,29 +280,241 @@ function addTaskHTML(task) {
     updateTaskDueVisual(li, task);
 }
 
-function addSubtaskHTML(list, subtask) {
-    let li = $('<li></li>').attr('data-id', subtask.id);
-    let div = $('<div class="task-text"></div>');
+// NOVO: Função de renderização RECURSIVA para Sub-tarefas
+function addSubtaskHTML(list, subtask, taskId, parentId = null) {
+    
+    let li = $('<li></li>')
+        .attr('data-id', subtask.id)
+        .attr('data-parent-id', parentId || taskId)
+        // Adiciona classe de prioridade para subtasks terem cor
+        .addClass('priority-' + (subtask.priority || 'medium'));
+    
+    // O item LI deve ser relativo para posicionar o menu de contexto ABSOLUTAMENTE
+    li.css('position', 'relative'); 
+
+    let textDiv = $('<div class="task-text"></div>');
     let checkbox = $('<input type="checkbox" class="subtask-checkbox">').prop('checked', subtask.completed);
-    let label = $('<label></label>').text(subtask.text);
+    
+    // O clique no label AGORA abre o modal de edição
+    let label = $('<label class="subtask-label"></label>').text(subtask.text)
+        .attr('data-task-id', taskId)
+        .attr('data-subtask-id', subtask.id)
+        .on('click', function(e) {
+            e.stopPropagation();
+            openSubtaskModalForEdit(taskId, subtask.id);
+        });
+
     if (subtask.completed) label.addClass('completed');
-    div.append(checkbox, label);
-    let removeBtn = $('<button class="remove-subtask-btn" type="button">🗑️</button>');
-    li.append(div, removeBtn);
+    
+    textDiv.append(checkbox, label);
+    
+    // Mostra data e hora se existirem
+    if (subtask.dueDate) {
+        let dateText = new Date(subtask.dueDate + 'T00:00:00').toLocaleDateString();
+        let timeText = subtask.dueTime ? ` ${subtask.dueTime}` : '';
+        let dateTimeText = `📅 ${dateText}${timeText}`;
+        let dateLabel = $('<span class="task-datetime"></span>').text(dateTimeText);
+        textDiv.append(dateLabel);
+    }
+    
+    // GRUPO DE BOTÕES (AGORA APENAS O ÍCONE DE OPÇÕES)
+    let btnGroup = $('<div class="button-group subtask-btn-group"></div>'); 
+
+    // ÍCONE DE OPÇÕES (os três pontinhos)
+    let optionsBtn = $('<button class="subtask-options-btn" type="button">⋮</button>')
+        .attr('data-task-id', taskId)
+        .attr('data-subtask-id', subtask.id)
+        .attr('data-parent-id', parentId || taskId)
+        // O handler para o menu de contexto
+        .on('click', function(e) { 
+            e.stopPropagation();
+            toggleSubtaskMenu($(this), taskId, subtask.id, parentId || taskId);
+        });
+
+    // Adiciona o botão e o menu de contexto DENTRO do button-group para posicionamento
+    let contextMenu = $(`
+        <div class="subtask-options-menu">
+            <ul>
+                <li><button class="menu-add-below"><i class="fa fa-plus"></i> Adicionar Abaixo</button></li>
+                <li><button class="menu-add-child"><i class="fa fa-level-down-alt"></i> Adicionar Filho</button></li>
+                <li><button class="menu-edit"><i class="fa fa-pencil"></i> Editar</button></li>
+                <li><button class="menu-remove" style="color: #dc3545;"><i class="fa fa-trash"></i> Excluir</button></li>
+            </ul>
+        </div>
+    `);
+
+    btnGroup.append(optionsBtn, contextMenu);
+    
+    // Adiciona o conteúdo (texto/checkbox/data) e o grupo de botões ao LI
+    li.append(textDiv, btnGroup);
+
+    // RENDERIZAÇÃO RECURSIVA para a hierarquia visual
+    if (subtask.subtasks && subtask.subtasks.length > 0) {
+        let nestedSubtaskList = $('<ul class="subtask-list nested-subtask-list"></ul>');
+        subtask.subtasks.forEach(st => addSubtaskHTML(nestedSubtaskList, st, taskId, subtask.id));
+        li.append(nestedSubtaskList);
+    }
+    
     list.append(li);
+    updateTaskDueVisual(li, subtask);
 }
 
-/* ---------- DRAG & DROP UTILS (ELEVADAS) ---------- */
+// NOVO: Função que lida com o menu de contexto da sub-tarefa (CORRIGIDO)
+function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
+    // Esconde todos os outros menus abertos
+    $('.subtask-options-menu').removeClass('active');
+    
+    // O menu é irmão do botão
+    const $menu = $button.siblings('.subtask-options-menu').first();
+    $menu.toggleClass('active');
+
+    // Mapear os botões do menu para as ações:
+    
+    // 1. Editar
+    $menu.find('.menu-edit').off('click').on('click', (e) => {
+        e.stopPropagation();
+        openSubtaskModalForEdit(taskId, subtaskId);
+        $menu.removeClass('active');
+    });
+
+    // 2. Adicionar Abaixo (Cria no mesmo nível)
+    $menu.find('.menu-add-below').off('click').on('click', (e) => {
+        e.stopPropagation();
+        openSubtaskModalForCreate(taskId, parentId); 
+        $menu.removeClass('active');
+    });
+
+    // 3. Adicionar Filho (Cria um nível abaixo)
+    $menu.find('.menu-add-child').off('click').on('click', (e) => {
+        e.stopPropagation();
+        openSubtaskModalForCreate(taskId, subtaskId); 
+        $menu.removeClass('active');
+    });
+
+    // 4. Excluir (NOVO: Chama o modal)
+    $menu.find('.menu-remove').off('click').on('click', async (e) => {
+        e.stopPropagation();
+        $menu.removeClass('active');
+        deleteSubtaskViaModal(taskId, subtaskId); 
+    });
+    
+    // Fecha o menu ao clicar fora
+    // Usa um timeout para garantir que o evento de clique termine antes de fechar
+    setTimeout(() => {
+        $(document).one('click', (e) => {
+            // Se o clique não foi no próprio menu ou botão
+            if (!$(e.target).closest('.subtask-options-menu').length && !$(e.target).is('.subtask-options-btn')) {
+                $('.subtask-options-menu').removeClass('active');
+            }
+        });
+    }, 100);
+}
+
+
+// NOVO: Implementação da função deleteSubtaskViaModal (Substitui o prompt)
+function deleteSubtaskViaModal(taskId, subId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const subtask = findNestedSubtask(task.subtasks, subId);
+    if (!subtask) return;
+
+    // 1. Configura o modal de confirmação
+    $('#confirm-title').text('Apagar Subtarefa');
+    $('#confirm-text').html(`Deseja realmente apagar a subtarefa <strong>"${subtask.text}"</strong> e todos os seus itens aninhados? Esta ação não pode ser desfeita.`);
+    
+    // 2. Exibe o modal
+    showModal('#confirmModal');
+
+    // 3. Configura o handler de confirmação (com exclusão)
+    $('#confirm-ok-btn').off('click').on('click', async function() {
+        $('#confirm-ok-btn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Excluindo...');
+        
+        const recursiveRemove = (subtasks) => {
+            return subtasks.filter(sub => sub.id !== subId).map(sub => {
+                if (sub.subtasks && sub.subtasks.length > 0) {
+                    sub.subtasks = recursiveRemove(sub.subtasks);
+                }
+                return sub;
+            });
+        };
+
+        const updatedSubtasks = recursiveRemove(task.subtasks);
+        await saveSubtasksToFirestore(taskId, updatedSubtasks);
+        
+        // Limpeza e fechamento
+        hideModal('#confirmModal');
+        $('#confirm-ok-btn').prop('disabled', false).html('Confirmar');
+    });
+
+    // 4. Configura o handler de cancelamento
+    $('#confirm-cancel-btn').off('click').on('click', function() {
+        hideModal('#confirmModal');
+        $('#confirm-ok-btn').prop('disabled', false).html('Confirmar');
+    });
+}
+
+
+/* ---------- EDICAO / CRIACAO DE SUBTAREFA VIA MODAL (MODIFICADO) ---------- */
+
+function openSubtaskModalForCreate(taskId, parentId) {
+    // Reseta/Define o estado do modal
+    currentSubtaskData = { 
+        taskId, subtaskId: null, isEdit: false, parentId,
+        priority: 'medium', category: 'geral', dueDate: '', dueTime: '' 
+    }; 
+    
+    let parentText = parentId === taskId 
+        ? tasks.find(t => t.id === taskId)?.text 
+        : findNestedSubtask(tasks.find(t => t.id === taskId)?.subtasks, parentId)?.text || "Subtarefa";
+    
+    $('#subtask-modal-title').text(`Adicionar Subtarefa a "${parentText}"`);
+    $('#subtask-input').val('');
+    $('#subtask-priority').val('medium');
+    $('#subtask-category').val('geral');
+    $('#subtask-date').val('');
+    $('#subtask-time').val('');
+    $('#subtask-add-btn').text('Adicionar');
+    showModal('#subtask-modal');
+}
+
+function openSubtaskModalForEdit(taskId, subtaskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const subtask = findNestedSubtask(task.subtasks, subtaskId);
+    if (!subtask) return;
+    
+    // Define o estado com os dados da subtask
+    currentSubtaskData = { 
+        taskId, subtaskId, isEdit: true, parentId: null,
+        priority: subtask.priority || 'medium', 
+        category: subtask.category || 'geral', 
+        dueDate: subtask.dueDate || '', 
+        dueTime: subtask.dueTime || '' 
+    };
+    
+    $('#subtask-modal-title').text(`Editar Subtarefa: "${subtask.text}"`);
+    $('#subtask-input').val(subtask.text);
+    $('#subtask-priority').val(currentSubtaskData.priority);
+    $('#subtask-category').val(currentSubtaskData.category);
+    $('#subtask-date').val(currentSubtaskData.dueDate);
+    $('#subtask-time').val(currentSubtaskData.dueTime);
+    $('#subtask-add-btn').text('Salvar Edição');
+    showModal('#subtask-modal');
+}
+
+/* ---------- DRAG & DROP UTILS ---------- */
 function initSubtaskSortable(sublist) {
     sublist.sortable({
         connectWith: '.subtask-list',
         update: function () {
-             // Opcional: Implementar persistência de ordenação de subtasks aqui, se necessário.
+             // Lógica de persistência para ordenação de subtasks aninhadas é complexa e omitida aqui.
         }
     });
 }
 
-/* ---------- FILTRO / PESQUISA (ELEVADA) ---------- */
+/* ---------- FILTRO / PESQUISA ---------- */
 function applyFilter() {
     let searchVal = $('#search-input').val().toLowerCase();
     let priorityVal = $('#filter-priority').val();
@@ -267,10 +533,10 @@ function applyFilter() {
     });
 }
 
-/* ---------- BARRA DE PROGRESSO (ELEVADA) ---------- */
+/* ---------- BARRA DE PROGRESSO ---------- */
 function updateProgress() {
     let total = tasks.length;
-    let completed = tasks.filter(t => t.completed).length;
+    let completed = tasks.filter(t => t.completed).length; 
     let percent = total ? Math.round((completed / total) * 100) : 0;
     $('.progress-bar').text(percent ? percent + '%' : '');
 
@@ -287,9 +553,12 @@ function updateProgress() {
     $('.progress-bar').toggleClass('completed', percent === 100);
 }
 
-/* ---------- DATAS (ELEVADAS) ---------- */
+/* ---------- DATAS ---------- */
 function updateTaskDueVisual(li, task) {
     li.removeClass('due-soon overdue');
+    // Verifica se a subtask tem classe priority-low/medium/high
+    li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
+
     if (!task || !task.dueDate || task.completed) return;
     
     const dueDateTimeString = task.dueDate + (task.dueTime ? 'T' + task.dueTime : 'T00:00:00');
@@ -305,9 +574,19 @@ function checkAllDueDates() {
     $('#task-list>li').each(function () {
         updateTaskDueVisual($(this), tasks.find(t => t.id === $(this).attr('data-id')));
     });
+    // Adiciona verificação para subtasks, já que elas agora chamam updateTaskDueVisual
+    $('.subtask-list li').each(function () {
+        const taskId = $(this).closest('li[data-id][data-category]').attr('data-id');
+        const subId = $(this).attr('data-id');
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            const subtask = findNestedSubtask(task.subtasks, subId);
+            if (subtask) updateTaskDueVisual($(this), subtask);
+        }
+    });
 }
 
-/* ---------- GOOGLE AGENDA (ELEVADA) ---------- */
+/* ---------- GOOGLE AGENDA ---------- */
 function exportTaskToGoogleLink(task) {
     if (!task.dueDate) { alert("A tarefa precisa ter uma data para exportar!"); return; }
     
@@ -324,7 +603,7 @@ function exportTaskToGoogleLink(task) {
     window.open(url,'_blank');
 }
 
-/* ---------- FULLCALENDAR (ELEVADAS) ---------- */
+/* ---------- FULLCALENDAR ---------- */
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
     if(calendarEl && typeof FullCalendar!=='undefined' && FullCalendar.Calendar){
@@ -431,7 +710,7 @@ function hideModal(selector) {
 
 
 // ===============================================
-// 5. LÓGICA DE AUTENTICAÇÃO E INICIALIZAÇÃO
+// 8. LÓGICA DE AUTENTICAÇÃO E EVENT HANDLERS
 // ===============================================
 
 onAuthStateChanged(auth, (user) => {
@@ -440,13 +719,9 @@ onAuthStateChanged(auth, (user) => {
         
         $(document).ready(function () {
             
-            // === PASSO 1: MIGRAÇÃO (Chamada Única) ===
             migrateLocalTasksToFirestore(); 
-            
-            // === PASSO 2: INICIALIZAÇÃO DO LISTENER ===
             loadTasksRealTime(); 
 
-            // Inicialização de calendários e checks de datas
             initCalendar(); 
             setInterval(checkAllDueDates, 60 * 1000); 
 
@@ -472,7 +747,6 @@ onAuthStateChanged(auth, (user) => {
                 });
             });
 
-            // Fecha painéis no Escape
             $(document).on('keydown', function (e) {
                 if (e.key === 'Escape' || e.keyCode === 27) {
                     if ($('#form-container').is(':visible')) {
@@ -485,7 +759,6 @@ onAuthStateChanged(auth, (user) => {
                 }
             });
             
-            // Eventos de Fechamento de Modais
             $('.modal .close, .modal .close-top-right').on('click', function() { hideModal($(this).closest('.modal')); });
             $('#edit-cancel-btn').on('click', () => hideModal('#editTaskModal'));
             $('#subtask-cancel-btn').on('click', () => hideModal('#subtask-modal'));
@@ -509,7 +782,6 @@ onAuthStateChanged(auth, (user) => {
                 
                 addTaskToFirestore(task);
 
-                // Limpa UI
                 $('#task-text').val('');
                 $('#task-priority').val('medium');
                 $('#task-date').val('');
@@ -527,7 +799,16 @@ onAuthStateChanged(auth, (user) => {
                 let task = tasks.find(t => t.id === taskId);
                 if (!task) return;
                 
-                const subtasks = task.subtasks.map(st => ({ ...st, completed: isCompleted }));
+                // Marca/desmarca o status da tarefa principal e propaga para todos os filhos
+                const recursiveCheck = (subtasks) => {
+                    return subtasks.map(st => ({
+                        ...st,
+                        completed: isCompleted,
+                        subtasks: st.subtasks ? recursiveCheck(st.subtasks) : []
+                    }));
+                };
+
+                const subtasks = recursiveCheck(task.subtasks);
                 
                 await updateTaskInFirestore(taskId, { 
                     completed: isCompleted,
@@ -535,25 +816,40 @@ onAuthStateChanged(auth, (user) => {
                 });
             });
 
-            /* ---------- MARCAR / DESMARCAR SUBTAREFA (MODIFICADO) ---------- */
+            /* ---------- MARCAR / DESMARCAR SUBTAREFA (MODIFICADO - QUALQUER NÍVEL) ---------- */
             $(document).off('change', '.subtask-checkbox').on('change', '.subtask-checkbox', async function () {
                 let li = $(this).closest('li');
                 let subId = li.attr('data-id');
-                let taskLi = li.closest('ul').closest('li');
-                let taskId = taskLi.attr('data-id');
+                let taskId = $(this).closest('li[data-id][data-category]').attr('data-id');
 
                 let task = tasks.find(t => t.id === taskId);
                 if (!task) return;
 
-                const updatedSubtasks = task.subtasks.map(st => 
-                    st.id === subId ? { ...st, completed: $(this).prop('checked') } : st
-                );
+                const isCompleted = $(this).prop('checked');
+                
+                // 1. Atualiza o status da sub-tarefa alvo e seus filhos (recursivamente)
+                const updateTargetAndChildren = (subtasks) => {
+                    return subtasks.map(st => {
+                        if (st.id === subId) {
+                            st.completed = isCompleted;
+                            // Propaga para filhos
+                            if (st.subtasks) st.subtasks = st.subtasks.map(child => ({...child, completed: isCompleted}));
+                        } else if (st.subtasks && st.subtasks.length > 0) {
+                            st.subtasks = updateTargetAndChildren(st.subtasks);
+                        }
+                        return st;
+                    });
+                };
+                
+                let updatedSubtasks = updateTargetAndChildren(task.subtasks);
 
-                const mainTaskCompleted = updatedSubtasks.every(st => st.completed);
+                // 2. Verifica o status da Tarefa Principal com o novo array
+                const isMainTaskCompleted = checkCompletionStatusRecursively(updatedSubtasks);
 
+                // 3. Salva no Firestore
                 await updateTaskInFirestore(taskId, { 
                     subtasks: updatedSubtasks,
-                    completed: mainTaskCompleted 
+                    completed: isMainTaskCompleted 
                 });
             });
 
@@ -578,46 +874,69 @@ onAuthStateChanged(auth, (user) => {
                 });
             });
 
-            /* ---------- REMOVER SUBTAREFA (MODIFICADO) ---------- */
-            $(document).off('click', '.remove-subtask-btn').on('click', '.remove-subtask-btn', async function () {
-                let li = $(this).closest('li');
-                let subId = li.attr('data-id');
-                let taskLi = li.closest('ul').closest('li');
-                let taskId = taskLi.attr('data-id');
-                
-                let task = tasks.find(t => t.id === taskId);
-                if (!task) return;
-                
-                const updatedSubtasks = task.subtasks.filter(st => st.id !== subId);
-                
-                await saveSubtasksToFirestore(taskId, updatedSubtasks); 
+            /* ---------- REMOVER SUBTAREFA (MODIFICADO - QUALQUER NÍVEL) ---------- */
+            // Esta lógica foi movida para dentro do menu de contexto e é tratada pela função deleteSubtaskViaModal
+            
+            // NOVO EVENTO: Adicionar Subtarefa Aninhada
+            $(document).on('click', '.add-nested-subtask-btn', function() {
+                const taskId = $(this).data('task-id');
+                const parentId = $(this).data('parent-id');
+                openSubtaskModalForCreate(taskId, parentId);
             });
 
-            /* ---------- ADD SUBTAREFA VIA MODAL (MODIFICADO) ---------- */
+            // MODIFICADO: Adicionar Subtarefa (Principal)
             $(document).on('click', '.add-subtask-btn', function () {
-                currentTaskLi = $(this).closest('li');
-                let taskText = currentTaskLi.find('label').first().text();
-                $('#subtask-input').val('');
-                $('#subtask-input').attr('placeholder', `Digite a subtarefa para "${taskText}"`);
-                $('#subtask-modal-title').text(`Adicionar subtarefa para "${taskText}"`);
-                showModal('#subtask-modal');
+                const taskId = $(this).data('task-id') || $(this).closest('li').data('id');
+                if (!taskId) return;
+                openSubtaskModalForCreate(taskId, taskId); 
             });
 
+
+            // MODIFICADO: Lógica de Salvar/Adicionar Subtarefa (Unifica Edição e Criação Aninhada)
             $('#subtask-add-btn').off('click').on('click', async function () { 
-                let subtaskText = $('#subtask-input').val().trim();
-                if (!subtaskText || !currentTaskLi) return;
-                let taskId = currentTaskLi.attr('data-id');
+                const { taskId, subtaskId, isEdit, parentId } = currentSubtaskData;
+                const subtaskText = $('#subtask-input').val().trim();
                 
-                let task = tasks.find(t => t.id === taskId);
+                // Pega os novos campos do modal
+                const newSubtaskData = {
+                    text: subtaskText,
+                    priority: $('#subtask-priority').val(),
+                    category: $('#subtask-category').val(),
+                    dueDate: $('#subtask-date').val(),
+                    dueTime: $('#subtask-time').val(),
+                };
+
+                if (!newSubtaskData.text || !taskId) return;
+                
+                const task = tasks.find(t => t.id === taskId);
                 if (!task) return;
-                
-                let subtask = { id: generateId(), text: subtaskText, completed: false };
-                const updatedSubtasks = [...task.subtasks, subtask];
+
+                let updatedSubtasks;
+
+                if (isEdit) {
+                    updatedSubtasks = updateNestedSubtasks(task.subtasks, subtaskId, (sub) => {
+                        // Atualiza todos os campos
+                        return { ...sub, ...newSubtaskData };
+                    });
+                    
+                } else {
+                    const newSubtask = { id: generateId(), completed: false, subtasks: [], ...newSubtaskData };
+
+                    if (parentId === taskId) {
+                        updatedSubtasks = [...task.subtasks, newSubtask];
+                    } else {
+                        updatedSubtasks = updateNestedSubtasks(task.subtasks, parentId, (sub) => {
+                            sub.subtasks = sub.subtasks || [];
+                            sub.subtasks.push(newSubtask);
+                            return sub;
+                        });
+                    }
+                }
                 
                 await saveSubtasksToFirestore(taskId, updatedSubtasks);
 
                 hideModal('#subtask-modal');
-                currentTaskLi = null;
+                currentSubtaskData = { taskId: null, subtaskId: null, isEdit: false, parentId: null };
             });
 
 
@@ -672,20 +991,16 @@ onAuthStateChanged(auth, (user) => {
                     const batch = writeBatch(db);
                     const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
                     
-                    // Recalcula e salva o orderIndex de 0 até N
                     orderedIds.forEach((taskId, newIndex) => {
                         const taskRef = doc(tasksRef, taskId);
-                        // Usa o índice da posição DOM como o novo orderIndex
                         batch.update(taskRef, { orderIndex: newIndex });
                     });
 
                     try {
                         await batch.commit();
                         console.log("✅ Nova ordem salva no Firestore com sucesso!");
-                        // O onSnapshot do loadTasksRealTime irá reagir ao batch.commit() e redesenhar a lista, garantindo a persistência.
                     } catch (error) {
                         console.error("🚨 Erro ao salvar a nova ordem:", error);
-                        // Se falhar, reverte a mudança visual para evitar dessincronização.
                         $(this).sortable('cancel');
                         alert("Erro ao salvar a nova ordem. Verifique sua conexão ou regras de segurança.");
                     }
@@ -699,11 +1014,22 @@ onAuthStateChanged(auth, (user) => {
                 $(this).toggleClass('collapsed');
             });
 
-            /* ---------- MODAL DE VISUALIZAÇÃO (INALTERADO) ---------- */
+            /* ---------- MODAL DE VISUALIZAÇÃO (MODIFICADO PARA RECURSÃO) ---------- */
             $(document).on('click', '#task-list li > .task-main > .task-text > label', function(){
                 let li = $(this).closest('li');
                 let task = tasks.find(t => t.id === li.attr('data-id'));
                 if(!task) return;
+                
+                const renderNestedSubtasks = (subtasks, $list) => {
+                    if (!subtasks || subtasks.length === 0) return;
+                    subtasks.forEach(st => {
+                        const $li = $('<li></li>').text(st.text + (st.completed ? ' ✅' : '')).appendTo($list);
+                        if (st.subtasks && st.subtasks.length > 0) {
+                            const $ul = $('<ul class="subtasks-list" style="margin-left: 20px; border-left: 2px solid #ddd; padding-left: 10px;"></ul>').appendTo($li);
+                            renderNestedSubtasks(st.subtasks, $ul);
+                        }
+                    });
+                };
 
                 $('#view-task-name').text(task.text);
                 $('#view-task-priority').text(task.priority.charAt(0).toUpperCase()+task.priority.slice(1));
@@ -715,7 +1041,7 @@ onAuthStateChanged(auth, (user) => {
 
                 let $subtasks = $('#view-task-subtasks').empty();
                 if(task.subtasks.length){
-                    task.subtasks.forEach(st => $('<li></li>').text(st.text + (st.completed ? ' ✅' : '')).appendTo($subtasks));
+                    renderNestedSubtasks(task.subtasks, $subtasks);
                 } else $subtasks.append('<li>Nenhuma subtarefa</li>');
 
                 showModal('#viewTaskModal');
@@ -751,7 +1077,6 @@ onAuthStateChanged(auth, (user) => {
         });
         
     } else {
-        // Redireciona para o login se não estiver logado
         const currentPage = window.location.pathname.split('/').pop();
         if (currentPage !== 'login.html' && currentPage !== 'signup.html') {
             window.location.href = "login.html";

@@ -170,6 +170,14 @@ nav ul li a.active { background: #fff; color: #4CAF50; }
     transition: transform 0.2s, box-shadow 0.2s;
     border-radius:8px;
 }
+/* CORREÇÃO D&D: Estilo para a tarefa sendo arrastada */
+#task-list .ui-sortable-helper {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    background-color: #fff !important; /* Fixa a cor branca durante o arrasto */
+    opacity: 0.95;
+    transform: none;
+}
+
 #task-list > li:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
 .task-main { display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap:10px; }
 .task-text { display:flex; align-items:center; gap:10px; flex:1; flex-wrap: wrap; }
@@ -218,9 +226,37 @@ nav ul li a.active { background: #fff; color: #4CAF50; }
 }
 .remove-btn { background:#e57373; color:#fff; } .remove-btn:hover { background:#d32f2f; }
 .edit-btn { background:#64b5f6; color:#fff; } .edit-btn:hover { background:#1976d2; }
-.add-subtask-btn { background:#ffb74d; color:#111; } .add-subtask-btn:hover { background:#f57c00; }
-.remove-subtask-btn { background:#ef9a9a; color:#fff; } .remove-subtask-btn:hover { background:#d32f2f; }
-.google-calendar-btn { background:none; padding:0 5px; display:flex; align-items:center; position:relative; }
+/* Botões principais */
+.add-subtask-btn { background:#ffb74d; color:#111; } 
+.add-subtask-btn:hover { background:#f57c00; }
+
+/* Ícone de Opções (os três pontinhos) */
+.subtask-options-btn { 
+    background: none; 
+    color: #666; 
+    font-size: 1.2rem; 
+    padding: 2px 6px; 
+    cursor: pointer;
+    border: none;
+    line-height: 1;
+    border-radius: 4px; 
+    font-weight: 900; 
+    transition: background-color 0.2s, color 0.2s;
+}
+.subtask-options-btn:hover {
+    color: #333;
+    background-color: #eee;
+}
+
+/* CORREÇÃO GOOGLE AGENDA: Garante que o ícone fique na vertical */
+.google-calendar-btn { 
+    background:none; 
+    padding:0 5px; 
+    display:flex; 
+    align-items:center; 
+    position:relative; 
+    line-height: 1; 
+}
 .google-calendar-btn img { width:20px; height:20px; display:block; }
 .google-calendar-btn:hover::after {
     content: attr(data-tooltip);
@@ -255,22 +291,119 @@ nav ul li a.active { background: #fff; color: #4CAF50; }
 .completed { text-decoration:line-through; color:#888; }
 .edit-task { flex:1; padding:5px; font-size:16px; }
 
-/* ======================= SUBTAREFAS ======================= */
-.subtask-list { list-style:none; padding-left:25px; margin-top:5px; }
-.subtask-list li {
-    padding:8px 12px;
-    margin-bottom:5px;
-    background:#f5f5f5;
-    border-radius:6px;
-    border-left:3px solid #64b5f6;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    transition: transform 0.2s, box-shadow 0.2s;
+/* ======================= SUBTAREFAS (CORREÇÃO UX) ======================= */
+.subtask-list { 
+    list-style: none; 
+    padding-left: 0; 
+    margin-top: 5px; 
 }
-.subtask-list li:hover { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,0.12); }
-.subtask-list li .task-text { flex:1; }
+
+/* O item LI individual da sublista (Nível 1, 2, 3...) */
+.subtask-list li {
+    padding: 8px 12px 5px 12px;
+    margin-bottom: 5px;
+    background: #fcfcfc;
+    border-radius: 6px;
+    border-left: 3px solid transparent; 
+    
+    /* CHAVE 1: display: block para garantir a hierarquia vertical */
+    display: block; 
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative; 
+    box-shadow: none; 
+}
+
+.subtask-list li:hover { transform: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+
+/* O conteúdo principal do LI (checkbox, label, e botões) */
+.subtask-list li > .task-text { 
+    display: flex; 
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+/* CHAVE 2: Ajusta o posicionamento do ícone de Opções para ficar fixo à direita */
+.subtask-list li .button-group {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+    position: absolute;
+    /* Alinha o botão com o da tarefa principal */
+    right: 12px; 
+    top: 8px;
+    z-index: 10;
+}
+
+/* CHAVE 3: Regra para Aninhamento Visual Suave (Indentação e Borda) */
+.subtask-list .subtask-list {
+    padding-left: 15px; 
+    margin-left: 5px;
+    border-left: 2px solid #ddd; 
+    padding-top: 5px;
+    margin-top: 10px;
+}
+
+/* Remove a borda esquerda em itens aninhados para que apenas a borda da UL apareça */
+.subtask-list .subtask-list li {
+    border-left: none; 
+}
+
+/* ======================= MENU DE CONTEXTO SUBTAREFA (NOVO) ======================= */
+.subtask-options-menu {
+    position: absolute;
+    top: 30px; 
+    right: 0;
+    width: 200px; /* Reduzi a largura para ser mais compacto */
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 100; 
+    list-style: none;
+    padding: 5px 0;
+    display: none; 
+    overflow: hidden;
+}
+
+.subtask-options-menu.active {
+    display: block;
+}
+
+.subtask-options-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.subtask-options-menu li {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    display: block; 
+}
+
+.subtask-options-menu li button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+    transition: background 0.2s, color 0.2s;
+}
+
+.subtask-options-menu li button:hover {
+    background-color: #f0f0f0;
+    color: #4CAF50;
+}
+
+
 .toggle-subtasks-btn { font-weight: bold; border:none; background:none; cursor:pointer; transition: transform 0.3s ease; padding: 0 5px; font-size: 1rem; }
 .toggle-subtasks-btn.collapsed { transform: rotate(-90deg); }
 .toggle-subtasks-btn:hover { background: #1976d2; transform: scale(1.1); }
@@ -384,20 +517,6 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     margin-bottom: 25px;
 }
 
-.btn-action-primary, .btn-action-secondary {
-    padding: 12px 24px;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
 .btn-action-primary {
     background-color: #4CAF50;
     color: white;
@@ -487,7 +606,6 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     z-index: 1100;
 }
 
-/* Exibe o submenu no hover OU quando a classe .is-open é adicionada via JS */
 .profile-menu-container:hover .profile-submenu,
 .profile-menu-container.is-open .profile-submenu {
     display: block;
