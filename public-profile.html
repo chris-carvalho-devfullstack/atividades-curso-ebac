@@ -17,34 +17,28 @@
     </header>
 
     <main class="profile-container">
-        <div class="profile-card">
-            <div class="profile-picture-section">
-                <img id="public-profile-image" src="https://via.placeholder.com/150" alt="Foto de Perfil">
-            </div>
-
-            <div class="profile-info-section">
-                <h2 id="public-fullname">Nome do Usuário</h2>
-                
-                <div class="info-item">
-                    <i class="fa fa-calendar-days"></i>
-                    <span id="public-birthdate">Data de Nascimento</span>
-                </div>
-                <div class="info-item">
-                    <i class="fa fa-phone"></i>
-                    <span id="public-phone">Telefone de Contato</span>
-                </div>
-                <div class="info-item">
-                    <i class="fa-brands fa-instagram"></i>
-                    <span id="public-instagram">@instagram</span>
-                </div>
-                <div class="info-item">
-                    <i class="fa-brands fa-linkedin"></i>
-                    <a href="#" id="public-linkedin" target="_blank">Perfil no LinkedIn</a>
-                </div>
-            </div>
+    <div class="profile-header">
+        <div class="cover-photo-container">
+            <img id="cover-photo-preview" src="https://via.placeholder.com/800x250/e0e0e0/ffffff?text=+" alt="Foto de Capa">
         </div>
-    </main>
+        <div class="profile-picture-section public-view">
+            <img id="public-profile-image" src="https://via.placeholder.com/150" alt="Foto de Perfil">
+        </div>
+    </div>
 
+    <div class="profile-card-info-only">
+        <h2 id="public-fullname">Nome do Usuário</h2>
+        <p id="public-username-header" class="username-display">@usuario</p>
+
+        <div class="bio-section">
+            <h3>Sobre mim</h3>
+            <p id="public-bio">Este usuário ainda não escreveu uma bio.</p>
+        </div>
+
+        <div class="info-grid">
+            </div>
+    </div>
+</main>
     <footer>
         <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
     </footer>

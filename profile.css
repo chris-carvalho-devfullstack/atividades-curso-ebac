@@ -1,42 +1,104 @@
+/* ======================= ESTRUTURA GERAL DO PERFIL ======================= */
 .profile-container {
     max-width: 800px;
     margin: 40px auto;
     padding: 20px;
 }
 
-.profile-card {
-    background: #fff;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    display: flex;
-    flex-wrap: wrap;
-    padding: 30px;
-    gap: 30px;
+/* ======================= NOVO HEADER DO PERFIL (CAPA E FOTO) ======================= */
+.profile-header {
+    position: relative;
+    margin-bottom: 80px; /* Espaço para a foto de perfil que vai "vazar" para baixo */
+}
+
+.cover-photo-container {
+    width: 100%;
+    height: 250px;
+    background-color: #e0e0e0;
+    border-radius: 15px 15px 0 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.cover-photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Garante que a imagem da capa preencha o espaço sem distorcer */
 }
 
 .profile-picture-section {
-    flex: 1 1 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
+    position: absolute;
+    bottom: -60px; /* Metade da altura da foto para fora da capa */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 150px;
 }
 
-#profile-image-preview {
+#profile-image-preview, #public-profile-image {
     width: 150px;
     height: 150px;
     border-radius: 50%;
-    object-fit: cover;
-    border: 4px solid #f0f0f0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 5px solid #fff;
+    object-fit: cover; /* Garante que a foto de perfil seja um círculo perfeito e proporcional */
+    background-color: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-.profile-info-section {
-    flex: 2 1 400px;
+/* ======================= BOTÕES DE ALTERAR IMAGEM ======================= */
+.btn-change-cover {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+.btn-change-cover:hover {
+    background-color: white;
+}
+
+.btn-change-picture {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+.btn-change-picture:hover {
+    background-color: #d5d5d5;
+}
+
+
+/* ======================= CARD DE INFORMAÇÕES ======================= */
+.profile-card-info-only {
+    background: #fff;
+    border-radius: 0 0 15px 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    padding: 90px 30px 30px 30px; /* Padding no topo para compensar a foto */
+    text-align: center;
+}
+
+/* Esconde o estilo antigo para não criar conflito */
+.profile-card {
+    display: none;
 }
 
 .profile-info-section .input-group {
     margin-bottom: 20px;
+    text-align: left;
 }
 
 .profile-info-section label {
@@ -46,12 +108,14 @@
     color: #555;
 }
 
-.profile-info-section input {
+.profile-info-section input,
+.profile-info-section textarea {
     width: 100%;
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 1rem;
+    font-family: 'Arial', sans-serif;
 }
 
 .profile-info-section input:disabled {
@@ -64,6 +128,7 @@
     color: #888;
 }
 
+/* ======================= BOTÕES E MENSAGENS ======================= */
 .btn-primary, .btn-neutral {
     padding: 10px 20px;
     border-radius: 8px;
@@ -80,6 +145,17 @@
 .btn-primary:hover {
     background: #43a047;
 }
+.btn-primary:disabled {
+    background-color: #a5d6a7;
+    cursor: wait;
+}
+.btn-primary.btn-success {
+    background-color: #28a745;
+    cursor: default;
+}
+.btn-primary.btn-error {
+    background-color: #dc3545;
+}
 
 .btn-neutral {
     background: #e0e0e0;
@@ -95,35 +171,14 @@
     border-radius: 8px;
     text-align: center;
     font-weight: 600;
-    display: none; /* Começa escondido */
 }
-
 .message.success {
     background-color: #d4edda;
     color: #155724;
     display: block;
 }
-
 .message.error {
     background-color: #f8d7da;
     color: #721c24;
     display: block;
-}
-
-/* Adicione ao final de profile.css */
-
-.btn-primary:disabled {
-    background-color: #a5d6a7; /* Um verde mais claro para indicar o estado de "carregando" */
-    cursor: wait; /* Muda o cursor do mouse para indicar que algo está acontecendo */
-}
-
-/* Adicione estas classes no final de profile.css */
-
-.btn-primary.btn-success {
-    background-color: #28a745; /* Verde para sucesso */
-    cursor: default;
-}
-
-.btn-primary.btn-error {
-    background-color: #dc3545; /* Vermelho para erro */
 }

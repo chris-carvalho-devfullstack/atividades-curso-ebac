@@ -25,56 +25,65 @@
     </header>
 
     <main class="profile-container">
-        <div class="profile-card">
+        <div class="profile-header">
+            <div class="cover-photo-container">
+                <img id="cover-photo-preview" src="https://via.placeholder.com/800x250/e0e0e0/ffffff?text=+" alt="Foto de Capa">
+                <input type="file" id="cover-upload" accept="image/*" style="display: none;">
+                <button type="button" id="change-cover-btn" class="btn-change-cover"><i class="fa fa-camera"></i> Alterar Capa</button>
+            </div>
             <div class="profile-picture-section">
                 <img id="profile-image-preview" src="https://via.placeholder.com/150" alt="Foto de Perfil">
                 <input type="file" id="image-upload" accept="image/*" style="display: none;">
-                <button id="change-picture-btn" class="btn-neutral"><i class="fa fa-camera"></i> Alterar Foto</button>
+                <button type="button" id="change-picture-btn" class="btn-change-picture"><i class="fa fa-camera"></i></button>
             </div>
+        </div>
+        <div class="profile-card-info-only">
+            <form id="profile-form">
+                <div class="input-group">
+                    <label for="profile-fullname"><i class="fa fa-user"></i> Nome Completo</label>
+                    <input type="text" id="profile-fullname" placeholder="Seu nome completo">
+                </div>
 
-            <div class="profile-info-section">
-                <form id="profile-form">
-                    <div class="input-group">
-                        <label for="profile-fullname"><i class="fa fa-user"></i> Nome Completo</label>
-                        <input type="text" id="profile-fullname" placeholder="Seu nome completo">
-                    </div>
+                <div class="input-group">
+                    <label for="profile-username"><i class="fa fa-at"></i> Nome de Usuário</label>
+                    <input type="text" id="profile-username" placeholder="Ex: @seunome" maxlength="15">
+                    <small>Seu nome de usuário público.</small>
+                </div>
+                
+                <div class="input-group">
+                    <label for="profile-bio"><i class="fa fa-info-circle"></i> Sobre mim</label>
+                    <textarea id="profile-bio" placeholder="Escreva uma breve biografia..." rows="3" maxlength="200"></textarea>
+                </div>
 
-                    <div class="input-group">
-                        <label for="profile-username"><i class="fa fa-at"></i> Nome de Usuário</label>
-                        <input type="text" id="profile-username" placeholder="Ex: @seunome" maxlength="15">
-                        <small>Seu nome de usuário público.</small>
-                    </div>
+                <div class="input-group">
+                    <label for="profile-birthdate"><i class="fa fa-calendar-days"></i> Data de Nascimento</label>
+                    <input type="date" id="profile-birthdate">
+                </div>
 
-                    <div class="input-group">
-                        <label for="profile-birthdate"><i class="fa fa-calendar-days"></i> Data de Nascimento</label>
-                        <input type="date" id="profile-birthdate">
-                    </div>
+                <div class="input-group">
+                    <label for="profile-phone"><i class="fa fa-phone"></i> Celular</label>
+                    <input type="tel" id="profile-phone" placeholder="(99) 9 9999-9999" maxlength="15">
+                </div>
 
-                    <div class="input-group">
-                        <label for="profile-phone"><i class="fa fa-phone"></i> Celular</label>
-                        <input type="tel" id="profile-phone" placeholder="(99) 9 9999-9999" maxlength="15">
-                    </div>
+                <div class="input-group">
+                    <label for="profile-instagram"><i class="fa-brands fa-instagram"></i> Instagram</label>
+                    <input type="text" id="profile-instagram" placeholder="@seu-perfil">
+                </div>
 
-                    <div class="input-group">
-                        <label for="profile-instagram"><i class="fa-brands fa-instagram"></i> Instagram</label>
-                        <input type="text" id="profile-instagram" placeholder="@seu-perfil">
-                    </div>
+                <div class="input-group">
+                    <label for="profile-linkedin"><i class="fa-brands fa-linkedin"></i> LinkedIn</label>
+                    <input type="url" id="profile-linkedin" placeholder="https://linkedin.com/in/seu-perfil">
+                </div>
 
-                    <div class="input-group">
-                        <label for="profile-linkedin"><i class="fa-brands fa-linkedin"></i> LinkedIn</label>
-                        <input type="url" id="profile-linkedin" placeholder="https://linkedin.com/in/seu-perfil">
-                    </div>
-
-                    <div class="input-group">
-                        <label for="profile-email"><i class="fa fa-envelope"></i> Email</label>
-                        <input type="email" id="profile-email" disabled>
-                        <small>O email não pode ser alterado.</small>
-                    </div>
-                    
-                    <button type="submit" id="save-profile-btn" class="btn-primary">Salvar Alterações</button>
-                </form>
-                <p id="profile-message" class="message"></p>
-            </div>
+                <div class="input-group">
+                    <label for="profile-email"><i class="fa fa-envelope"></i> Email</label>
+                    <input type="email" id="profile-email" disabled>
+                    <small>O email não pode ser alterado.</small>
+                </div>
+                
+                <button type="submit" id="save-profile-btn" class="btn-primary">Salvar Alterações</button>
+            </form>
+            <p id="profile-message" class="message"></p>
         </div>
     </main>
 
@@ -84,7 +93,6 @@
 
     <script type="module" src="firebase-config.js"></script>
     <script type="module" src="auth-listener.js"></script>
-    <script type="module" src="logout.js"></script>
-    <script type="module" src="profile.js"></script>
+    <script type="module" src="logout.js"></script> <script type="module" src="profile.js"></script>
 </body>
 </html>
