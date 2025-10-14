@@ -9,12 +9,20 @@ const navProfileName = document.getElementById('nav-profile-name');
 const logoutBtnSubmenu = document.getElementById('logout-btn-submenu');
 const profileMenu = document.querySelector('.profile-menu-container');
 const loginBtn = document.getElementById('nav-login-btn');
-const profileMenuToggle = document.querySelector('.profile-menu-toggle'); // <-- NOVO
+const profileMenuToggle = document.querySelector('.profile-menu-toggle');
+
+// Elementos NOVOS para o mobile (INCLUSÃO DA LÓGICA DO HAMBURGER)
+const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+const mainNavList = document.getElementById('main-nav-list'); // Seleciona a UL principal no index.html
+
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         // --- Usuário está LOGADO ---
-        if(profileMenu) profileMenu.style.display = 'list-item';
+        
+        // CORREÇÃO: Remove o atributo style do perfil para que o CSS defina a exibição
+        if(profileMenu) profileMenu.style.display = ''; 
+        // CORREÇÃO: Esconde explicitamente o botão de login
         if(loginBtn) loginBtn.style.display = 'none';
 
         const docRef = doc(db, "users", user.uid);
@@ -31,8 +39,11 @@ onAuthStateChanged(auth, async (user) => {
 
     } else {
         // --- Usuário está DESLOGADO ---
+        
+        // CORREÇÃO: Esconde explicitamente o menu de perfil
         if(profileMenu) profileMenu.style.display = 'none';
-        if(loginBtn) loginBtn.style.display = 'list-item';
+        // CORREÇÃO: Remove o atributo style do login para que o CSS defina a exibição
+        if(loginBtn) loginBtn.style.display = ''; 
     }
 });
 
@@ -50,9 +61,9 @@ if(logoutBtnSubmenu) {
 }
 
 // ===========================
-// LÓGICA DE CLIQUE PARA O SUBMENU (NOVO)
+// LÓGICA DE CLIQUE PARA O SUBMENU (Perfil)
 // ===========================
-if (profileMenuToggle) {
+if (profileMenuToggle && profileMenu) {
     profileMenuToggle.addEventListener('click', (e) => {
         // Impede que o clique no documento (abaixo) seja acionado
         e.stopPropagation(); 
@@ -67,3 +78,13 @@ document.addEventListener('click', () => {
         profileMenu.classList.remove('is-open');
     }
 });
+
+// ===========================
+// LÓGICA DE CLIQUE PARA O HAMBURGER (Mobile)
+// ===========================
+if (mobileMenuToggle && mainNavList) {
+    mobileMenuToggle.addEventListener('click', () => {
+        // Adiciona a classe 'mobile-open' para exibir o menu
+        mainNavList.classList.toggle('mobile-open');
+    });
+}
