@@ -1,4 +1,4 @@
-// friends.js
+// friends.js (Final e Corrigido)
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { 
@@ -9,8 +9,8 @@ import {
     setDoc, 
     deleteDoc, 
     writeBatch,
-    query, // Importação adicionada para consultas
-    where // Importação adicionada para consultas
+    query, 
+    where 
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // O escopo dos listeners é corrigido para que as funções possam ser chamadas diretamente no HTML
@@ -21,7 +21,7 @@ onAuthStateChanged(auth, user => {
     if (user) {
         loadFriendRequests(user.uid);
         loadFriends(user.uid);
-        setupSearchListeners(user.uid); // Chama a nova função de setup
+        setupSearchListeners(user.uid); 
     } else {
         window.location.href = 'login.html';
     }
@@ -175,14 +175,13 @@ async function searchUsers(currentUserUid, searchTerm) {
     
     try {
         const usersRef = collection(db, "users");
-        // O caractere Unicode \uf8ff garante que a consulta inclua todos os prefixos.
         const endTerm = term + '\uf8ff'; 
-        let results = new Map(); // Usado para armazenar resultados únicos (ID do usuário)
+        let results = new Map(); 
         
-        // --- QUERY 1: Busca por Username ---
+        // --- QUERY 1: Busca por usernameSearch (NOVO CAMPO) ---
         const qUsernames = query(usersRef, 
-            where("username", ">=", term), 
-            where("username", "<", endTerm)
+            where("usernameSearch", ">=", term), 
+            where("usernameSearch", "<", endTerm) 
         );
         const snapshotUsernames = await getDocs(qUsernames);
         
@@ -192,23 +191,21 @@ async function searchUsers(currentUserUid, searchTerm) {
             }
         });
         
-        // --- QUERY 2: Busca por Nome Completo ---
-        // OBS: Requer que o campo 'fullname' esteja criado no Firebase e indexado
+        // --- QUERY 2: Busca por fullnameSearch (NOVO CAMPO) ---
         const qFullnames = query(usersRef, 
-            where("fullname", ">=", term), 
-            where("fullname", "<", endTerm)
+            where("fullnameSearch", ">=", term), 
+            where("fullnameSearch", "<", endTerm) 
         );
         const snapshotFullnames = await getDocs(qFullnames);
 
         snapshotFullnames.forEach(docSnap => {
             if (docSnap.id !== currentUserUid) {
-                // Adiciona ao Map. Se o usuário já foi encontrado pelo username, apenas sobrescreve.
                 results.set(docSnap.id, docSnap.data());
             }
         });
         
         // --- 3. Renderizar Resultados e Feedback ---
-        searchList.innerHTML = ''; // Limpa o "Buscando..."
+        searchList.innerHTML = ''; 
 
         if (results.size === 0) {
             searchList.innerHTML = '<li style="justify-content:center;">Nenhum usuário encontrado. Tente um nome ou nome de usuário diferente.</li>';
@@ -216,9 +213,9 @@ async function searchUsers(currentUserUid, searchTerm) {
         }
 
         results.forEach((userData, userId) => {
-            const username = userData.username || 'Usuário Sem Nome';
-            // Exibe o nome completo para melhor feedback visual
-            const displayFullname = userData.fullname ? ` (${userData.fullname})` : '';
+            // USANDO OS CAMPOS ORIGINAIS (username e fullname) PARA EXIBIÇÃO!
+            const username = userData.username || 'Usuário Sem Nome'; 
+            const displayFullname = userData.fullname ? ` (${userData.fullname})` : ''; 
             
             const li = `
                 <li>
@@ -235,8 +232,9 @@ async function searchUsers(currentUserUid, searchTerm) {
         });
         
     } catch(error) {
+        // Altera a mensagem de erro para guiar o usuário sobre os novos índices necessários
         console.error("Erro ao buscar usuários (V2.0):", error);
-        searchList.innerHTML = '<li style="justify-content:center; color: #f44336;">🚨 Erro na busca. Verifique se o índice "fullname" foi criado no Firebase.</li>';
+        searchList.innerHTML = '<li style="justify-content:center; color: #f44336;">🚨 Erro na busca. Verifique se os novos índices "fullnameSearch" e "usernameSearch" foram criados e ativados no Firebase.</li>';
     }
 }
 
