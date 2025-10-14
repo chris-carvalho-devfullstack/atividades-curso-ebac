@@ -5,10 +5,10 @@
     padding: 20px;
 }
 
-/* ======================= NOVO HEADER DO PERFIL (CAPA E FOTO) ======================= */
+/* ======================= HEADER DO PERFIL (CAPA E FOTO) ======================= */
 .profile-header {
     position: relative;
-    margin-bottom: 80px; /* Espaço para a foto de perfil que vai "vazar" para baixo */
+    margin-bottom: 80px;
 }
 
 .cover-photo-container {
@@ -23,12 +23,12 @@
 .cover-photo-container img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Garante que a imagem da capa preencha o espaço sem distorcer */
+    object-fit: cover;
 }
 
 .profile-picture-section {
     position: absolute;
-    bottom: -60px; /* Metade da altura da foto para fora da capa */
+    bottom: -60px;
     left: 50%;
     transform: translateX(-50%);
     width: 150px;
@@ -40,7 +40,7 @@
     height: 150px;
     border-radius: 50%;
     border: 5px solid #fff;
-    object-fit: cover; /* Garante que a foto de perfil seja um círculo perfeito e proporcional */
+    object-fit: cover;
     background-color: #fff;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
@@ -56,10 +56,6 @@
     padding: 8px 12px;
     cursor: pointer;
     font-weight: 600;
-    transition: background-color 0.2s;
-}
-.btn-change-cover:hover {
-    background-color: white;
 }
 
 .btn-change-picture {
@@ -75,41 +71,33 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
 }
-.btn-change-picture:hover {
-    background-color: #d5d5d5;
-}
-
 
 /* ======================= CARD DE INFORMAÇÕES ======================= */
 .profile-card-info-only {
     background: #fff;
     border-radius: 0 0 15px 15px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    padding: 90px 30px 30px 30px; /* Padding no topo para compensar a foto */
+    padding: 90px 30px 30px 30px;
     text-align: center;
 }
 
-/* Esconde o estilo antigo para não criar conflito */
-.profile-card {
-    display: none;
-}
-
-.profile-info-section .input-group {
+/* --- INÍCIO DA CORREÇÃO --- */
+/* Aponte para a classe correta: .profile-card-info-only */
+.profile-card-info-only .input-group {
     margin-bottom: 20px;
     text-align: left;
 }
 
-.profile-info-section label {
+.profile-card-info-only label {
     display: block;
     margin-bottom: 5px;
     font-weight: 600;
     color: #555;
 }
 
-.profile-info-section input,
-.profile-info-section textarea {
+.profile-card-info-only input,
+.profile-card-info-only textarea {
     width: 100%;
     padding: 12px;
     border: 1px solid #ccc;
@@ -118,17 +106,23 @@
     font-family: 'Arial', sans-serif;
 }
 
-.profile-info-section input:disabled {
+.profile-card-info-only input:disabled {
     background-color: #f5f5f5;
     cursor: not-allowed;
 }
 
-.profile-info-section small {
+.profile-card-info-only small {
     font-size: 0.8rem;
     color: #888;
 }
+/* --- FIM DA CORREÇÃO --- */
 
-/* ======================= BOTÕES E MENSAGENS ======================= */
+/* Esconde o estilo antigo para não criar conflito */
+.profile-card {
+    display: none;
+}
+
+/* ... (O restante do seu CSS para botões, mensagens, e a seção de perfil público continua igual) ... */
 .btn-primary, .btn-neutral {
     padding: 10px 20px;
     border-radius: 8px;
@@ -138,99 +132,23 @@
     transition: all 0.2s;
 }
 
-.btn-primary {
-    background: #4CAF50;
-    color: white;
-}
-.btn-primary:hover {
-    background: #43a047;
-}
-.btn-primary:disabled {
-    background-color: #a5d6a7;
-    cursor: wait;
-}
-.btn-primary.btn-success {
-    background-color: #28a745;
-    cursor: default;
-}
-.btn-primary.btn-error {
-    background-color: #dc3545;
-}
+.btn-primary { background: #4CAF50; color: white; }
+.btn-primary:hover { background: #43a047; }
+.btn-primary:disabled { background-color: #a5d6a7; cursor: wait; }
+.btn-primary.btn-success { background-color: #28a745; cursor: default; }
+.btn-primary.btn-error { background-color: #dc3545; }
+.btn-neutral { background: #e0e0e0; color: #333; }
+.btn-neutral:hover { background: #d5d5d5; }
 
-.btn-neutral {
-    background: #e0e0e0;
-    color: #333;
-}
-.btn-neutral:hover {
-    background: #d5d5d5;
-}
+.message { margin-top: 15px; padding: 10px; border-radius: 8px; text-align: center; font-weight: 600; }
+.message.success { background-color: #d4edda; color: #155724; display: block; }
+.message.error { background-color: #f8d7da; color: #721c24; display: block; }
 
-.message {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: 600;
-}
-.message.success {
-    background-color: #d4edda;
-    color: #155724;
-    display: block;
-}
-.message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    display: block;
-}
-
-/* Adicione ao FINAL de profile.css para corrigir o layout do perfil público */
-
-.bio-section {
-    margin: 20px 0;
-    padding: 15px;
-    border-top: 1px solid #eee;
-    border-bottom: 1px solid #eee;
-}
-
-.bio-section h3 {
-    margin-bottom: 8px;
-    color: #333;
-}
-
-.bio-section p {
-    color: #666;
-    line-height: 1.6;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    text-align: left;
-    margin-top: 30px;
-}
-
-.info-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #555;
-    font-size: 0.95rem;
-}
-
-.info-item i {
-    color: #4CAF50;
-    font-size: 1.2rem;
-    width: 20px; /* Alinha os ícones */
-    text-align: center;
-}
-
-.info-item a {
-    color: #4CAF50;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.info-item a:hover {
-    text-decoration: underline;
-}
+.bio-section { margin: 20px 0; padding: 15px; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+.bio-section h3 { margin-bottom: 8px; color: #333; }
+.bio-section p { color: #666; line-height: 1.6; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; text-align: left; margin-top: 30px; }
+.info-item { display: flex; align-items: center; gap: 12px; color: #555; font-size: 0.95rem; }
+.info-item i { color: #4CAF50; font-size: 1.2rem; width: 20px; text-align: center; }
+.info-item a { color: #4CAF50; text-decoration: none; font-weight: 600; }
+.info-item a:hover { text-decoration: underline; }
