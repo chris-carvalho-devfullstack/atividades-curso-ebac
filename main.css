@@ -15,6 +15,8 @@ nav {
     transition: transform 0.4s ease-in-out;
 }
 nav.hidden { transform: translateY(-100%); }
+
+/* Desktop View (Padrão) */
 nav ul {
     list-style: none;
     display: flex;
@@ -39,10 +41,126 @@ nav ul li a {
 nav ul li a i { font-size: 1.1rem; }
 nav ul li a:hover { background: rgba(255,255,255,0.12); transform: scale(1.03); }
 nav ul li a.active { background: #fff; color: #4CAF50; }
-@media (max-width:700px){
-    nav ul { flex-direction: column; gap:12px; }
-    nav { border-radius:0; }
+
+/* Esconde elementos móveis no Desktop */
+.nav-mobile-header-bar {
+    display: none;
 }
+.nav-auth-item {
+    /* Manter display no desktop, apenas o que é estritamente auth-related */
+    /* Como os itens foram movidos para a barra móvel, vamos deixá-los visíveis no desktop, mas apenas quando > 700px */
+}
+
+@media (max-width:700px){
+    /* 1. NAV BAR LAYOUT */
+    nav {
+        display: block;
+        padding: 0;
+        min-height: 60px; /* Define altura mínima para a barra superior */
+        position: relative; /* Contexto para posicionamento absoluto */
+        overflow: visible; /* Permite que o menu suspenso seja visível */
+    }
+
+    /* 2. MOBILE HEADER BAR (A barra superior verde) */
+    .nav-mobile-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* Ajuste para alinhar Hamburger e Auth */
+        width: 100%;
+        height: 60px;
+        padding: 0 15px;
+        position: sticky;
+        top: 0;
+        background: linear-gradient(135deg, #4CAF50, #43a047);
+        z-index: 1001; 
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* 3. HAMBURGER ICON (Esquerda) */
+    .mobile-toggle-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        z-index: 1002;
+    }
+    
+    /* 4. PERFIL / LOGIN (Direita) - Posicionamento Absoluto na barra móvel */
+    .nav-auth-item {
+        /* Desabilita o LI quebra-linha e permite o posicionamento */
+        display: block !important; 
+        list-style: none;
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1002;
+    }
+    
+    /* Esconde o nome e o caret do perfil no mobile, deixando apenas a foto */
+    .profile-menu-container #nav-profile-name,
+    .profile-menu-container .fa-caret-down {
+        display: none; 
+    }
+    .profile-menu-container .nav-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    /* O submenu de perfil é gerenciado pelo nav-profile.js */
+
+
+    /* 5. COLLAPSIBLE MENU (A lista principal) */
+    nav ul {
+        display: none; /* ESCONDIDO POR PADRÃO */
+        flex-direction: column; 
+        position: absolute;
+        top: 60px; /* Começa abaixo da barra superior */
+        left: 0;
+        width: 100%;
+        background: #fff; /* Fundo branco para o menu suspenso */
+        padding: 10px 0;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        z-index: 999; 
+        text-align: left;
+        border-radius: 0 0 8px 8px;
+    }
+
+    /* Classe ativada por JS */
+    nav ul.mobile-open {
+        display: flex; 
+    }
+
+    /* Estilo dos links no menu suspenso */
+    nav ul li {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    nav ul li a {
+        color: #333; /* Cor do link no menu branco */
+        padding: 12px 20px;
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 0;
+    }
+    
+    nav ul li a.active {
+        background: #e0f0e0;
+        color: #4CAF50;
+        border-left: 5px solid #4CAF50;
+    }
+    nav ul li a:hover {
+        background: #f5f5f5;
+        transform: none;
+    }
+}
+/* FIM DO MEDIA QUERY MOBILE */
 
 /* ======================= CABEÇALHO FORM ======================= */
 .task-form-header {
@@ -511,15 +629,12 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     padding: 10px 10px 10px 30px;
 }
 
-/* CORREÇÃO CRÍTICA FINAL: Garante que inputs de data e hora (e os do modal Add Task, agora sem ícones) 
-   usem o padding base (10px) para renderizar nativamente e alinhados.
-*/
+/* Garante que inputs de data e hora usem o padding base (10px) e aparência nativa */
 .modal .modal-body input[type="date"],
 .modal .modal-body input[type="time"] {
     -webkit-appearance: auto;
     -moz-appearance: auto;
     appearance: auto; 
-    /* Padding base sem o extra para ícone */
     padding: 10px; 
 }
 
@@ -579,8 +694,108 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 
 /* ======================= RESPONSIVIDADE ======================= */
 @media(max-width:700px){
+    /* 1. LAYOUT DA PÁGINA */
     .task-main { flex-direction:column; align-items:flex-start; }
     .button-group { margin-top:5px; }
+    
+    /* 2. MENU DESKTOP ESCONDIDO */
+    nav ul {
+        display: none; /* Esconde o menu principal de links no mobile */
+        flex-direction: column; 
+        position: absolute;
+        top: 60px; /* Começa abaixo da barra superior */
+        left: 0;
+        width: 100%;
+        background: #fff; /* Fundo branco para o menu suspenso */
+        padding: 10px 0;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        z-index: 999; 
+        text-align: left;
+        border-radius: 0 0 8px 8px;
+    }
+
+    /* 3. MOBILE HEADER BAR (A barra superior verde) */
+    .nav-mobile-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 60px;
+        padding: 0 15px;
+        position: sticky;
+        top: 0;
+        background: linear-gradient(135deg, #4CAF50, #43a047);
+        z-index: 1001; 
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* 4. HAMBURGER ICON (Esquerda) */
+    .mobile-toggle-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        z-index: 1002;
+    }
+
+    /* 5. PERFIL / LOGIN (Direita) - Posicionamento Absoluto na barra móvel */
+    .nav-auth-item {
+        display: block !important; 
+        list-style: none;
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1002;
+    }
+    
+    /* Perfil: Esconde nome e caret, deixando apenas a foto */
+    .profile-menu-container #nav-profile-name,
+    .profile-menu-container .fa-caret-down {
+        display: none; 
+    }
+    .profile-menu-container .nav-avatar {
+        width: 32px;
+        height: 32px;
+        border: 2px solid #fff;
+    }
+    
+    /* Login button adjustment */
+    #nav-login-btn a {
+        background: none !important;
+        color: white !important;
+        padding: 5px 10px;
+    }
+    
+    /* 6. COMPORTAMENTO DO MENU SUSPENSO */
+    nav ul.mobile-open {
+        display: flex; 
+    }
+
+    /* Estilo dos links no menu suspenso */
+    nav ul li {
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    nav ul li a {
+        color: #333; 
+        padding: 12px 20px;
+        border-radius: 0;
+    }
+    
+    nav ul li a.active {
+        background: #e0f0e0;
+        color: #4CAF50;
+        border-left: 5px solid #4CAF50;
+    }
+    nav ul li a:hover {
+        background: #f5f5f5;
+        transform: none;
+    }
 }
 
 /* ======================= NOVOS BOTÕES DE AÇÃO (Modernizado) ======================= */

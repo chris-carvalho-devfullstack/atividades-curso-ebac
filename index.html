@@ -14,32 +14,36 @@
 </head>
 <body>
     <nav>
-    <ul>
-        <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
-        <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
-        <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li> 
-        <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
-        <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li> 
-        <li id="nav-login-btn" style="display: none;">
-            <a href="login.html" class="btn-login-nav">
-                <i class="fa-solid fa-right-to-bracket"></i> Entrar
-            </a>
-        </li>
+        <div class="nav-mobile-header-bar">
+            <button id="mobile-menu-toggle" class="mobile-toggle-btn"><i class="fa-solid fa-bars"></i></button>
 
-        <li class="profile-menu-container" style="display: none;">
-            <div class="profile-menu-toggle">
-                <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
-                <span id="nav-profile-name">Carregando...</span>
-                <i class="fa-solid fa-caret-down"></i>
-            </div>
-            <ul class="profile-submenu">
-                <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
-                <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
-                <li><a href="#" id="logout-btn-submenu"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
+            <li id="nav-login-btn" class="nav-auth-item" style="display: none;">
+                <a href="login.html" class="btn-login-nav">
+                    <i class="fa-solid fa-right-to-bracket"></i> Entrar
+                </a>
+            </li>
+            <li class="profile-menu-container nav-auth-item" style="display: none;">
+                <div class="profile-menu-toggle">
+                    <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
+                    <span id="nav-profile-name">Carregando...</span>
+                    <i class="fa-solid fa-caret-down"></i>
+                </div>
+                <ul class="profile-submenu">
+                    <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
+                    <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
+                    <li><a href="#" id="logout-btn-submenu"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
+                </ul>
+            </li>
+        </div>
+        
+        <ul id="main-nav-list" class="nav-links">
+            <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
+            <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
+            <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li> 
+            <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
+            <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li> 
             </ul>
-        </li>
-    </ul>
-</nav>
+    </nav>
     <header class="task-form-header">
         <h1>Gerenciador de Tarefas</h1>
         <p>Organize suas tarefas diárias de forma eficiente!</p>
@@ -77,29 +81,38 @@
                     
                     <div class="input-group-modal">
                         <label for="task-text">Título da Tarefa</label>
-                        <input type="text" id="task-text" placeholder="Ex: Terminar o relatório de vendas" required>
+                        <div class="input-with-icon">
+                            <i class="fa fa-pen"></i>
+                            <input type="text" id="task-text" placeholder="Ex: Terminar o relatório de vendas" required>
+                        </div>
                     </div>
 
                     <div class="input-group-modal">
                         <label for="task-priority">Prioridade</label>
-                        <select id="task-priority">
-                            <option value="" disabled selected>Prioridade da tarefa</option>
-                            <option value="low">Baixa</option>
-                            <option value="medium">Média</option>
-                            <option value="high">Alta</option>
-                        </select>
+                        <div class="select-with-icon">
+                            <i class="fa fa-filter"></i>
+                            <select id="task-priority">
+                                <option value="" disabled selected>Prioridade da tarefa</option>
+                                <option value="low">Baixa</option>
+                                <option value="medium">Média</option>
+                                <option value="high">Alta</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="input-group-modal">
                         <label for="task-category">Categoria</label>
-                        <select id="task-category">
-                            <option value="" disabled selected>Categoria da tarefa</option>
-                            <option value="geral">Geral</option>
-                            <option value="trabalho">Trabalho</option>
-                            <option value="pessoal">Pessoal</option>
-                            <option value="estudo">Estudo</option>
-                            <option value="outros">Outros</option>
-                        </select>
+                        <div class="select-with-icon">
+                            <i class="fa fa-tag"></i>
+                            <select id="task-category">
+                                <option value="" disabled selected>Categoria da tarefa</option>
+                                <option value="geral">Geral</option>
+                                <option value="trabalho">Trabalho</option>
+                                <option value="pessoal">Pessoal</option>
+                                <option value="estudo">Estudo</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="input-group-modal">
