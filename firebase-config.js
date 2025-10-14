@@ -49,17 +49,3 @@ export async function logout() {
   }
 }
 
-// -----------------------------
-// Teste rápido do Firestore
-// -----------------------------
-export async function testarFirestore() {
-  try {
-    const snapshot = await getDocs(collection(db, "test")); // Tenta ler uma coleção "test" do seu novo banco
-    console.log("Firestore conectado! Documentos:", snapshot.docs.length);
-  } catch (error) {
-    console.error("Erro ao conectar ao Firestore:", error);
-  }
-}
-
-// Chamada de teste
-testarFirestore();
