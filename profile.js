@@ -154,24 +154,28 @@ profileForm.addEventListener("submit", async (e) => {
             coverURL = await getDownloadURL(storageRef);
         }
 
-        // --- INÍCIO DA CORREÇÃO DE CAPITALIZAÇÃO ---
-        const originalFullname = fullnameInput.value;
-        const originalUsername = usernameInput.value;
+        // --- CORREÇÃO FINAL AGRESSIVA: Limpa espaços em branco e garante o dado correto para a busca ---
         
-        // Versões em minúsculas para uso exclusivo na BUSCA (Busca V2.0 no friends.js)
-        const lowercaseFullname = originalFullname.toLowerCase();
-        const lowercaseUsername = originalUsername.toLowerCase();
-        // --- FIM DA CORREÇÃO DE CAPITALIZAÇÃO ---
+        // 1. Limpa espaços nas bordas para o nome de exibição (fullname)
+        const originalFullname = fullnameInput.value.trim(); 
+        
+        // 2. Para o username (que não deve ter espaços), usamos regex para remover TODOS os espaços (incluindo invisíveis)
+        const originalUsername = usernameInput.value.replace(/\s/g, '').trim(); 
+        
+        // 3. Versões em minúsculas (essenciais para a busca)
+        const lowercaseFullnameSearch = originalFullname.toLowerCase(); 
+        const lowercaseUsernameSearch = originalUsername.toLowerCase();
+        // --- FIM DA CORREÇÃO ---
 
         // Salva ou atualiza o documento no Firestore
         await setDoc(doc(db, "users", user.uid), {
-            // Campos de EXIBIÇÃO (capitalização correta)
+            // Campos de EXIBIÇÃO (limpos e com capitalização correta)
             fullname: originalFullname,
             username: originalUsername,
 
-            // NOVOS CAMPOS DE BUSCA (minúsculas)
-            fullnameSearch: lowercaseFullname, 
-            usernameSearch: lowercaseUsername,
+            // NOVOS CAMPOS DE BUSCA (minúsculas e garantidamente limpas)
+            fullnameSearch: lowercaseFullnameSearch, 
+            usernameSearch: lowercaseUsernameSearch,
             
             bio: bioInput.value, // <-- NOVO
             birthdate: birthdateInput.value,

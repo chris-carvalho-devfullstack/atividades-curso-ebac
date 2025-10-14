@@ -164,6 +164,13 @@ async function rejectFriendRequest(senderUid, receiverUid) {
 // ===================================
 // NOVA FUNÇÃO: BUSCAR USUÁRIOS (V2.0 - Multi-Campo)
 // ===================================
+// friends.js
+
+// ... (Resto do código acima)
+
+// ===================================
+// NOVA FUNÇÃO: BUSCAR USUÁRIOS (V2.0 - Multi-Campo)
+// ===================================
 async function searchUsers(currentUserUid, searchTerm) {
     const searchList = document.getElementById('search-list');
     
@@ -176,13 +183,22 @@ async function searchUsers(currentUserUid, searchTerm) {
     try {
         const usersRef = collection(db, "users");
         const endTerm = term + '\uf8ff'; 
-        let results = new Map(); 
+        
+        // --- LOG CRÍTICO PARA DEBUG ---
+        console.log(`Buscando por: ${term}`);
+        console.log(`Termo inicial: ${term}`);
+        console.log(`Termo final: ${endTerm}`);
+        // -----------------------------
+        
+        let results = new Map(); // Usado para armazenar resultados únicos (ID do usuário)
         
         // --- QUERY 1: Busca por usernameSearch (NOVO CAMPO) ---
         const qUsernames = query(usersRef, 
             where("usernameSearch", ">=", term), 
             where("usernameSearch", "<", endTerm) 
         );
+        // ... (o restante da função searchUsers continua inalterado)
+// ...
         const snapshotUsernames = await getDocs(qUsernames);
         
         snapshotUsernames.forEach(docSnap => {
