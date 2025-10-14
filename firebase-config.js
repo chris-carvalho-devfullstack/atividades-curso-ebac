@@ -28,3 +28,17 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+async function testarFirestore() {
+  try {
+    const snapshot = await getDocs(collection(db, "test"));
+    console.log("Firestore conectado! Documentos:", snapshot.docs.length);
+  } catch (error) {
+    console.error("Erro ao conectar ao Firestore:", error);
+  }
+}
+
+testarFirestore();
+
