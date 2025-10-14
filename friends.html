@@ -1,0 +1,91 @@
+/* friends.css */
+
+.friends-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 20px;
+}
+
+.tab-link {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #888;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.tab-link.active {
+    color: #4CAF50;
+    border-bottom: 2px solid #4CAF50;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.badge {
+    background-color: #f44336;
+    color: white;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    border-radius: 10px;
+    margin-left: 5px;
+}
+
+.user-list {
+    list-style: none;
+    padding: 0;
+}
+
+.user-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-info .username {
+    font-weight: bold;
+}
+
+.user-actions button {
+    margin-left: 5px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-accept { background-color: #4CAF50; color: white; }
+.btn-reject { background-color: #f44336; color: white; }
