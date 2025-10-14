@@ -57,62 +57,117 @@
             <button id="toggle-filter-btn" class="btn-action-secondary"><i class="fa-solid fa-search"></i> Pesquisar e Filtrar</button>
         </div>
 
-        <div id="form-container" style="display: none;">
-            <form id="task-form">
-                <input type="text" id="task-text" placeholder="Digite uma nova tarefa" required>
-                <select id="task-priority">
-                    <option value="low">Baixa</option>
-                    <option value="medium" selected>Média</option>
-                    <option value="high">Alta</option>
-                </select>
-                <input type="date" id="task-date" title="Data de Vencimento">
-                <input type="time" id="task-time" title="Hora de Vencimento">
-                <select id="task-category">
-                    <option value="geral" selected>Geral</option>
-                    <option value="trabalho">Trabalho</option>
-                    <option value="pessoal">Pessoal</option>
-                    <option value="estudo">Estudo</option>
-                    <option value="outros">Outros</option>
-                </select>
-                <button type="submit">Adicionar</button>
-            </form>
-        </div>
-
-        <div id="filter-container" style="display: none;">
-            <div class="search-box">
-                <div class="input-with-icon">
-                    <i class="fa fa-search"></i>
-                    <input type="text" id="search-input" placeholder="Pesquisar tarefa...">
-                </div>
-                <div class="select-with-icon">
-                    <i class="fa fa-filter"></i>
-                    <select id="filter-priority">
-                        <option value="all">Todas as prioridades</option>
-                        <option value="high">Alta</option>
-                        <option value="medium">Média</option>
-                        <option value="low">Baixa</option>
-                    </select>
-                </div>
-                <div class="select-with-icon">
-                    <i class="fa fa-tags"></i>
-                    <select id="filter-category">
-                        <option value="all">Todas as categorias</option>
-                        <option value="geral">Geral</option>
-                        <option value="trabalho">Trabalho</option>
-                        <option value="pessoal">Pessoal</option>
-                        <option value="estudo">Estudo</option>
-                        <option value="outros">Outros</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
+        
         <ul id="task-list"></ul>
 
         <button id="toggle-calendar-btn">📅 Mostrar calendário</button>
 
         <div id="calendar-container">
             <div id="calendar"></div>
+        </div>
+
+        <div id="addTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" aria-hidden="true">
+          <div class="modal-content" style="max-width: 450px;">
+            <button class="close close-top-right" aria-label="Fechar" data-dismiss-modal>&times;</button>
+            <div class="modal-header">
+              <h2 id="add-modal-title">Adicionar Nova Tarefa</h2>
+            </div>
+            <div class="modal-body">
+                <form id="task-form" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 0;">
+                    
+                    <div class="input-group-modal">
+                        <label for="task-text">Título da Tarefa</label>
+                        <input type="text" id="task-text" placeholder="Ex: Terminar o relatório de vendas" required>
+                    </div>
+
+                    <div class="input-group-modal">
+                        <label for="task-priority">Prioridade</label>
+                        <select id="task-priority">
+                            <option value="" disabled selected>Prioridade da tarefa</option>
+                            <option value="low">Baixa</option>
+                            <option value="medium">Média</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group-modal">
+                        <label for="task-category">Categoria</label>
+                        <select id="task-category">
+                            <option value="" disabled selected>Categoria da tarefa</option>
+                            <option value="geral">Geral</option>
+                            <option value="trabalho">Trabalho</option>
+                            <option value="pessoal">Pessoal</option>
+                            <option value="estudo">Estudo</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group-modal">
+                        <label for="task-date">Data e Hora de Vencimento</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="date" id="task-date" title="Data de Vencimento" style="flex: 1;">
+                            <input type="time" id="task-time" title="Hora de Vencimento" style="flex: 1;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="add-task-btn-submit" type="submit" form="task-form" class="btn-primary">Adicionar Tarefa</button>
+                <button id="add-task-cancel-btn" class="btn-neutral">Cancelar</button>
+            </div>
+          </div>
+        </div>
+        
+        <div id="filterModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" aria-hidden="true">
+          <div class="modal-content" style="max-width: 450px;">
+            <button class="close close-top-right" aria-label="Fechar" data-dismiss-modal>&times;</button>
+            <div class="modal-header">
+              <h2 id="filter-modal-title">Pesquisar e Filtrar</h2>
+            </div>
+            <div class="modal-body">
+                <div class="search-box" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 0;">
+                    <div class="input-group-modal">
+                        <label for="search-input">Pesquisar por texto</label>
+                        <div class="input-with-icon">
+                            <i class="fa fa-search"></i>
+                            <input type="text" id="search-input" placeholder="Pesquisar tarefa...">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group-modal">
+                        <label for="filter-priority">Prioridade</label>
+                        <div class="select-with-icon">
+                            <i class="fa fa-filter"></i>
+                            <select id="filter-priority">
+                                <option value="all">Todas as prioridades</option>
+                                <option value="high">Alta</option>
+                                <option value="medium">Média</option>
+                                <option value="low">Baixa</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group-modal">
+                        <label for="filter-category">Categoria</label>
+                        <div class="select-with-icon">
+                            <i class="fa fa-tags"></i>
+                            <select id="filter-category">
+                                <option value="all">Todas as categorias</option>
+                                <option value="geral">Geral</option>
+                                <option value="trabalho">Trabalho</option>
+                                <option value="pessoal">Pessoal</option>
+                                <option value="estudo">Estudo</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="filter-apply-btn" class="btn-primary">Aplicar Filtros</button>
+                <button id="filter-cancel-btn" class="btn-neutral">Fechar</button>
+            </div>
+          </div>
         </div>
 
         <div id="viewTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="view-modal-title" aria-hidden="true">

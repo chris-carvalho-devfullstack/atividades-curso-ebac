@@ -102,7 +102,7 @@ nav ul li a.active { background: #fff; color: #4CAF50; }
 }
 .progress-bar.completed { text-decoration:none !important; color:white !important; }
 
-/* ======================= FORMULÁRIO ======================= */
+/* ======================= FORMULÁRIO (Usado apenas no modal agora) ======================= */
 #task-form {
     display:flex;
     flex-wrap: wrap;
@@ -137,7 +137,7 @@ nav ul li a.active { background: #fff; color: #4CAF50; }
 #task-form button:hover { transform:scale(1.05); background:#43a047; }
 
 
-/* ======================= PESQUISA E FILTRO ======================= */
+/* ======================= PESQUISA E FILTRO (Usado apenas no modal agora) ======================= */
 .search-box {
     display:flex;
     gap:10px;
@@ -452,12 +452,91 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 .modal .modal-body li { padding:8px 10px; border-bottom:1px solid #f3f3f3; }
 .modal .modal-footer { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
 .modal .modal-footer button { padding:8px 14px; border-radius:8px; border:none; font-weight:700; cursor:pointer; transition: transform .12s, background-color .12s; }
-.modal .btn-primary { background:#4CAF50; color:#fff; } .modal .btn-primary:hover { background:#43a047; transform: translateY(-2px); }
-.modal .btn-danger { background:#f44336; color:#fff; } .modal .btn-danger:hover { background:#d32f2f; transform: translateY(-2px); }
-.modal .btn-neutral { background:#eee; color:#333; } .modal .btn-neutral:hover { background:#e0e0e0; transform: translateY(-2px); }
-.modal input[type="text"], .modal select, .modal input[type="date"], .modal input[type="time"], .modal textarea { width:100%; padding:10px; margin:8px 0; border-radius:8px; border:1px solid #ccc; font-size:14px; box-sizing:border-box; }
-#editTaskModal .modal-content, #viewTaskModal .modal-content { max-width:520px; }
-#calendarModal .modal-content { max-width:920px; }
+
+/* Estilização para botões dos modais (mais moderna) */
+.modal .btn-primary { background:#4CAF50; color:#fff; box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2); } 
+.modal .btn-primary:hover { background:#43a047; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3); }
+
+.modal .btn-danger { background:#f44336; color:#fff; } 
+.modal .btn-danger:hover { background:#d32f2f; transform: translateY(-1px); }
+
+.modal .btn-neutral { background:#eee; color:#333; } 
+.modal .btn-neutral:hover { background:#e0e0e0; transform: translateY(-1px); }
+
+/* Campos de formulário dentro do modal */
+.modal .modal-body label {
+    display: block;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+}
+.modal .modal-body input[type="text"], 
+.modal .modal-body select, 
+.modal .modal-body input[type="date"], 
+.modal .modal-body input[type="time"],
+.modal .modal-body textarea { 
+    width: 100%;
+    padding: 10px;
+    margin: 0; 
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    box-sizing: border-box; 
+    transition: border-color 0.2s;
+}
+
+.modal .modal-body input:focus, .modal .modal-body select:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+/* * Regras para inputs com ícone dentro do modal: 
+   Aplica padding esquerdo apenas onde o ícone customizado ESTIVER PRESENTE (Search e Filter).
+*/
+.modal .modal-body .input-with-icon { position: relative; }
+.modal .modal-body .input-with-icon i,
+.modal .modal-body .select-with-icon i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    pointer-events: none; /* Garante que o clique passe para o input */
+    font-size: 1.1em; /* Ícones levemente maiores */
+}
+
+/* Ajusta o padding dos inputs com ícone para acomodar o ícone */
+.modal .modal-body .input-with-icon input, 
+.modal .modal-body .select-with-icon select {
+    padding: 10px 10px 10px 30px;
+}
+
+/* CORREÇÃO CRÍTICA FINAL: Garante que inputs de data e hora (e os do modal Add Task, agora sem ícones) 
+   usem o padding base (10px) para renderizar nativamente e alinhados.
+*/
+.modal .modal-body input[type="date"],
+.modal .modal-body input[type="time"] {
+    -webkit-appearance: auto;
+    -moz-appearance: auto;
+    appearance: auto; 
+    /* Padding base sem o extra para ícone */
+    padding: 10px; 
+}
+
+
+/* Ajuste de Tamanho dos Modais */
+#addTaskModal .modal-content, 
+#filterModal .modal-content { 
+    max-width: 450px !important; 
+}
+#editTaskModal .modal-content, 
+#viewTaskModal .modal-content,
+#subtask-modal .modal-content { 
+    max-width: 520px; 
+}
+
+
+/* Restante dos estilos do modal (inalterado) */
 #viewTaskModal .modal-header { align-items:flex-start; }
 #viewTaskModal .modal-body .meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
 #viewTaskModal .modal-body .meta span { background:#f5f5f5; padding:6px 10px; border-radius:8px; font-size:0.9rem; color:#333; }
@@ -500,21 +579,28 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 
 /* ======================= RESPONSIVIDADE ======================= */
 @media(max-width:700px){
-    #task-form { flex-direction:column; }
-    #task-form input, #task-form select {
-        flex-basis: 100% !important;
-    }
-    .search-box { flex-direction:column; }
     .task-main { flex-direction:column; align-items:flex-start; }
     .button-group { margin-top:5px; }
 }
 
-/* ======================= NOVOS BOTÕES DE AÇÃO ======================= */
+/* ======================= NOVOS BOTÕES DE AÇÃO (Modernizado) ======================= */
 .main-actions {
     display: flex;
     justify-content: center;
     gap: 15px;
     margin-bottom: 25px;
+}
+
+/* Base style for all action buttons */
+.main-actions button {
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px; /* Mais arredondado */
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra suave */
 }
 
 .btn-action-primary {
@@ -525,33 +611,19 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 .btn-action-primary:hover {
     background-color: #43a047;
     transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2); /* Sombra mais destacada no hover */
 }
 
 .btn-action-secondary {
-    background-color: #f0f0f0;
+    background-color: #fff; /* Fundo branco para contraste clean */
     color: #333;
     border: 1px solid #ddd;
 }
 
 .btn-action-secondary:hover {
-    background-color: #e7e7e7;
+    background-color: #f5f5f5;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-/* ======================= CONTAINERS COLAPSÁVEIS ======================= */
-#form-container, #filter-container {
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    border: 1px solid #e0e0e0;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-}
-
-#task-form, .search-box {
-    margin-bottom: 0; /* Remove a margem original para o container cuidar disso */
 }
 
 /* ======================= NOVO SUBMENU PERFIL ======================= */

@@ -727,39 +727,42 @@ onAuthStateChanged(auth, (user) => {
 
             /* ------------------ EVENT HANDLERS (DOM INTERACTION) ------------------ */
 
-            /* ---------- Mostrar/Esconder Formulário e Filtros ---------- */
-            $('#toggle-form-btn').on('click', function() {
-                $('#filter-container').slideUp(200);
-                $('#form-container').slideToggle(300, function() {
-                    if ($(this).is(':visible')) $('#task-text').focus();
-                });
-                const formVisible = $('#form-container').is(':visible');
-                if (!formVisible) $(this).html('<i class="fa-solid fa-times"></i> Fechar Formulário');
-                else $(this).html('<i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa');
+            /* ---------- Mostrar/Esconder Formulário e Filtros (MODAL) ---------- */
+            // NOVO: Abre o modal de Adicionar Tarefa
+            $('#toggle-form-btn').off('click').on('click', function() {
+                showModal('#addTaskModal'); 
+                // Pequeno atraso para focar no input após o modal abrir
+                setTimeout(() => { $('#task-text').focus(); }, 150); 
             });
 
-            $('#toggle-filter-btn').on('click', function() {
-                $('#form-container').slideUp(200, function() {
-                    $('#toggle-form-btn').html('<i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa');
-                });
-                $('#filter-container').slideToggle(300, function() {
-                    if ($(this).is(':visible')) $('#search-input').focus();
-                });
-            });
-
-            $(document).on('keydown', function (e) {
-                if (e.key === 'Escape' || e.keyCode === 27) {
-                    if ($('#form-container').is(':visible')) {
-                        $('#form-container').slideUp(300);
-                        $('#toggle-form-btn').html('<i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa');
-                    }
-                    if ($('#filter-container').is(':visible')) {
-                        $('#filter-container').slideUp(300);
-                    }
-                }
+            // NOVO: Abre o modal de Pesquisar e Filtrar
+            $('#toggle-filter-btn').off('click').on('click', function() {
+                showModal('#filterModal');
+                // Pequeno atraso para focar no input após o modal abrir
+                setTimeout(() => { $('#search-input').focus(); }, 150);
             });
             
-            $('.modal .close, .modal .close-top-right').on('click', function() { hideModal($(this).closest('.modal')); });
+            // Handlers para fechar os novos modais
+            $('#add-task-cancel-btn').on('click', function() { 
+                hideModal('#addTaskModal'); 
+            });
+            
+            // O botão de aplicar filtro também fecha o modal
+            $('#filter-apply-btn').on('click', function() {
+                applyFilter(); // Aplica o filtro antes de fechar
+                hideModal('#filterModal');
+            });
+            
+            // O botão de fechar do modal de filtro
+            $('#filter-cancel-btn').on('click', function() {
+                hideModal('#filterModal');
+            });
+
+
+            // Handler de fechar modais padrão (Escape e Close Button)
+            $('.modal .close, .modal .close-top-right').on('click', function() { 
+                hideModal($(this).closest('.modal')); 
+            });
             $('#edit-cancel-btn').on('click', () => hideModal('#editTaskModal'));
             $('#subtask-cancel-btn').on('click', () => hideModal('#subtask-modal'));
             $('#view-close-btn').on('click', () => hideModal('#viewTaskModal'));
@@ -768,7 +771,7 @@ onAuthStateChanged(auth, (user) => {
             });
 
 
-            /* ---------- ADD TAREFA (MODIFICADO) ---------- */
+            /* ---------- ADD TAREFA (MODIFICADO: FECHA O MODAL) ---------- */
             $('#task-form').off('submit').on('submit', function (e) {
                 e.preventDefault();
                 let text = $('#task-text').val().trim();
@@ -787,6 +790,8 @@ onAuthStateChanged(auth, (user) => {
                 $('#task-date').val('');
                 $('#task-time').val('');
                 $('#task-category').val('geral');
+                
+                hideModal('#addTaskModal'); // <--- Ação de fechar o modal
             });
 
 
@@ -973,7 +978,7 @@ onAuthStateChanged(auth, (user) => {
                 currentTaskLi=null;
             });
             
-            /* ---------- FILTRO / PESQUISA ---------- */
+            /* ---------- FILTRO / PESQUISA (NOVO: Usam o modal de filtro) ---------- */
             $('#search-input').on('input', applyFilter);
             $('#filter-priority').on('change', applyFilter);
             $('#filter-category').on('change', applyFilter);
