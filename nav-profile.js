@@ -9,15 +9,14 @@ const navProfileName = document.getElementById('nav-profile-name');
 const logoutBtnSubmenu = document.getElementById('logout-btn-submenu');
 const profileMenu = document.querySelector('.profile-menu-container');
 const loginBtn = document.getElementById('nav-login-btn');
+const profileMenuToggle = document.querySelector('.profile-menu-toggle'); // <-- NOVO
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         // --- Usuário está LOGADO ---
-        // Mostra o menu de perfil e esconde o botão de login
         if(profileMenu) profileMenu.style.display = 'list-item';
         if(loginBtn) loginBtn.style.display = 'none';
 
-        // Busca dados do perfil para exibir no menu
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
 
@@ -26,14 +25,12 @@ onAuthStateChanged(auth, async (user) => {
             navProfileName.textContent = data.username || user.displayName || "Usuário";
             navProfilePic.src = data.fotoURL || "https://via.placeholder.com/150";
         } else {
-            // Fallback se o usuário ainda não salvou um perfil
             navProfileName.textContent = user.displayName || "Usuário";
             navProfilePic.src = user.photoURL || "https://via.placeholder.com/150";
         }
 
     } else {
         // --- Usuário está DESLOGADO ---
-        // Esconde o menu de perfil e mostra o botão de login
         if(profileMenu) profileMenu.style.display = 'none';
         if(loginBtn) loginBtn.style.display = 'list-item';
     }
@@ -51,3 +48,22 @@ if(logoutBtnSubmenu) {
         }
     });
 }
+
+// ===========================
+// LÓGICA DE CLIQUE PARA O SUBMENU (NOVO)
+// ===========================
+if (profileMenuToggle) {
+    profileMenuToggle.addEventListener('click', (e) => {
+        // Impede que o clique no documento (abaixo) seja acionado
+        e.stopPropagation(); 
+        // Adiciona ou remove a classe que mostra/esconde o menu
+        profileMenu.classList.toggle('is-open');
+    });
+}
+
+// Fecha o menu se o usuário clicar fora dele
+document.addEventListener('click', () => {
+    if (profileMenu && profileMenu.classList.contains('is-open')) {
+        profileMenu.classList.remove('is-open');
+    }
+});
