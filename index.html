@@ -17,12 +17,31 @@
         <div class="nav-mobile-header-bar">
             <button id="mobile-menu-toggle" class="mobile-toggle-btn"><i class="fa-solid fa-bars"></i></button>
 
+            <li id="mobile-nav-login-btn" class="nav-auth-item" style="display: none;">
+                <a href="login.html" class="btn-login-nav">
+                    <i class="fa-solid fa-right-to-bracket"></i> Entrar
+                </a>
+            </li>
+            <li class="profile-menu-container nav-auth-item" id="mobile-profile-container" style="display: none;">
+                <div class="profile-menu-toggle">
+                    <img id="mobile-nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
+                </div>
+            </li>
+            </div>
+        
+        <ul id="main-nav-list" class="nav-links">
+            <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
+            <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
+            <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li> 
+            <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
+            <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li> 
+            
             <li id="nav-login-btn" class="nav-auth-item" style="display: none;">
                 <a href="login.html" class="btn-login-nav">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </a>
             </li>
-            <li class="profile-menu-container nav-auth-item" style="display: none;">
+            <li class="profile-menu-container nav-auth-item" id="desktop-profile-container" style="display: none;">
                 <div class="profile-menu-toggle">
                     <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
                     <span id="nav-profile-name">Carregando...</span>
@@ -34,15 +53,7 @@
                     <li><a href="#" id="logout-btn-submenu"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
                 </ul>
             </li>
-        </div>
-        
-        <ul id="main-nav-list" class="nav-links">
-            <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
-            <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
-            <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li> 
-            <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
-            <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li> 
-            </ul>
+        </ul>
     </nav>
     <header class="task-form-header">
         <h1>Gerenciador de Tarefas</h1>
