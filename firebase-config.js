@@ -11,7 +11,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBsfGTZ1yypzWE4R_thDARSh61Osc6OUbU",
   authDomain: "gerenciador-tarefas-fd5be.firebaseapp.com",
   projectId: "gerenciador-tarefas-fd5be",
-  storageBucket: "gerenciador-tarefas-fd5be.appspot.com", // ✅ Corrigido
+  storageBucket: "gerenciador-tarefas-fd5be.appspot.com",
   messagingSenderId: "831715035671",
   appId: "1:831715035671:web:2836e1701f80fc6f602a52"
 };
@@ -22,7 +22,8 @@ const app = initializeApp(firebaseConfig);
 
 // Instâncias
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Aponte para o banco de dados específico pelo nome dele
+export const db = getFirestore(app, "banco-de-dados-gerenciador-de-tarefas"); // <-- MUDANÇA AQUI
 export const storage = getStorage(app);
 export const provider = new GoogleAuthProvider();
 
@@ -53,7 +54,7 @@ export async function logout() {
 // -----------------------------
 export async function testarFirestore() {
   try {
-    const snapshot = await getDocs(collection(db, "test"));
+    const snapshot = await getDocs(collection(db, "test")); // Tenta ler uma coleção "test" do seu novo banco
     console.log("Firestore conectado! Documentos:", snapshot.docs.length);
   } catch (error) {
     console.error("Erro ao conectar ao Firestore:", error);
