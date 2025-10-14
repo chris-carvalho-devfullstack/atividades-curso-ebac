@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Perfil - Gerenciador de Tarefas</title>
+    <title>Editar Perfil - Gerenciador de Tarefas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="profile.css">
@@ -20,8 +20,8 @@
     </nav>
 
     <header class="task-form-header">
-        <h1>Meu Perfil</h1>
-        <p>Gerencie suas informações pessoais e configurações.</p>
+        <h1>Editar Perfil</h1>
+        <p>Mantenha suas informações pessoais e de contato atualizadas.</p>
     </header>
 
     <main class="profile-container">
@@ -35,18 +35,42 @@
             <div class="profile-info-section">
                 <form id="profile-form">
                     <div class="input-group">
-                        <label for="profile-name">Nome de Exibição</label>
-                        <input type="text" id="profile-name" placeholder="Como você quer ser chamado?">
+                        <label for="profile-fullname"><i class="fa fa-user"></i> Nome Completo</label>
+                        <input type="text" id="profile-fullname" placeholder="Seu nome completo">
                     </div>
+
                     <div class="input-group">
-                        <label for="profile-contact">Contato (Telefone ou Rede Social)</label>
-                        <input type="text" id="profile-contact" placeholder="Seu contato (opcional)">
+                        <label for="profile-username"><i class="fa fa-at"></i> Nome de Usuário</label>
+                        <input type="text" id="profile-username" placeholder="Ex: @seunome" maxlength="15">
+                        <small>Seu nome de usuário público.</small>
                     </div>
+
                     <div class="input-group">
-                        <label for="profile-email">Email</label>
+                        <label for="profile-birthdate"><i class="fa fa-calendar-days"></i> Data de Nascimento</label>
+                        <input type="date" id="profile-birthdate">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="profile-phone"><i class="fa fa-phone"></i> Celular</label>
+                        <input type="tel" id="profile-phone" placeholder="(99) 9 9999-9999" maxlength="15">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="profile-instagram"><i class="fa-brands fa-instagram"></i> Instagram</label>
+                        <input type="text" id="profile-instagram" placeholder="@seu-perfil">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="profile-linkedin"><i class="fa-brands fa-linkedin"></i> LinkedIn</label>
+                        <input type="url" id="profile-linkedin" placeholder="https://linkedin.com/in/seu-perfil">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="profile-email"><i class="fa fa-envelope"></i> Email</label>
                         <input type="email" id="profile-email" disabled>
                         <small>O email não pode ser alterado.</small>
                     </div>
+                    
                     <button type="submit" id="save-profile-btn" class="btn-primary">Salvar Alterações</button>
                 </form>
                 <p id="profile-message" class="message"></p>
