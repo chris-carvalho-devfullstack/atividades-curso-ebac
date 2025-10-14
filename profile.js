@@ -159,10 +159,10 @@ profileForm.addEventListener("submit", async (e) => {
         // 1. Limpa espaços nas bordas para o nome de exibição (fullname)
         const originalFullname = fullnameInput.value.trim(); 
         
-        // 2. Para o username (que não deve ter espaços), usamos regex para remover TODOS os espaços (incluindo invisíveis)
+        // 2. Para o username, remove TODOS os espaços (incluindo invisíveis)
         const originalUsername = usernameInput.value.replace(/\s/g, '').trim(); 
         
-        // 3. Versões em minúsculas (essenciais para a busca)
+        // 3. Versões em minúsculas para uso exclusivo na BUSCA
         const lowercaseFullnameSearch = originalFullname.toLowerCase(); 
         const lowercaseUsernameSearch = originalUsername.toLowerCase();
         // --- FIM DA CORREÇÃO ---
