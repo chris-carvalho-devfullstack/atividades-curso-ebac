@@ -8,7 +8,9 @@ import {
     getDocs, 
     setDoc, 
     deleteDoc, 
-    writeBatch 
+    writeBatch,
+    query, // Importação adicionada para consultas
+    where // Importação adicionada para consultas
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // O escopo dos listeners é corrigido para que as funções possam ser chamadas diretamente no HTML
@@ -19,6 +21,7 @@ onAuthStateChanged(auth, user => {
     if (user) {
         loadFriendRequests(user.uid);
         loadFriends(user.uid);
+        setupSearchListeners(user.uid); // Chama a nova função de setup
     } else {
         window.location.href = 'login.html';
     }
@@ -71,7 +74,7 @@ async function loadFriends(uid) {
 }
 
 // ===================================
-// FUNÇÃO COMPLETA PARA CARREGAR PEDIDOS DE AMIZADE
+// FUNÇÃO PARA CARREGAR PEDIDOS DE AMIZADE
 // ===================================
 async function loadFriendRequests(uid) {
     const requestsRef = collection(db, "users", uid, "friendRequests");
@@ -155,5 +158,110 @@ async function rejectFriendRequest(senderUid, receiverUid) {
     } catch (error) {
         console.error("Erro ao rejeitar pedido:", error);
         alert("Erro ao rejeitar pedido de amizade. Tente novamente.");
+    }
+}
+
+// ===================================
+// NOVA FUNÇÃO: BUSCAR USUÁRIOS (V2.0 - Multi-Campo)
+// ===================================
+async function searchUsers(currentUserUid, searchTerm) {
+    const searchList = document.getElementById('search-list');
+    
+    // Limpeza e validação do termo de busca
+    let term = searchTerm.toLowerCase().replace('@', '').trim();
+    if (term.length < 3) return; 
+
+    searchList.innerHTML = '<li style="justify-content:center;">Buscando...</li>'; 
+    
+    try {
+        const usersRef = collection(db, "users");
+        // O caractere Unicode \uf8ff garante que a consulta inclua todos os prefixos.
+        const endTerm = term + '\uf8ff'; 
+        let results = new Map(); // Usado para armazenar resultados únicos (ID do usuário)
+        
+        // --- QUERY 1: Busca por Username ---
+        const qUsernames = query(usersRef, 
+            where("username", ">=", term), 
+            where("username", "<", endTerm)
+        );
+        const snapshotUsernames = await getDocs(qUsernames);
+        
+        snapshotUsernames.forEach(docSnap => {
+            if (docSnap.id !== currentUserUid) {
+                results.set(docSnap.id, docSnap.data());
+            }
+        });
+        
+        // --- QUERY 2: Busca por Nome Completo ---
+        // OBS: Requer que o campo 'fullname' esteja criado no Firebase e indexado
+        const qFullnames = query(usersRef, 
+            where("fullname", ">=", term), 
+            where("fullname", "<", endTerm)
+        );
+        const snapshotFullnames = await getDocs(qFullnames);
+
+        snapshotFullnames.forEach(docSnap => {
+            if (docSnap.id !== currentUserUid) {
+                // Adiciona ao Map. Se o usuário já foi encontrado pelo username, apenas sobrescreve.
+                results.set(docSnap.id, docSnap.data());
+            }
+        });
+        
+        // --- 3. Renderizar Resultados e Feedback ---
+        searchList.innerHTML = ''; // Limpa o "Buscando..."
+
+        if (results.size === 0) {
+            searchList.innerHTML = '<li style="justify-content:center;">Nenhum usuário encontrado. Tente um nome ou nome de usuário diferente.</li>';
+            return;
+        }
+
+        results.forEach((userData, userId) => {
+            const username = userData.username || 'Usuário Sem Nome';
+            // Exibe o nome completo para melhor feedback visual
+            const displayFullname = userData.fullname ? ` (${userData.fullname})` : '';
+            
+            const li = `
+                <li>
+                    <div class="user-info">
+                        <img src="${userData.fotoURL || 'https://via.placeholder.com/150'}" alt="Foto de Perfil">
+                        <span class="username">@${username}${displayFullname}</span>
+                    </div>
+                    <div class="user-actions">
+                        <button onclick="window.location.href='public-profile.html?uid=${userId}'">Ver Perfil</button>
+                    </div>
+                </li>
+            `;
+            searchList.innerHTML += li;
+        });
+        
+    } catch(error) {
+        console.error("Erro ao buscar usuários (V2.0):", error);
+        searchList.innerHTML = '<li style="justify-content:center; color: #f44336;">🚨 Erro na busca. Verifique se o índice "fullname" foi criado no Firebase.</li>';
+    }
+}
+
+
+// ===================================
+// NOVA FUNÇÃO: SETUP DE LISTENERS DE BUSCA (V2.0)
+// ===================================
+function setupSearchListeners(uid) {
+    const searchInput = document.getElementById('search-input'); 
+    const searchList = document.getElementById('search-list');
+
+    if (searchInput) {
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const searchTerm = e.target.value;
+            
+            if (searchTerm.length >= 3) {
+                searchTimeout = setTimeout(() => {
+                    searchUsers(uid, searchTerm);
+                }, 500); // 500ms de debounce
+            } else {
+                 if (searchList) searchList.innerHTML = '<li style="justify-content:center;">Digite pelo menos 3 caracteres para buscar.</li>';
+            }
+        });
     }
 }

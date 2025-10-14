@@ -44,6 +44,9 @@
             <button class="tab-link" data-tab="requests">
                 Pedidos Recebidos <span class="badge" style="display:none;"></span>
             </button>
+            <button class="tab-link" data-tab="search">
+                <i class="fa fa-search"></i> Buscar Usuários
+            </button>
         </div>
 
         <div id="friends" class="tab-content active">
@@ -57,6 +60,16 @@
                 <li style="justify-content:center;">Carregando pedidos de amizade...</li>
             </ul>
         </div>
+        
+        <div id="search" class="tab-content">
+    <div class="search-input-container" style="margin-bottom: 20px;">
+        <input type="text" id="search-input" placeholder="Buscar por nome de usuário ou nome completo (V2.0)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc;">
+    </div>
+    <ul class="user-list" id="search-list">
+        <li style="justify-content:center;">Digite pelo menos 3 caracteres para buscar.</li>
+    </ul>
+</div>
+
     </main>
 
     <footer>
