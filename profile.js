@@ -1,7 +1,7 @@
-// profile.js
+// profile-teste.js
 import { auth, db, storage } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
 // Elementos da página
@@ -17,50 +17,54 @@ const profileMessage = document.getElementById('profile-message');
 
 let currentUser = null;
 
-// Função para exibir mensagens para o usuário
 function showMessage(text, type = 'success') {
     profileMessage.textContent = text;
     profileMessage.className = `message ${type}`;
-    setTimeout(() => {
-        profileMessage.className = 'message';
-    }, 4000);
+    setTimeout(() => profileMessage.className = 'message', 4000);
 }
 
-// 1. Monitorar o estado de autenticação
+// ===== 1. Monitorar estado de autenticação =====
 onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUser = user;
-        profileEmailInput.value = user.email; // Preenche o email (desabilitado)
-        
+    if (!user) {
+        showMessage("Nenhum usuário logado.", "error");
+        return;
+    }
+    currentUser = user;
+    profileEmailInput.value = user.email;
+
+    // ===== 2. Testar conexão com Firestore =====
+    try {
+        const snapshot = await getDocs(collection(db, "users"));
+        console.log("Firestore conectado! Total de documentos:", snapshot.docs.length);
+    } catch (err) {
+        console.error("Erro ao conectar no Firestore:", err);
+        showMessage("Erro ao conectar no Firestore. Verifique regras e domínio.", "error");
+        return;
+    }
+
+    // ===== 3. Carregar dados do perfil =====
+    try {
         const userDocRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(userDocRef);
-
         if (docSnap.exists()) {
             const data = docSnap.data();
             profileNameInput.value = data.displayName || '';
             profileContactInput.value = data.contact || '';
-            if (data.photoURL) {
-                profileImagePreview.src = data.photoURL;
-            } else {
-                profileImagePreview.src = 'https://via.placeholder.com/150';
-            }
+            profileImagePreview.src = data.photoURL || 'https://via.placeholder.com/150';
         } else {
-            console.log("Documento de perfil não encontrado, usuário pode ser novo.");
+            console.log("Documento do usuário não encontrado.");
         }
-    } else {
-        console.log("Nenhum usuário logado.");
+    } catch (err) {
+        console.error("Erro ao carregar dados do perfil:", err);
+        showMessage("Erro ao carregar perfil. Regras de Firestore podem estar bloqueando.", "error");
     }
 });
 
-// 3. Salvar alterações no formulário (nome e contato)
+// ===== 4. Salvar alterações =====
 profileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!currentUser) {
-        showMessage("Você precisa estar logado para salvar.", "error");
-        return;
-    }
+    if (!currentUser) return;
 
-    // **NOVO: Feedback visual no botão**
     saveProfileBtn.disabled = true;
     saveProfileBtn.textContent = 'Salvando...';
 
@@ -70,33 +74,24 @@ profileForm.addEventListener('submit', async (e) => {
             displayName: profileNameInput.value,
             contact: profileContactInput.value,
         }, { merge: true });
-
         showMessage("Perfil atualizado com sucesso!");
-    } catch (error) {
-        console.error("Erro ao salvar perfil:", error);
-        let friendlyMessage = "Ocorreu um erro ao salvar.";
-        if (error.code === 'permission-denied') {
-            friendlyMessage = "Erro de permissão. Verifique suas regras de segurança do Firestore.";
-        }
-        showMessage(friendlyMessage, "error");
+    } catch (err) {
+        console.error("Erro ao salvar perfil:", err);
+        showMessage("Erro ao salvar perfil. Verifique regras do Firestore.", "error");
     } finally {
-        // **NOVO: Restaura o botão em qualquer cenário (sucesso ou erro)**
         saveProfileBtn.disabled = false;
         saveProfileBtn.textContent = 'Salvar Alterações';
     }
 });
 
-// 4. Lógica para upload da foto de perfil
-changePictureBtn.addEventListener('click', () => {
-    imageUploadInput.click();
-});
+// ===== 5. Upload da foto =====
+changePictureBtn.addEventListener('click', () => imageUploadInput.click());
 
 imageUploadInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file || !currentUser) return;
 
     const storageRef = ref(storage, `profile_pictures/${currentUser.uid}/${file.name}`);
-    
     showMessage("Enviando imagem...", "neutral");
 
     try {
@@ -104,20 +99,12 @@ imageUploadInput.addEventListener('change', async (e) => {
         const downloadURL = await getDownloadURL(snapshot.ref);
 
         profileImagePreview.src = downloadURL;
-
         const userDocRef = doc(db, 'users', currentUser.uid);
         await setDoc(userDocRef, { photoURL: downloadURL }, { merge: true });
 
         showMessage("Foto de perfil atualizada!");
-
-    } catch (error) {
-        console.error("Erro no upload da imagem:", error);
-        let friendlyMessage = "Erro ao enviar a imagem.";
-        if (error.code === 'storage/unauthorized') {
-            friendlyMessage = "Erro de permissão no Storage.";
-        } else if (error.code === 'permission-denied') {
-            friendlyMessage = "Erro de permissão para salvar a URL no Firestore.";
-        }
-        showMessage(friendlyMessage, "error");
+    } catch (err) {
+        console.error("Erro no upload da imagem:", err);
+        showMessage("Erro ao enviar imagem. Verifique Storage e regras.", "error");
     }
 });
