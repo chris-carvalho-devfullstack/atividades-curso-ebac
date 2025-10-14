@@ -487,8 +487,10 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     z-index: 1100;
 }
 
-.profile-menu-container:hover .profile-submenu {
-    display: block; /* Aparece no hover */
+/* Exibe o submenu no hover OU quando a classe .is-open é adicionada via JS */
+.profile-menu-container:hover .profile-submenu,
+.profile-menu-container.is-open .profile-submenu {
+    display: block;
 }
 
 .profile-menu-container:hover .profile-menu-toggle i {
