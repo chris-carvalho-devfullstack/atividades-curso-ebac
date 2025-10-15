@@ -1,75 +1,12 @@
-// feed.js (VERSÃO COMPLETA E ATUALIZADA)
+// feed.js (VERSÃO COMPLETA E ATUALIZADA COM EDIÇÃO E EXCLUSÃO DE COMENTÁRIOS)
 
 import { auth, db, storage } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import {
-    collection, addDoc, query, orderBy, onSnapshot,
-    doc, getDoc, updateDoc, serverTimestamp, arrayUnion, arrayRemove, deleteDoc
+    collection, addDoc, query, where, orderBy, onSnapshot,
+    doc, getDoc, updateDoc, serverTimestamp, arrayUnion, arrayRemove, deleteDoc, writeBatch
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
-
-// =================================================================
-// FUNÇÕES AUXILIARES PARA O EDITOR DE TEXTO COM HIGHLIGHT
-// =================================================================
-
-/**
- * Salva a posição atual do cursor dentro de um elemento editável.
- * @param {HTMLElement} element - O elemento contenteditable.
- * @returns {object|null} Um objeto com a informação da posição do cursor.
- */
-function saveCursorPosition(element) {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        const preCaretRange = range.cloneRange();
-        preCaretRange.selectNodeContents(element);
-        preCaretRange.setEnd(range.endContainer, range.endOffset);
-        return {
-            container: range.endContainer,
-            offset: range.endOffset,
-            charCount: preCaretRange.toString().length
-        };
-    }
-    return null;
-}
-
-/**
- * Restaura a posição do cursor em um elemento editável.
- * @param {HTMLElement} element - O elemento contenteditable.
- * @param {object} savedPosition - A posição salva pela função saveCursorPosition.
- */
-function restoreCursorPosition(element, savedPosition) {
-    if (!savedPosition) return;
-
-    const selection = window.getSelection();
-    const range = document.createRange();
-    let charCount = 0;
-    
-    function findTextNode(node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            const nextCharCount = charCount + node.length;
-            if (savedPosition.charCount <= nextCharCount) {
-                range.setStart(node, savedPosition.charCount - charCount);
-                range.collapse(true);
-                return true; // Encontrado
-            }
-            charCount = nextCharCount;
-        } else {
-            for (const child of node.childNodes) {
-                if (findTextNode(child)) {
-                    return true; // Encontrado
-                }
-            }
-        }
-        return false; // Não encontrado
-    }
-
-    if (element.childNodes.length > 0) {
-        findTextNode(element);
-    }
-    selection.removeAllRanges();
-    selection.addRange(range);
-}
 
 // =================================================================
 // LÓGICA PRINCIPAL DO FEED
@@ -88,26 +25,13 @@ onAuthStateChanged(auth, user => {
 
 // Seletores de elementos do DOM
 const createPostForm = document.getElementById('create-post-form');
-const postContent = document.getElementById('post-content'); // Agora é um DIV editável
+const postContent = document.getElementById('post-content');
 const imageUpload = document.getElementById('post-image-upload');
 const addImageBtn = document.getElementById('add-image-btn');
 const imagePreviewContainer = document.getElementById('image-preview-container');
 const imagePreview = document.getElementById('image-preview');
 const removeImageBtn = document.getElementById('remove-image-btn');
 const feedPosts = document.getElementById('feed-posts');
-
-// Event listener para highlight em tempo real
-postContent.addEventListener('input', () => {
-    const text = postContent.textContent;
-    const savedPosition = saveCursorPosition(postContent);
-
-    const highlightedHTML = text.replace(/#(\w+)/g, '<span class="hashtag-highlight">#$1</span>');
-    
-    if (postContent.innerHTML !== highlightedHTML) {
-        postContent.innerHTML = highlightedHTML;
-        restoreCursorPosition(postContent, savedPosition);
-    }
-});
 
 // Abrir seletor de arquivo ao clicar no botão de imagem
 addImageBtn.addEventListener('click', () => imageUpload.click());
@@ -135,7 +59,6 @@ removeImageBtn.addEventListener('click', () => {
 // Criar uma nova publicação
 createPostForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    // MODIFICADO: Pega o texto puro do DIV editável
     const content = postContent.textContent.trim();
     const file = imageUpload.files[0];
 
@@ -151,9 +74,9 @@ createPostForm.addEventListener('submit', async (e) => {
 
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         const userData = userDoc.data();
-
-        // Extrai hashtags do conteúdo de texto puro
         const hashtags = content.match(/#\w+/g)?.map(tag => tag.substring(1).toLowerCase()) || [];
+        const taggedUsers = content.match(/@\w+/g)?.map(tag => tag.substring(1).toLowerCase()) || [];
+
 
         await addDoc(collection(db, 'posts'), {
             userId: currentUser.uid,
@@ -163,11 +86,11 @@ createPostForm.addEventListener('submit', async (e) => {
             imageUrl: imageUrl,
             timestamp: serverTimestamp(),
             likes: [],
-            comments: [],
-            hashtags: hashtags
+            commentCount: 0,
+            hashtags: hashtags,
+            taggedUsers: taggedUsers,
         });
 
-        // MODIFICADO: Limpa o DIV editável
         postContent.innerHTML = '';
         removeImageBtn.click();
 
@@ -175,6 +98,7 @@ createPostForm.addEventListener('submit', async (e) => {
         console.error("Erro ao criar publicação:", error);
     }
 });
+
 
 // Carregar as publicações
 function loadPosts() {
@@ -188,15 +112,13 @@ function loadPosts() {
     });
 }
 
-/**
- * Função para transformar hashtags em links <a> no post final.
- * @param {string} text - O texto do conteúdo do post.
- * @returns {string} - O texto com HTML formatado.
- */
-function linkifyHashtags(text) {
+function linkifyContent(text) {
     if (!text) return '';
-    return text.replace(/#(\w+)/g, '<a href="hashtag.html?tag=$1" class="hashtag-link">#$1</a>');
+    let linkedText = text.replace(/#(\w+)/g, '<a href="hashtag.html?tag=$1" class="hashtag-link">#$1</a>');
+    linkedText = linkedText.replace(/@(\w+)/g, '<a href="#" class="usertag-link" data-username="$1">@$1</a>');
+    return linkedText;
 }
+
 
 // Renderizar uma publicação no HTML
 function renderPost(post, postId) {
@@ -206,8 +128,8 @@ function renderPost(post, postId) {
     const timestamp = post.timestamp ? post.timestamp.toDate().toLocaleString('pt-BR') : 'Agora mesmo';
     const isLiked = currentUser && post.likes.includes(currentUser.uid);
     const isOwner = currentUser && currentUser.uid === post.userId;
-    
-    const linkedContent = linkifyHashtags(post.content);
+
+    const linkedContent = linkifyContent(post.content);
 
     postCard.innerHTML = `
         <div class="post-header">
@@ -228,28 +150,28 @@ function renderPost(post, postId) {
         ${post.imageUrl ? `<div class="post-media"><img src="${post.imageUrl}" alt="Mídia da publicação"></div>` : ''}
         <div class="post-footer">
             <button class="action-btn like-btn ${isLiked ? 'liked' : ''}"><i class="fa fa-heart"></i> ${post.likes.length}</button>
-            <button class="action-btn comment-btn"><i class="fa fa-comment"></i> ${post.comments.length}</button>
+            <button class="action-btn comment-btn"><i class="fa fa-comment"></i> ${post.commentCount || 0}</button>
             <button class="action-btn share-btn"><i class="fa fa-share"></i> Compartilhar</button>
         </div>
         <div class="comments-section" style="display: none;">
-            <form class="comment-form"><input type="text" placeholder="Adicione um comentário..." required><button type="submit">Comentar</button></form>
+            <form class="comment-form" data-parent-id="root"><input type="text" placeholder="Adicione um comentário..." required><button type="submit">Comentar</button></form>
             <div class="comments-list"></div>
         </div>
     `;
 
     feedPosts.appendChild(postCard);
 
-    // Adiciona os event listeners para os botões do post
     if (isOwner) {
         const optionsBtn = postCard.querySelector('.post-options-btn');
         const optionsMenu = postCard.querySelector('.options-menu');
-        
         optionsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            document.querySelectorAll('.options-menu.active').forEach(menu => menu !== optionsMenu && menu.classList.remove('active'));
+            // Fecha outros menus abertos
+            document.querySelectorAll('.options-menu.active').forEach(menu => {
+                if (menu !== optionsMenu) menu.classList.remove('active');
+            });
             optionsMenu.classList.toggle('active');
         });
-
         postCard.querySelector('.delete-btn').addEventListener('click', () => {
             showConfirmModal('Apagar Publicação', 'Tem certeza que deseja apagar? Esta ação não pode ser desfeita.', () => {
                 deletePost(postId, post.imageUrl);
@@ -257,38 +179,243 @@ function renderPost(post, postId) {
         });
     }
 
+    const commentsSection = postCard.querySelector('.comments-section');
     const commentsList = postCard.querySelector('.comments-list');
-    if (post.comments && post.comments.length > 0) {
-        post.comments.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0)).forEach(comment => {
-            const commentElement = document.createElement('div');
-            commentElement.className = 'comment';
-            commentElement.innerHTML = `
-                <a href="public-profile.html?uid=${comment.userId}" class="comment-author-link"><img src="${comment.userProfileImage}" alt="Foto"></a>
-                <div class="comment-content">
-                    <a href="public-profile.html?uid=${comment.userId}" class="comment-author-link"><strong>${comment.username}</strong></a>
-                    <span>${comment.commentText}</span>
-                </div>`;
-            commentsList.appendChild(commentElement);
-        });
-    }
+    loadAndRenderComments(postId, commentsList);
 
     postCard.querySelector('.like-btn').addEventListener('click', () => toggleLike(postId));
     postCard.querySelector('.comment-btn').addEventListener('click', () => {
-        const commentsSection = postCard.querySelector('.comments-section');
-        const isHidden = commentsSection.style.display === 'none';
-        commentsSection.style.display = isHidden ? 'block' : 'none';
-        if (isHidden) commentsSection.querySelector('input').focus();
+        commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
     });
     postCard.querySelector('.comment-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const input = e.target.querySelector('input');
         if (input.value.trim()) {
-            addComment(postId, input.value.trim());
+            addComment(postId, input.value.trim(), e.target.dataset.parentId);
             input.value = '';
         }
     });
     postCard.querySelector('.share-btn').addEventListener('click', () => sharePost(postId, post.content));
 }
+
+// =================================================================
+// SEÇÃO DE COMENTÁRIOS (COM EDIÇÃO E EXCLUSÃO)
+// =================================================================
+
+async function loadAndRenderComments(postId, container, parentId = 'root') {
+    const commentsRef = collection(db, 'posts', postId, 'comments');
+    const q = query(commentsRef, where("parentId", "==", parentId), orderBy('timestamp', 'asc'));
+
+    onSnapshot(q, snapshot => {
+        snapshot.docChanges().forEach(change => {
+            const commentId = change.doc.id;
+            const commentData = change.doc.data();
+            const commentElement = container.querySelector(`[data-comment-id="${commentId}"]`);
+
+            if (change.type === "added") {
+                if (!commentElement) {
+                    renderComment(postId, commentId, commentData, container);
+                }
+            }
+            if (change.type === "modified") {
+                if (commentElement) {
+                    // Atualiza apenas o texto e os likes para ser mais eficiente
+                    const textSpan = commentElement.querySelector('.comment-text');
+                    const likeBtn = commentElement.querySelector('.like-comment-btn');
+                    if (textSpan) textSpan.innerHTML = linkifyContent(commentData.commentText);
+                    if (likeBtn) {
+                        likeBtn.innerHTML = `<i class="fa fa-heart"></i> ${commentData.likes.length}`;
+                        likeBtn.classList.toggle('liked', commentData.likes.includes(currentUser.uid));
+                    }
+                }
+            }
+            if (change.type === "removed") {
+                if (commentElement) {
+                    commentElement.remove();
+                }
+            }
+        });
+    });
+}
+
+
+function renderComment(postId, commentId, commentData, container) {
+    const commentElement = document.createElement('div');
+    commentElement.className = 'comment';
+    commentElement.dataset.commentId = commentId;
+    
+    const isOwner = currentUser && currentUser.uid === commentData.userId;
+    const isLiked = currentUser && commentData.likes.includes(currentUser.uid);
+
+    commentElement.innerHTML = `
+        <a href="public-profile.html?uid=${commentData.userId}" class="comment-author-link"><img src="${commentData.userProfileImage}" alt="Foto"></a>
+        <div class="comment-body">
+            <div class="comment-content-wrapper">
+                <div class="comment-content">
+                    <a href="public-profile.html?uid=${commentData.userId}" class="comment-author-link"><strong>${commentData.username}</strong></a>
+                    <span class="comment-text">${linkifyContent(commentData.commentText)}</span>
+                </div>
+                ${isOwner ? `
+                <div class="post-options comment-options">
+                    <button class="post-options-btn comment-options-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                    <div class="options-menu">
+                        <button class="edit-comment-btn"><i class="fa-solid fa-pencil"></i> Editar</button>
+                        <button class="delete-comment-btn"><i class="fa-solid fa-trash"></i> Apagar</button>
+                    </div>
+                </div>` : ''}
+            </div>
+            <div class="comment-actions">
+                <button class="comment-action-btn like-comment-btn ${isLiked ? 'liked' : ''}"><i class="fa fa-heart"></i> ${commentData.likes.length}</button>
+                <button class="comment-action-btn reply-btn">Responder</button>
+            </div>
+            <div class="replies-container"></div>
+            <div class="reply-form-container" style="display: none;">
+                <form class="comment-form" data-parent-id="${commentId}"><input type="text" placeholder="Escreva uma resposta..." required><button type="submit">Responder</button></form>
+            </div>
+        </div>
+    `;
+    container.appendChild(commentElement);
+
+    if (isOwner) {
+        const optionsBtn = commentElement.querySelector('.comment-options-btn');
+        const optionsMenu = commentElement.querySelector('.options-menu');
+        optionsBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            optionsMenu.classList.toggle('active');
+        });
+
+        commentElement.querySelector('.delete-comment-btn').addEventListener('click', () => {
+            showConfirmModal('Apagar Comentário', 'Tem certeza que deseja apagar este comentário?', () => {
+                deleteComment(postId, commentId);
+            });
+        });
+
+        commentElement.querySelector('.edit-comment-btn').addEventListener('click', () => {
+            openEditCommentModal(postId, commentId, commentData.commentText);
+        });
+    }
+
+    commentElement.querySelector('.like-comment-btn').addEventListener('click', () => toggleCommentLike(postId, commentId));
+    commentElement.querySelector('.reply-btn').addEventListener('click', (e) => {
+        const replyFormContainer = e.target.closest('.comment-body').querySelector('.reply-form-container');
+        replyFormContainer.style.display = replyFormContainer.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    const replyForm = commentElement.querySelector('.comment-form');
+    replyForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = e.target.querySelector('input');
+        if (input.value.trim()) {
+            addComment(postId, input.value.trim(), e.target.dataset.parentId);
+            input.value = '';
+            e.target.closest('.reply-form-container').style.display = 'none';
+        }
+    });
+
+    const repliesContainer = commentElement.querySelector('.replies-container');
+    loadAndRenderComments(postId, repliesContainer, commentId);
+}
+
+async function addComment(postId, commentText, parentId = 'root') {
+    if (!currentUser) return;
+    try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const userData = userDoc.data();
+        
+        const batch = writeBatch(db);
+
+        const newCommentRef = doc(collection(db, 'posts', postId, 'comments'));
+        batch.set(newCommentRef, {
+            userId: currentUser.uid,
+            username: userData.username || 'Anônimo',
+            userProfileImage: userData.fotoURL || 'https://via.placeholder.com/150',
+            commentText,
+            parentId: parentId,
+            timestamp: serverTimestamp(),
+            likes: [],
+        });
+        
+        const postRef = doc(db, 'posts', postId);
+        const postDoc = await getDoc(postRef);
+        const currentCount = postDoc.data().commentCount || 0;
+        batch.update(postRef, { commentCount: currentCount + 1 });
+        
+        await batch.commit();
+
+    } catch (error) {
+        console.error("Erro ao adicionar comentário:", error);
+    }
+}
+
+async function toggleCommentLike(postId, commentId) {
+    if (!currentUser) return;
+    const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+    const commentDoc = await getDoc(commentRef);
+
+    if (!commentDoc.exists()) return;
+
+    const isLiked = commentDoc.data().likes.includes(currentUser.uid);
+    await updateDoc(commentRef, {
+        likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+    });
+}
+
+async function deleteComment(postId, commentId) {
+    const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+    const postRef = doc(db, 'posts', postId);
+
+    try {
+        const batch = writeBatch(db);
+        batch.delete(commentRef);
+
+        const postDoc = await getDoc(postRef);
+        const currentCount = postDoc.data().commentCount || 0;
+        batch.update(postRef, { commentCount: Math.max(0, currentCount - 1) });
+
+        await batch.commit();
+    } catch (error) {
+        console.error("Erro ao apagar comentário:", error);
+    }
+}
+
+function openEditCommentModal(postId, commentId, currentText) {
+    const modal = document.getElementById('confirmModal');
+    const modalTitle = modal.querySelector('#confirm-modal-title');
+    const modalBody = modal.querySelector('.modal-body');
+    const okBtn = modal.querySelector('#confirm-modal-ok-btn');
+    const cancelBtn = modal.querySelector('#confirm-modal-cancel-btn');
+
+    modalTitle.textContent = "Editar Comentário";
+    modalBody.innerHTML = `<textarea id="edit-comment-input" class="editable-textarea" style="min-height: 100px;">${currentText}</textarea>`;
+    okBtn.textContent = "Salvar";
+    
+    modal.style.display = 'flex';
+    
+    document.getElementById('edit-comment-input').focus();
+
+    okBtn.onclick = async () => {
+        const newText = document.getElementById('edit-comment-input').value.trim();
+        if (newText && newText !== currentText) {
+            const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+            await updateDoc(commentRef, { commentText: newText });
+        }
+        // Restaura o modal e o fecha
+        modalBody.innerHTML = '<p id="confirm-modal-text">Você tem certeza?</p>';
+        okBtn.textContent = "Confirmar";
+        modal.style.display = 'none';
+    };
+
+    cancelBtn.onclick = () => {
+        modalBody.innerHTML = '<p id="confirm-modal-text">Você tem certeza?</p>';
+        okBtn.textContent = "Confirmar";
+        modal.style.display = 'none';
+    };
+}
+
+
+// =================================================================
+// FUNÇÕES GERAIS DO POST
+// =================================================================
 
 async function toggleLike(postId) {
     if (!currentUser) return;
@@ -299,27 +426,6 @@ async function toggleLike(postId) {
     await updateDoc(postRef, {
         likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
     });
-}
-
-async function addComment(postId, commentText) {
-    if (!currentUser) return;
-    const postRef = doc(db, 'posts', postId);
-    try {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        const userData = userDoc.data();
-        const newComment = {
-            userId: currentUser.uid,
-            username: userData.username || 'Anônimo',
-            userProfileImage: userData.fotoURL || 'https://via.placeholder.com/150',
-            commentText,
-            timestamp: new Date()
-        };
-        await updateDoc(postRef, {
-            comments: arrayUnion(newComment)
-        });
-    } catch (error) {
-        console.error("Erro ao comentar:", error);
-    }
 }
 
 async function sharePost(postId, postText) {
@@ -356,29 +462,27 @@ async function deletePost(postId, imageUrl) {
 
 function showConfirmModal(title, message, onConfirm) {
     const confirmModal = document.getElementById('confirmModal');
-    if (confirmModal) {
-        const modalTitle = confirmModal.querySelector('#confirm-modal-title');
-        const modalText = confirmModal.querySelector('#confirm-modal-text');
-        const okBtn = confirmModal.querySelector('#confirm-modal-ok-btn');
-        const cancelBtn = confirmModal.querySelector('#confirm-modal-cancel-btn');
-
-        if(modalTitle) modalTitle.textContent = title;
-        if(modalText) modalText.textContent = message;
-        
-        confirmModal.style.display = 'flex';
-
-        okBtn.onclick = () => {
-            onConfirm();
-            confirmModal.style.display = 'none';
-        };
-        cancelBtn.onclick = () => {
-            confirmModal.style.display = 'none';
-        };
-    } else {
-        if (confirm(`${title}\n\n${message}`)) {
-            onConfirm();
-        }
+    if (!confirmModal) {
+        if (confirm(`${title}\n\n${message}`)) onConfirm();
+        return;
     }
+    const modalTitle = confirmModal.querySelector('#confirm-modal-title');
+    const modalText = confirmModal.querySelector('#confirm-modal-text');
+    const okBtn = confirmModal.querySelector('#confirm-modal-ok-btn');
+    const cancelBtn = confirmModal.querySelector('#confirm-modal-cancel-btn');
+
+    if (modalTitle) modalTitle.textContent = title;
+    if (modalText) modalText.textContent = message;
+    
+    confirmModal.style.display = 'flex';
+
+    okBtn.onclick = () => {
+        onConfirm();
+        confirmModal.style.display = 'none';
+    };
+    cancelBtn.onclick = () => {
+        confirmModal.style.display = 'none';
+    };
 }
 
 document.addEventListener('click', (e) => {
