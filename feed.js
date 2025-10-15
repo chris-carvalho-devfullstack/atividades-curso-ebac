@@ -145,11 +145,38 @@ function renderPost(post, postId) {
                 <button type="submit">Comentar</button>
             </form>
             <div class="comments-list">
-                </div>
+                <!-- Comentários serão renderizados aqui -->
+            </div>
         </div>
     `;
 
     feedPosts.appendChild(postCard);
+
+    // --- INÍCIO DA CORREÇÃO ---
+    // Pega a referência da lista de comentários dentro do card recém-criado
+    const commentsList = postCard.querySelector('.comments-list');
+    
+    // Verifica se existem comentários no array do post
+    if (post.comments && post.comments.length > 0) {
+        // Ordena os comentários por data para garantir a ordem cronológica
+        const sortedComments = post.comments.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
+
+        // Itera sobre cada comentário e cria o HTML correspondente
+        sortedComments.forEach(comment => {
+            const commentElement = document.createElement('div');
+            commentElement.className = 'comment';
+            commentElement.innerHTML = `
+                <img src="${comment.userProfileImage}" alt="Foto de Perfil">
+                <div class="comment-content">
+                    <strong>${comment.username}</strong>
+                    <span>${comment.commentText}</span>
+                </div>
+            `;
+            // Adiciona o elemento do comentário na lista
+            commentsList.appendChild(commentElement);
+        });
+    }
+    // --- FIM DA CORREÇÃO ---
 
     // Event Listeners para as ações
     const likeBtn = postCard.querySelector('.like-btn');
@@ -158,15 +185,23 @@ function renderPost(post, postId) {
     const commentBtn = postCard.querySelector('.comment-btn');
     const commentsSection = postCard.querySelector('.comments-section');
     commentBtn.addEventListener('click', () => {
-        commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
+        const isHidden = commentsSection.style.display === 'none';
+        commentsSection.style.display = isHidden ? 'block' : 'none';
+        // Foca no input ao abrir a seção de comentários
+        if (isHidden) {
+            commentsSection.querySelector('input').focus();
+        }
     });
 
     const commentForm = postCard.querySelector('.comment-form');
     commentForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const commentText = e.target.querySelector('input').value;
-        addComment(postId, commentText);
-        e.target.querySelector('input').value = '';
+        const input = e.target.querySelector('input');
+        const commentText = input.value;
+        if (commentText.trim()) { // Apenas adiciona se não estiver vazio
+            addComment(postId, commentText);
+            input.value = ''; // Limpa o input
+        }
     });
 }
 
