@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feed - Gerenciador de Tarefas</title>
+    <title>Hashtag - Gerenciador de Tarefas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="feed.css">
@@ -11,19 +11,12 @@
 <body>
     <nav>
         <div class="nav-mobile-header-bar">
-            <!-- Menu hamburguer à esquerda -->
             <button id="mobile-menu-toggle" class="mobile-toggle-btn">
                 <i class="fa-solid fa-bars"></i>
             </button>
-
-            <!-- Botão login (mobile) -->
             <li id="mobile-nav-login-btn" class="nav-auth-item" style="display: none;">
-                <a href="login.html" class="btn-login-nav">
-                    <i class="fa-solid fa-right-to-bracket"></i> Entrar
-                </a>
+                <a href="login.html" class="btn-login-nav"><i class="fa-solid fa-right-to-bracket"></i> Entrar</a>
             </li>
-
-            <!-- Avatar do perfil (mobile) -->
             <li class="profile-menu-container nav-auth-item" id="mobile-profile-container" style="display: none;">
                 <div class="profile-menu-toggle" id="mobile-profile-toggle">
                     <img id="mobile-nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
@@ -35,7 +28,6 @@
                 </ul>
             </li>
         </div>
-
         <ul id="main-nav-list" class="nav-links">
             <li><a href="./index.html"><i class="fa-solid fa-house"></i> Início</a></li>
             <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
@@ -43,15 +35,9 @@
             <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
             <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
             <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li>
-
-            <!-- Login desktop -->
             <li id="nav-login-btn" class="nav-auth-item" style="display: none;">
-                <a href="login.html" class="btn-login-nav">
-                    <i class="fa-solid fa-right-to-bracket"></i> Entrar
-                </a>
+                <a href="login.html" class="btn-login-nav"><i class="fa-solid fa-right-to-bracket"></i> Entrar</a>
             </li>
-
-            <!-- Perfil desktop -->
             <li class="profile-menu-container nav-auth-item" id="desktop-profile-container" style="display: none;">
                 <div class="profile-menu-toggle" id="desktop-profile-toggle">
                     <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
@@ -68,37 +54,19 @@
     </nav>
 
     <header class="task-form-header">
-        <h1>Feed de Atividades</h1>
-        <p>Veja o que seus amigos estão fazendo e compartilhe suas conquistas.</p>
+        <h1 id="hashtag-title">Carregando posts...</h1>
+        <p>Veja todas as publicações com esta hashtag.</p>
     </header>
 
     <main class="feed-container">
-        <div class="create-post-card">
-            <h2>Criar Publicação</h2>
-            <form id="create-post-form">
-                <div id="post-content" class="editable-textarea" contenteditable="true" data-placeholder="No que você está pensando?"></div>
-                <div class="post-actions">
-                    <input type="file" id="post-image-upload" accept="image/*" style="display: none;">
-                    <button type="button" id="add-image-btn"><i class="fa fa-camera"></i> Adicionar Imagem</button>
-                    <button type="submit">Publicar</button>
-                </div>
-                <div id="image-preview-container" style="display: none;">
-                    <img id="image-preview" src="#" alt="Preview da Imagem"/>
-                    <button id="remove-image-btn">&times;</button>
-                </div>
-            </form>
-        </div>
-
         <div id="feed-posts">
-            <!-- As publicações serão carregadas aqui -->
-        </div>
+            </div>
     </main>
 
     <footer>
         <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
     </footer>
 
-    <!-- MODAL DE CONFIRMAÇÃO ADICIONADO -->
     <div id="confirmModal" class="modal">
         <div class="modal-content" style="max-width: 420px;">
             <div class="modal-header">
@@ -115,8 +83,7 @@
     </div>
 
     <script type="module" src="firebase-config.js"></script>
-    <script type="module" src="auth-listener.js"></script>
     <script type="module" src="nav-profile.js"></script>
-    <script type="module" src="feed.js"></script>
+    <script type="module" src="hashtag.js"></script>
 </body>
 </html>

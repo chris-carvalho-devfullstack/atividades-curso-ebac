@@ -275,3 +275,50 @@
     background-color: #e74c3c;
     color: white;
 }
+
+/* Adicionado ao final de feed.css */
+
+.hashtag-link {
+    color: #007bff; /* Uma cor azul para destacar */
+    font-weight: 600;
+    text-decoration: none;
+    transition: text-decoration 0.2s;
+}
+
+.hashtag-link:hover {
+    text-decoration: underline;
+}
+
+/* Estilos para o novo input editável em feed.css */
+
+.editable-textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 1rem;
+  font-family: inherit; /* Garante que a fonte seja a mesma do resto do site */
+  resize: vertical;
+  overflow: auto;
+  background-color: #fff;
+  cursor: text;
+}
+
+.editable-textarea:focus {
+  outline: none;
+  border-color: #4CAF50; /* Destaque ao focar */
+}
+
+/* Simulação do placeholder */
+.editable-textarea:empty:before {
+  content: attr(data-placeholder);
+  color: #999;
+  pointer-events: none; /* Permite clicar através do placeholder */
+}
+
+/* Estilo da hashtag dentro do editor */
+.editable-textarea .hashtag-highlight {
+  color: #007bff;
+  font-weight: bold;
+}
