@@ -1,4 +1,4 @@
-// feed.js (VERSÃO COMPLETA E ATUALIZADA COM EDIÇÃO E EXCLUSÃO DE COMENTÁRIOS)
+// feed.js (VERSÃO COMPLETA E ATUALIZADA COM RECURSOS SOCIAIS E HIGHLIGHTING CORRIGIDO)
 
 import { auth, db, storage } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
@@ -7,6 +7,58 @@ import {
     doc, getDoc, updateDoc, serverTimestamp, arrayUnion, arrayRemove, deleteDoc, writeBatch
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
+
+// =================================================================
+// FUNÇÕES AUXILIARES PARA O EDITOR DE TEXTO COM HIGHLIGHT (RESTAURADAS)
+// =================================================================
+
+function saveCursorPosition(element) {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        return {
+            container: range.endContainer,
+            offset: range.endOffset,
+            charCount: preCaretRange.toString().length
+        };
+    }
+    return null;
+}
+
+function restoreCursorPosition(element, savedPosition) {
+    if (!savedPosition) return;
+    const selection = window.getSelection();
+    const range = document.createRange();
+    let charCount = 0;
+    
+    function findTextNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const nextCharCount = charCount + node.length;
+            if (savedPosition.charCount <= nextCharCount) {
+                range.setStart(node, savedPosition.charCount - charCount);
+                range.collapse(true);
+                return true;
+            }
+            charCount = nextCharCount;
+        } else {
+            for (const child of node.childNodes) {
+                if (findTextNode(child)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    if (element.childNodes.length > 0) {
+        findTextNode(element);
+    }
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
 
 // =================================================================
 // LÓGICA PRINCIPAL DO FEED
@@ -33,10 +85,25 @@ const imagePreview = document.getElementById('image-preview');
 const removeImageBtn = document.getElementById('remove-image-btn');
 const feedPosts = document.getElementById('feed-posts');
 
+// == EVENT LISTENER PARA HIGHLIGHT EM TEMPO REAL (RESTAURADO) ==
+postContent.addEventListener('input', () => {
+    const text = postContent.textContent;
+    const savedPosition = saveCursorPosition(postContent);
+
+    // Agora destaca tanto hashtags quanto menções
+    let highlightedHTML = text.replace(/#(\w+)/g, '<span class="hashtag-highlight">#$1</span>');
+    highlightedHTML = highlightedHTML.replace(/@(\w+)/g, '<span class="hashtag-highlight">@$1</span>');
+    
+    if (postContent.innerHTML !== highlightedHTML) {
+        postContent.innerHTML = highlightedHTML;
+        restoreCursorPosition(postContent, savedPosition);
+    }
+});
+
 // Abrir seletor de arquivo ao clicar no botão de imagem
 addImageBtn.addEventListener('click', () => imageUpload.click());
 
-// Mostrar preview da imagem
+// Mostrar preview da imagem e Remover imagem do preview (sem alterações)
 imageUpload.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -48,8 +115,6 @@ imageUpload.addEventListener('change', (e) => {
         reader.readAsDataURL(file);
     }
 });
-
-// Remover imagem do preview
 removeImageBtn.addEventListener('click', () => {
     imageUpload.value = '';
     imagePreview.src = '#';
@@ -77,7 +142,6 @@ createPostForm.addEventListener('submit', async (e) => {
         const hashtags = content.match(/#\w+/g)?.map(tag => tag.substring(1).toLowerCase()) || [];
         const taggedUsers = content.match(/@\w+/g)?.map(tag => tag.substring(1).toLowerCase()) || [];
 
-
         await addDoc(collection(db, 'posts'), {
             userId: currentUser.uid,
             username: userData.username || 'Anônimo',
@@ -99,7 +163,6 @@ createPostForm.addEventListener('submit', async (e) => {
     }
 });
 
-
 // Carregar as publicações
 function loadPosts() {
     const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
@@ -119,7 +182,6 @@ function linkifyContent(text) {
     return linkedText;
 }
 
-
 // Renderizar uma publicação no HTML
 function renderPost(post, postId) {
     const postCard = document.createElement('div');
@@ -128,7 +190,6 @@ function renderPost(post, postId) {
     const timestamp = post.timestamp ? post.timestamp.toDate().toLocaleString('pt-BR') : 'Agora mesmo';
     const isLiked = currentUser && post.likes.includes(currentUser.uid);
     const isOwner = currentUser && currentUser.uid === post.userId;
-
     const linkedContent = linkifyContent(post.content);
 
     postCard.innerHTML = `
@@ -166,7 +227,6 @@ function renderPost(post, postId) {
         const optionsMenu = postCard.querySelector('.options-menu');
         optionsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Fecha outros menus abertos
             document.querySelectorAll('.options-menu.active').forEach(menu => {
                 if (menu !== optionsMenu) menu.classList.remove('active');
             });
@@ -212,32 +272,24 @@ async function loadAndRenderComments(postId, container, parentId = 'root') {
             const commentData = change.doc.data();
             const commentElement = container.querySelector(`[data-comment-id="${commentId}"]`);
 
-            if (change.type === "added") {
-                if (!commentElement) {
-                    renderComment(postId, commentId, commentData, container);
+            if (change.type === "added" && !commentElement) {
+                renderComment(postId, commentId, commentData, container);
+            }
+            if (change.type === "modified" && commentElement) {
+                const textSpan = commentElement.querySelector('.comment-text');
+                const likeBtn = commentElement.querySelector('.like-comment-btn');
+                if (textSpan) textSpan.innerHTML = linkifyContent(commentData.commentText);
+                if (likeBtn) {
+                    likeBtn.innerHTML = `<i class="fa fa-heart"></i> ${commentData.likes.length}`;
+                    likeBtn.classList.toggle('liked', commentData.likes.includes(currentUser.uid));
                 }
             }
-            if (change.type === "modified") {
-                if (commentElement) {
-                    // Atualiza apenas o texto e os likes para ser mais eficiente
-                    const textSpan = commentElement.querySelector('.comment-text');
-                    const likeBtn = commentElement.querySelector('.like-comment-btn');
-                    if (textSpan) textSpan.innerHTML = linkifyContent(commentData.commentText);
-                    if (likeBtn) {
-                        likeBtn.innerHTML = `<i class="fa fa-heart"></i> ${commentData.likes.length}`;
-                        likeBtn.classList.toggle('liked', commentData.likes.includes(currentUser.uid));
-                    }
-                }
-            }
-            if (change.type === "removed") {
-                if (commentElement) {
-                    commentElement.remove();
-                }
+            if (change.type === "removed" && commentElement) {
+                commentElement.remove();
             }
         });
     });
 }
-
 
 function renderComment(postId, commentId, commentData, container) {
     const commentElement = document.createElement('div');
@@ -399,7 +451,6 @@ function openEditCommentModal(postId, commentId, currentText) {
             const commentRef = doc(db, 'posts', postId, 'comments', commentId);
             await updateDoc(commentRef, { commentText: newText });
         }
-        // Restaura o modal e o fecha
         modalBody.innerHTML = '<p id="confirm-modal-text">Você tem certeza?</p>';
         okBtn.textContent = "Confirmar";
         modal.style.display = 'none';
@@ -449,6 +500,7 @@ async function sharePost(postId, postText) {
 
 async function deletePost(postId, imageUrl) {
     try {
+        // Futuramente, usar uma Cloud Function para deletar subcoleções de forma eficiente.
         await deleteDoc(doc(db, 'posts', postId));
         if (imageUrl) {
             const imageRef = ref(storage, imageUrl);
@@ -467,12 +519,14 @@ function showConfirmModal(title, message, onConfirm) {
         return;
     }
     const modalTitle = confirmModal.querySelector('#confirm-modal-title');
-    const modalText = confirmModal.querySelector('#confirm-modal-text');
+    const modalBody = confirmModal.querySelector('.modal-body'); // Alterado para modalBody
     const okBtn = confirmModal.querySelector('#confirm-modal-ok-btn');
     const cancelBtn = confirmModal.querySelector('#confirm-modal-cancel-btn');
+    
+    // Garante que o corpo do modal está no estado original
+    modalBody.innerHTML = `<p id="confirm-modal-text">${message}</p>`;
 
     if (modalTitle) modalTitle.textContent = title;
-    if (modalText) modalText.textContent = message;
     
     confirmModal.style.display = 'flex';
 
