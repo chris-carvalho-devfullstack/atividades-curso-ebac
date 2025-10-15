@@ -1,8 +1,47 @@
-// friends.js (Versão Final com Busca por Username Exato)
+/**
+ * Exibe um modal de informação genérico.
+ * @param {string} title - O título do modal.
+ * @param {string} message - A mensagem a ser exibida no corpo do modal.
+ */
+function showInfoModal(title, message) {
+    const modal = document.getElementById('infoModal');
+    const modalTitle = document.getElementById('info-modal-title');
+    const modalText = document.getElementById('info-modal-text');
+    const closeBtn = document.getElementById('info-modal-close-btn');
+    const closeTopBtn = document.getElementById('info-modal-close-top');
+
+    if (!modal || !modalTitle || !modalText || !closeBtn || !closeTopBtn) {
+        console.error("Elementos do modal de informação não encontrados!");
+        // Fallback para o alert caso o modal não exista no HTML
+        alert(`${title}\n\n${message}`);
+        return;
+    }
+
+    modalTitle.textContent = title;
+    modalText.textContent = message;
+
+    modal.style.display = 'flex'; // Usa flex para centralizar
+    
+    // Função para fechar o modal
+    const closeModal = () => {
+        modal.style.display = 'none';
+    };
+
+    // Adiciona listeners para fechar o modal
+    closeBtn.onclick = closeModal;
+    closeTopBtn.onclick = closeModal;
+    modal.onclick = (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
+}
+
+// friends.js (Versão Final com Busca por Username Exato e Modais)
 
 // ===========================
 // IMPORTAÇÕES DO FIREBASE
-// =ual=========================
+// ===========================
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import {
@@ -31,7 +70,7 @@ onAuthStateChanged(auth, user => {
         // Se o usuário estiver logado, carrega os dados e configura os listeners.
         loadFriendRequests(user.uid);
         loadFriends(user.uid);
-        setupSearchListeners(user.uid); // ATUALIZADO para a nova busca
+        setupSearchListeners(user.uid);
         setupTabListeners();
     } else {
         // Se não estiver logado, redireciona para a página de login.
@@ -176,12 +215,12 @@ async function acceptFriendRequest(senderUid, receiverUid) {
 
     try {
         await batch.commit();
-        alert("Amigo adicionado com sucesso!");
+        showInfoModal("Sucesso!", "Amigo adicionado com sucesso!");
         loadFriendRequests(receiverUid);
         loadFriends(receiverUid);
     } catch (error) {
         console.error("Erro ao aceitar pedido:", error);
-        alert("Não foi possível aceitar o pedido. Tente novamente.");
+        showInfoModal("Erro", "Não foi possível aceitar o pedido. Tente novamente.");
     }
 }
 
@@ -194,21 +233,20 @@ async function rejectFriendRequest(senderUid, receiverUid) {
     const requestRef = doc(db, "users", receiverUid, "friendRequests", senderUid);
     try {
         await deleteDoc(requestRef);
-        alert("Pedido de amizade rejeitado.");
+        showInfoModal("Aviso", "Pedido de amizade rejeitado.");
         loadFriendRequests(receiverUid);
     } catch (error) {
         console.error("Erro ao rejeitar pedido:", error);
-        alert("Não foi possível rejeitar o pedido. Tente novamente.");
+        showInfoModal("Erro", "Não foi possível rejeitar o pedido. Tente novamente.");
     }
 }
 
-
 // ==================================================================
-// NOVA LÓGICA DE BUSCA (SUBSTITUI A ANTERIOR)
+// LÓGICA DE BUSCA
 // ==================================================================
 
 /**
- * ATUALIZADO: Busca um usuário por correspondência exata do nome de usuário.
+ * Busca um usuário por correspondência exata do nome de usuário.
  * @param {string} currentUserUid - O ID do usuário que está realizando a busca.
  * @param {string} searchTerm - O termo a ser buscado (o @username).
  */
@@ -216,7 +254,6 @@ async function searchUserByUsername(currentUserUid, searchTerm) {
     const searchList = document.getElementById('search-list');
     if (!searchList) return;
 
-    // Padroniza o termo de busca para minúsculas, remove o '@' e espaços.
     const term = searchTerm.toLowerCase().replace('@', '').trim();
 
     if (term.length < 3) {
@@ -228,13 +265,11 @@ async function searchUserByUsername(currentUserUid, searchTerm) {
 
     try {
         const usersRef = collection(db, "users");
-        // A consulta agora busca por uma correspondência EXATA no campo 'usernameSearch'
         const q = query(usersRef, where("usernameSearch", "==", term));
         const querySnapshot = await getDocs(q);
 
         const results = new Map();
         querySnapshot.forEach(docSnap => {
-            // Garante que o usuário não encontre a si mesmo na busca
             if (docSnap.id !== currentUserUid) {
                 results.set(docSnap.id, docSnap.data());
             }
@@ -282,19 +317,16 @@ function renderSearchResults(results) {
 }
 
 /**
- * ATUALIZADO: Configura o listener do campo de busca para acionar com a tecla "Enter".
+ * Configura o listener do campo de busca para acionar com a tecla "Enter".
  * @param {string} uid - O ID do usuário logado.
  */
 function setupSearchListeners(uid) {
     const searchInput = document.getElementById('search-input');
     if (!searchInput) return;
 
-    // Adiciona um listener para a tecla "Enter"
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
-            // Previne o comportamento padrão de formulário (caso exista)
             e.preventDefault(); 
-            // Chama a nova função de busca
             searchUserByUsername(uid, searchInput.value);
         }
     });
