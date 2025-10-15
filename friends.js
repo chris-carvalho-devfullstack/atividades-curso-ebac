@@ -12,22 +12,18 @@ function showInfoModal(title, message) {
 
     if (!modal || !modalTitle || !modalText || !closeBtn || !closeTopBtn) {
         console.error("Elementos do modal de informação não encontrados!");
-        // Fallback para o alert caso o modal não exista no HTML
         alert(`${title}\n\n${message}`);
         return;
     }
 
     modalTitle.textContent = title;
     modalText.textContent = message;
-
-    modal.style.display = 'flex'; // Usa flex para centralizar
+    modal.style.display = 'flex';
     
-    // Função para fechar o modal
     const closeModal = () => {
         modal.style.display = 'none';
     };
 
-    // Adiciona listeners para fechar o modal
     closeBtn.onclick = closeModal;
     closeTopBtn.onclick = closeModal;
     modal.onclick = (event) => {
@@ -37,11 +33,43 @@ function showInfoModal(title, message) {
     };
 }
 
-// friends.js (Versão Final com Busca por Username Exato e Modais)
+/**
+ * NOVO: Exibe um modal de confirmação para ações críticas.
+ * @param {string} title - O título do modal.
+ * @param {string} message - A mensagem de confirmação.
+ * @param {function} onConfirm - A função a ser executada se o usuário confirmar.
+ */
+function showConfirmModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirmModal');
+    const modalTitle = document.getElementById('confirm-modal-title');
+    const modalText = document.getElementById('confirm-modal-text');
+    const okBtn = document.getElementById('confirm-modal-ok-btn');
+    const cancelBtn = document.getElementById('confirm-modal-cancel-btn');
 
-// ===========================
-// IMPORTAÇÕES DO FIREBASE
-// ===========================
+    if (!modal || !modalTitle || !modalText || !okBtn || !cancelBtn) {
+        console.error("Elementos do modal de confirmação não encontrados!");
+        if (confirm(`${title}\n\n${message}`)) {
+            onConfirm();
+        }
+        return;
+    }
+    
+    modalTitle.textContent = title;
+    modalText.textContent = message;
+    modal.style.display = 'flex';
+
+    okBtn.onclick = () => {
+        onConfirm();
+        modal.style.display = 'none';
+    };
+
+    cancelBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+}
+
+// friends.js (Versão Final com Remoção de Amigo e Modais)
+
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import {
@@ -62,25 +90,59 @@ import {
 window.acceptFriendRequest = acceptFriendRequest;
 window.rejectFriendRequest = rejectFriendRequest;
 
+/**
+ * NOVO: Remove a amizade entre dois usuários de forma mútua.
+ * @param {string} currentUserUid - O UID do usuário logado.
+ * @param {string} friendUid - O UID do amigo a ser removido.
+ */
+async function removeFriend(currentUserUid, friendUid) {
+    const batch = writeBatch(db);
+
+    const userFriendRef = doc(db, "users", currentUserUid, "friends", friendUid);
+    batch.delete(userFriendRef);
+
+    const friendUserRef = doc(db, "users", friendUid, "friends", currentUserUid);
+    batch.delete(friendUserRef);
+
+    try {
+        await batch.commit();
+        showInfoModal("Amizade Desfeita", "A amizade foi desfeita com sucesso.");
+        loadFriends(currentUserUid); // Recarrega a lista para refletir a remoção
+    } catch (error) {
+        console.error("Erro ao remover amigo:", error);
+        showInfoModal("Erro", "Não foi possível desfazer a amizade. Tente novamente.");
+    }
+}
+
+// NOVO: Função intermediária para ser chamada pelo HTML, garantindo a confirmação
+window.confirmRemoveFriend = function(friendUid, friendUsername) {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    showConfirmModal(
+        "Remover Amigo",
+        `Você tem certeza que deseja remover @${friendUsername} da sua lista de amigos?`,
+        () => {
+            removeFriend(currentUser.uid, friendUid);
+        }
+    );
+};
+
+
 // ===========================
-// LISTENER DE AUTENTICAÇÃO
+// LÓGICA PRINCIPAL
 // ===========================
 onAuthStateChanged(auth, user => {
     if (user) {
-        // Se o usuário estiver logado, carrega os dados e configura os listeners.
         loadFriendRequests(user.uid);
         loadFriends(user.uid);
         setupSearchListeners(user.uid);
         setupTabListeners();
     } else {
-        // Se não estiver logado, redireciona para a página de login.
         window.location.href = 'login.html';
     }
 });
 
-/**
- * Configura os listeners para a navegação por abas.
- */
 function setupTabListeners() {
     const tabs = document.querySelectorAll('.tab-link');
     tabs.forEach(tab => {
@@ -97,8 +159,7 @@ function setupTabListeners() {
 }
 
 /**
- * Carrega e exibe a lista de amigos do usuário.
- * @param {string} uid - O ID do usuário logado.
+ * Carrega e exibe a lista de amigos do usuário (LÓGICA ATUALIZADA).
  */
 async function loadFriends(uid) {
     const friendsList = document.getElementById('friends-list');
@@ -131,6 +192,8 @@ async function loadFriends(uid) {
                         </div>
                         <div class="user-actions">
                             <button onclick="window.location.href='public-profile.html?uid=${friendData.id}'">Ver Perfil</button>
+                            <!-- BOTÃO DE REMOVER ADICIONADO -->
+                            <button class="btn-reject" onclick="confirmRemoveFriend('${friendData.id}', '${username}')">Remover</button>
                         </div>
                     </li>
                 `;
@@ -144,10 +207,7 @@ async function loadFriends(uid) {
     }
 }
 
-/**
- * Carrega e exibe os pedidos de amizade pendentes.
- * @param {string} uid - O ID do usuário logado.
- */
+// ... (O restante das funções: loadFriendRequests, acceptFriendRequest, rejectFriendRequest, searchUserByUsername, etc., continuam iguais)
 async function loadFriendRequests(uid) {
     const requestsList = document.getElementById('requests-list');
     if (!requestsList) return;
@@ -199,11 +259,6 @@ async function loadFriendRequests(uid) {
     }
 }
 
-/**
- * Aceita um pedido de amizade, criando uma relação mútua.
- * @param {string} senderUid - O ID de quem enviou o pedido.
- * @param {string} receiverUid - O ID de quem está aceitando o pedido.
- */
 async function acceptFriendRequest(senderUid, receiverUid) {
     const batch = writeBatch(db);
     const receiverFriendsRef = doc(db, "users", receiverUid, "friends", senderUid);
@@ -224,11 +279,6 @@ async function acceptFriendRequest(senderUid, receiverUid) {
     }
 }
 
-/**
- * Rejeita um pedido de amizade.
- * @param {string} senderUid - O ID de quem enviou o pedido.
- * @param {string} receiverUid - O ID de quem está rejeitando o pedido.
- */
 async function rejectFriendRequest(senderUid, receiverUid) {
     const requestRef = doc(db, "users", receiverUid, "friendRequests", senderUid);
     try {
@@ -241,15 +291,6 @@ async function rejectFriendRequest(senderUid, receiverUid) {
     }
 }
 
-// ==================================================================
-// LÓGICA DE BUSCA
-// ==================================================================
-
-/**
- * Busca um usuário por correspondência exata do nome de usuário.
- * @param {string} currentUserUid - O ID do usuário que está realizando a busca.
- * @param {string} searchTerm - O termo a ser buscado (o @username).
- */
 async function searchUserByUsername(currentUserUid, searchTerm) {
     const searchList = document.getElementById('search-list');
     if (!searchList) return;
@@ -283,10 +324,6 @@ async function searchUserByUsername(currentUserUid, searchTerm) {
     }
 }
 
-/**
- * Renderiza a lista de resultados da busca de usuários.
- * @param {Map<string, object>} results - Um Map com os dados dos usuários encontrados.
- */
 function renderSearchResults(results) {
     const searchList = document.getElementById('search-list');
     if (!searchList) return;
@@ -316,10 +353,6 @@ function renderSearchResults(results) {
     searchList.innerHTML = searchHTML;
 }
 
-/**
- * Configura o listener do campo de busca para acionar com a tecla "Enter".
- * @param {string} uid - O ID do usuário logado.
- */
 function setupSearchListeners(uid) {
     const searchInput = document.getElementById('search-input');
     if (!searchInput) return;
@@ -331,3 +364,4 @@ function setupSearchListeners(uid) {
         }
     });
 }
+

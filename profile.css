@@ -152,3 +152,29 @@
 .info-item i { color: #4CAF50; font-size: 1.2rem; width: 20px; text-align: center; }
 .info-item a { color: #4CAF50; text-decoration: none; font-weight: 600; }
 .info-item a:hover { text-decoration: underline; }
+/* Adicione no final de profile.css */
+
+/* Estilo para o botão de amigo quando está no estado 'Amigos' */
+.btn-amigos {
+    background-color: #4CAF50; /* Verde */
+    color: white;
+    border: 1px solid #4CAF50;
+}
+
+/* Estilo para o botão de remover amigo (e para o hover do btn-amigos) */
+.btn-remover-amigo {
+    background-color: #dc3545; /* Vermelho */
+    color: white;
+    border: 1px solid #dc3545;
+}
+
+/* Garante que o cursor seja uma 'mãozinha' (pointer) */
+.btn-amigos, .btn-remover-amigo {
+    cursor: pointer;
+}
+
+/* Estilo para o botão desabilitado para corrigir o cursor */
+#add-friend-btn:disabled {
+    cursor: default;
+    opacity: 0.7;
+}
