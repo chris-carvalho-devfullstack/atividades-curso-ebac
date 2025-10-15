@@ -30,7 +30,7 @@ nav {
     gap: 1rem;
     align-items: center;
     padding: 0.5rem 1rem;
-    justify-content: center; /* Centraliza os itens no desktop */
+    justify-content: center;
 }
 
 .nav-links li a {
@@ -68,7 +68,7 @@ nav {
     display: none;
     position: absolute;
     right: 0;
-    top: 110%; /* Posição abaixo do toggle */
+    top: 110%;
     background: #fff;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -111,10 +111,9 @@ nav {
 }
 
 #mobile-profile-container .profile-submenu {
-    top: 45px; /* Ajuste para o avatar mobile */
+    top: 45px;
 }
 
-/* Oculta o menu principal em telas pequenas */
 @media (max-width: 768px) {
     .nav-mobile-header-bar {
         display: flex;
@@ -125,7 +124,7 @@ nav {
         flex-direction: column;
         background: #fff;
         position: absolute;
-        top: 60px; /* Abaixo da barra mobile */
+        top: 60px;
         left: 0;
         width: 100%;
         padding: 1rem 0;
@@ -136,22 +135,17 @@ nav {
         display: flex;
     }
 
-    /* Esconde o perfil de DENTRO do menu hamburguer para evitar duplicidade */
-    #main-nav-list #desktop-profile-container {
-        display: none !important;
-    }
+    #main-nav-list #desktop-profile-container,
     #main-nav-list #nav-login-btn {
         display: none !important;
     }
 }
 
-/* Desktop mantém o menu principal e esconde o mobile */
 @media (min-width: 769px) {
     .nav-mobile-header-bar {
         display: none;
     }
 }
-
 
 /* ======================= CABEÇALHO FORM ======================= */
 .task-form-header {
@@ -212,7 +206,31 @@ nav {
 }
 .progress-bar.completed { text-decoration:none !important; color:white !important; }
 
-/* ======================= LISTA DE TAREFAS (Restante do código) ======================= */
+/* ======================= INPUTS E SELECTS COM ÍCONE (CORRIGIDO) ======================= */
+.input-with-icon,
+.select-with-icon {
+    position: relative;
+    width: 100%;
+}
+
+.input-with-icon i,
+.select-with-icon i {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    pointer-events: none; /* não atrapalha o clique */
+}
+
+.input-with-icon input,
+.select-with-icon select {
+    width: 100%;
+    padding-left: 35px !important; /* espaço para o ícone. !important para garantir */
+    box-sizing: border-box;
+}
+
+/* ======================= LISTA DE TAREFAS ======================= */
 #task-list { list-style:none; padding:0; text-align:left; }
 #task-list > li {
     padding:12px 15px;
@@ -480,7 +498,7 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 .modal .modal-body input[type="time"],
 .modal .modal-body textarea { 
     width: 100%;
-    padding: 10px;
+    padding: 10px; /* Padding base */
     margin: 0; 
     border-radius: 8px;
     border: 1px solid #ccc;
@@ -491,28 +509,6 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 .modal .modal-body input:focus, .modal .modal-body select:focus {
     border-color: #4CAF50;
     outline: none;
-}
-.modal .modal-body .input-with-icon { position: relative; }
-.modal .modal-body .input-with-icon i,
-.modal .modal-body .select-with-icon i {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-    pointer-events: none;
-    font-size: 1.1em;
-}
-.modal .modal-body .input-with-icon input, 
-.modal .modal-body .select-with-icon select {
-    padding: 10px 10px 10px 30px;
-}
-.modal .modal-body input[type="date"],
-.modal .modal-body input[type="time"] {
-    -webkit-appearance: auto;
-    -moz-appearance: auto;
-    appearance: auto; 
-    padding: 10px; 
 }
 #addTaskModal .modal-content, 
 #filterModal .modal-content { 
