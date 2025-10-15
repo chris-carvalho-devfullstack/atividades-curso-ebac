@@ -725,41 +725,44 @@ onAuthStateChanged(auth, (user) => {
             initCalendar(); 
             setInterval(checkAllDueDates, 60 * 1000); 
 
+            /* ------------------ NOVA LÓGICA DO MENU RESPONSIVO ------------------ */
+            
+            // MENU HAMBURGUER - abre/fecha menu principal no mobile
+            const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
+            const mainNavList = document.getElementById("main-nav-list");
+
+            if (mobileMenuToggle && mainNavList) {
+                mobileMenuToggle.addEventListener("click", () => {
+                    mainNavList.classList.toggle("active");
+                });
+            }
+
             /* ------------------ EVENT HANDLERS (DOM INTERACTION) ------------------ */
 
             /* ---------- Mostrar/Esconder Formulário e Filtros (MODAL) ---------- */
-            // NOVO: Abre o modal de Adicionar Tarefa
             $('#toggle-form-btn').off('click').on('click', function() {
                 showModal('#addTaskModal'); 
-                // Pequeno atraso para focar no input após o modal abrir
                 setTimeout(() => { $('#task-text').focus(); }, 150); 
             });
 
-            // NOVO: Abre o modal de Pesquisar e Filtrar
             $('#toggle-filter-btn').off('click').on('click', function() {
                 showModal('#filterModal');
-                // Pequeno atraso para focar no input após o modal abrir
                 setTimeout(() => { $('#search-input').focus(); }, 150);
             });
             
-            // Handlers para fechar os novos modais
             $('#add-task-cancel-btn').on('click', function() { 
                 hideModal('#addTaskModal'); 
             });
             
-            // O botão de aplicar filtro também fecha o modal
             $('#filter-apply-btn').on('click', function() {
-                applyFilter(); // Aplica o filtro antes de fechar
+                applyFilter();
                 hideModal('#filterModal');
             });
             
-            // O botão de fechar do modal de filtro
             $('#filter-cancel-btn').on('click', function() {
                 hideModal('#filterModal');
             });
 
-
-            // Handler de fechar modais padrão (Escape e Close Button)
             $('.modal .close, .modal .close-top-right').on('click', function() { 
                 hideModal($(this).closest('.modal')); 
             });
@@ -791,7 +794,7 @@ onAuthStateChanged(auth, (user) => {
                 $('#task-time').val('');
                 $('#task-category').val('geral');
                 
-                hideModal('#addTaskModal'); // <--- Ação de fechar o modal
+                hideModal('#addTaskModal');
             });
 
 
@@ -804,7 +807,6 @@ onAuthStateChanged(auth, (user) => {
                 let task = tasks.find(t => t.id === taskId);
                 if (!task) return;
                 
-                // Marca/desmarca o status da tarefa principal e propaga para todos os filhos
                 const recursiveCheck = (subtasks) => {
                     return subtasks.map(st => ({
                         ...st,
@@ -832,12 +834,10 @@ onAuthStateChanged(auth, (user) => {
 
                 const isCompleted = $(this).prop('checked');
                 
-                // 1. Atualiza o status da sub-tarefa alvo e seus filhos (recursivamente)
                 const updateTargetAndChildren = (subtasks) => {
                     return subtasks.map(st => {
                         if (st.id === subId) {
                             st.completed = isCompleted;
-                            // Propaga para filhos
                             if (st.subtasks) st.subtasks = st.subtasks.map(child => ({...child, completed: isCompleted}));
                         } else if (st.subtasks && st.subtasks.length > 0) {
                             st.subtasks = updateTargetAndChildren(st.subtasks);
@@ -848,10 +848,8 @@ onAuthStateChanged(auth, (user) => {
                 
                 let updatedSubtasks = updateTargetAndChildren(task.subtasks);
 
-                // 2. Verifica o status da Tarefa Principal com o novo array
                 const isMainTaskCompleted = checkCompletionStatusRecursively(updatedSubtasks);
 
-                // 3. Salva no Firestore
                 await updateTaskInFirestore(taskId, { 
                     subtasks: updatedSubtasks,
                     completed: isMainTaskCompleted 
@@ -878,18 +876,13 @@ onAuthStateChanged(auth, (user) => {
                     hideModal('#confirmModal');
                 });
             });
-
-            /* ---------- REMOVER SUBTAREFA (MODIFICADO - QUALQUER NÍVEL) ---------- */
-            // Esta lógica foi movida para dentro do menu de contexto e é tratada pela função deleteSubtaskViaModal
             
-            // NOVO EVENTO: Adicionar Subtarefa Aninhada
             $(document).on('click', '.add-nested-subtask-btn', function() {
                 const taskId = $(this).data('task-id');
                 const parentId = $(this).data('parent-id');
                 openSubtaskModalForCreate(taskId, parentId);
             });
 
-            // MODIFICADO: Adicionar Subtarefa (Principal)
             $(document).on('click', '.add-subtask-btn', function () {
                 const taskId = $(this).data('task-id') || $(this).closest('li').data('id');
                 if (!taskId) return;
@@ -897,12 +890,10 @@ onAuthStateChanged(auth, (user) => {
             });
 
 
-            // MODIFICADO: Lógica de Salvar/Adicionar Subtarefa (Unifica Edição e Criação Aninhada)
             $('#subtask-add-btn').off('click').on('click', async function () { 
                 const { taskId, subtaskId, isEdit, parentId } = currentSubtaskData;
                 const subtaskText = $('#subtask-input').val().trim();
                 
-                // Pega os novos campos do modal
                 const newSubtaskData = {
                     text: subtaskText,
                     priority: $('#subtask-priority').val(),
@@ -920,7 +911,6 @@ onAuthStateChanged(auth, (user) => {
 
                 if (isEdit) {
                     updatedSubtasks = updateNestedSubtasks(task.subtasks, subtaskId, (sub) => {
-                        // Atualiza todos os campos
                         return { ...sub, ...newSubtaskData };
                     });
                     
@@ -978,7 +968,6 @@ onAuthStateChanged(auth, (user) => {
                 currentTaskLi=null;
             });
             
-            /* ---------- FILTRO / PESQUISA (NOVO: Usam o modal de filtro) ---------- */
             $('#search-input').on('input', applyFilter);
             $('#filter-priority').on('change', applyFilter);
             $('#filter-category').on('change', applyFilter);

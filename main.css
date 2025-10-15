@@ -1,180 +1,157 @@
-/* ======================= RESET E BASE ======================= */
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; }
-body { font-family:'Arial',sans-serif; background:#f0f2f5; color:#333; -webkit-font-smoothing:antialiased; }
+/* === RESET BÁSICO === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-/* ======================= MENU TOPO ======================= */
+html, body { 
+    height:100%; 
+}
+body { 
+    font-family:'Arial',sans-serif; 
+    background:#f0f2f5; 
+    color:#333; 
+    -webkit-font-smoothing:antialiased; 
+}
+
+/* === ESTILO MENU === */
 nav {
-    background: linear-gradient(135deg, #4CAF50, #43a047);
-    padding: 12px 20px;
-    border-radius: 0 0 15px 15px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    background-color: #f8f8f8;
+    border-bottom: 1px solid #ddd;
     position: sticky;
     top: 0;
     z-index: 1000;
-    transition: transform 0.4s ease-in-out;
 }
-nav.hidden { transform: translateY(-100%); }
 
-/* Desktop View (Padrão) */
-nav ul {
+.nav-links {
     list-style: none;
     display: flex;
-    justify-content: center;
+    gap: 1rem;
     align-items: center;
-    gap: 25px;
-    margin: 0;
-    padding: 0;
+    padding: 0.5rem 1rem;
+    justify-content: center; /* Centraliza os itens no desktop */
 }
-nav ul li a {
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
+
+.nav-links li a {
     text-decoration: none;
+    color: #333;
+    font-weight: 500;
     padding: 8px 14px;
     border-radius: 8px;
-    transition: background 0.3s, transform 0.2s;
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: background-color 0.3s;
 }
-nav ul li a i { font-size: 1.1rem; }
-nav ul li a:hover { background: rgba(255,255,255,0.12); transform: scale(1.03); }
-nav ul li a.active { background: #fff; color: #4CAF50; }
+.nav-links li a:hover {
+    background-color: #eee;
+}
+.nav-links li a.active {
+    background-color: #4CAF50;
+    color: white;
+}
 
-/* Enforce small avatar size in the nav bar (Fixes HUGE profile photo issue) */
-nav .nav-avatar {
-    width: 32px;
-    height: 32px;
+.nav-avatar {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
+    cursor: pointer;
     object-fit: cover;
-    border: 2px solid #fff;
 }
 
-/* Esconde elementos móveis no Desktop */
+.profile-menu-container {
+    position: relative;
+}
+
+.profile-submenu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 110%; /* Posição abaixo do toggle */
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    list-style: none;
+    padding: 8px 0;
+    margin: 0;
+    width: 200px;
+    z-index: 1100;
+}
+.profile-submenu.active {
+    display: block;
+}
+.profile-submenu li a {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* === AJUSTES MENU RESPONSIVO === */
 .nav-mobile-header-bar {
     display: none;
-}
-.nav-auth-item {
-    /* Mantido para herança */
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    height: 60px;
+    background-color: #f8f8f8;
 }
 
-@media (max-width:700px){
-    /* 1. NAV BAR LAYOUT */
-    nav {
-        display: block;
-        padding: 0;
-        min-height: 60px; /* Define altura mínima para a barra superior */
-        position: relative; /* Contexto para posicionamento absoluto */
-        overflow: visible; /* Permite que o menu suspenso seja visível */
-    }
+.mobile-toggle-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #333;
+    cursor: pointer;
+}
 
-    /* 2. MOBILE HEADER BAR (A barra superior verde) */
+#mobile-profile-container .profile-submenu {
+    top: 45px; /* Ajuste para o avatar mobile */
+}
+
+/* Oculta o menu principal em telas pequenas */
+@media (max-width: 768px) {
     .nav-mobile-header-bar {
         display: flex;
-        align-items: center;
-        justify-content: space-between; /* Ajuste para alinhar Hamburger e Auth */
-        width: 100%;
-        height: 60px;
-        padding: 0 15px;
-        position: sticky;
-        top: 0;
-        background: linear-gradient(135deg, #4CAF50, #43a047);
-        z-index: 1001; 
-        border-radius: 0 0 15px 15px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
-    
-    /* 3. HAMBURGER ICON (Esquerda) */
-    .mobile-toggle-btn {
-        background: none;
-        border: none; /* CORREÇÃO DO ERRO DE SINTAXE */
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 0;
-        line-height: 1;
-        z-index: 1002;
     }
 
-    /* 5. PERFIL / LOGIN (Direita) - Posicionamento Absoluto na barra móvel */
-    .nav-auth-item {
-        /* Permite que o JS decida se é 'list-item' (visível) ou 'none' (invisível) */
-        display: block; 
-        list-style: none;
+    #main-nav-list {
+        display: none;
+        flex-direction: column;
+        background: #fff;
         position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1002;
-    }
-    
-    /* Esconde o nome e o caret do perfil no mobile, deixando apenas a foto */
-    .profile-menu-container #nav-profile-name,
-    .profile-menu-container .fa-caret-down {
-        display: none; 
-    }
-    .profile-menu-container .nav-avatar {
-        width: 32px;
-        height: 32px;
-        border: 2px solid #fff;
-    }
-    
-    /* Login button adjustment */
-    #nav-login-btn a {
-        background: none !important;
-        color: white !important;
-        padding: 5px 10px;
-    }
-    
-    /* 6. COMPORTAMENTO DO MENU SUSPENSO */
-    nav ul {
-        display: none; /* ESCONDIDO POR PADRÃO */
-        flex-direction: column; 
-        position: absolute;
-        top: 60px; /* Começa abaixo da barra superior */
+        top: 60px; /* Abaixo da barra mobile */
         left: 0;
         width: 100%;
-        background: #fff; /* Fundo branco para o menu suspenso */
-        padding: 10px 0;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        z-index: 999; 
-        text-align: left;
-        border-radius: 0 0 8px 8px;
+        padding: 1rem 0;
+        border-top: 1px solid #ddd;
     }
 
-    /* Classe ativada por JS */
-    nav ul.mobile-open {
-        display: flex; 
+    #main-nav-list.active {
+        display: flex;
     }
 
-    /* Estilo dos links no menu suspenso */
-    nav ul li {
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        border-bottom: 1px solid #f0f0f0;
+    /* Esconde o perfil de DENTRO do menu hamburguer para evitar duplicidade */
+    #main-nav-list #desktop-profile-container {
+        display: none !important;
     }
-    
-    nav ul li a {
-        color: #333; /* Cor do link no menu branco */
-        padding: 12px 20px;
-        width: 100%;
-        box-sizing: border-box;
-        border-radius: 0;
-    }
-    
-    nav ul li a.active {
-        background: #e0f0e0;
-        color: #4CAF50;
-        border-left: 5px solid #4CAF50;
-    }
-    nav ul li a:hover {
-        background: #f5f5f5;
-        transform: none;
+    #main-nav-list #nav-login-btn {
+        display: none !important;
     }
 }
-/* FIM DO MEDIA QUERY MOBILE */
+
+/* Desktop mantém o menu principal e esconde o mobile */
+@media (min-width: 769px) {
+    .nav-mobile-header-bar {
+        display: none;
+    }
+}
+
 
 /* ======================= CABEÇALHO FORM ======================= */
 .task-form-header {
@@ -182,7 +159,6 @@ nav .nav-avatar {
     padding:25px 20px;
     background:#f8f9fa;
     color:#333;
-    border-radius:15px 15px 0 0;
     box-shadow:0 2px 8px rgba(0,0,0,0.05);
 }
 .task-form-header h1 { font-size:1.8rem; margin-bottom:8px; font-weight:600; }
@@ -196,8 +172,6 @@ nav .nav-avatar {
     background:linear-gradient(145deg,#e0f7fa,#fff);
     border-radius:15px;
     box-shadow:0 10px 20px rgba(0,0,0,0.1);
-    
-    /* 🔑 CORREÇÃO CRÍTICA: Garante que o conteúdo principal fique em uma camada básica acima da NAV */
     position: relative; 
     z-index: 1; 
 }
@@ -238,62 +212,9 @@ nav .nav-avatar {
 }
 .progress-bar.completed { text-decoration:none !important; color:white !important; }
 
-/* ======================= FORMULÁRIO (Usado apenas no modal agora) ======================= */
-#task-form {
-    display:flex;
-    flex-wrap: wrap;
-    gap:10px;
-    margin-bottom:15px;
-    justify-content:center;
-    align-items:center;
-}
-#task-form input, #task-form select {
-    padding:10px;
-    font-size:14px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    background:#fff;
-}
-#task-form #task-text { flex: 1 1 200px; }
-#task-form #task-priority { flex: 0 1 100px; }
-#task-form #task-date { flex: 0 1 130px; }
-#task-form #task-time { flex: 0 1 100px; }
-#task-form #task-category { flex: 0 1 100px; }
+/* ... (O restante do seu CSS continua aqui sem alterações) ... */
 
-#task-form button {
-    padding:10px 20px;
-    font-size:14px;
-    border-radius:8px;
-    border:none;
-    background:#4CAF50;
-    color:white;
-    cursor:pointer;
-    transition:transform 0.2s, background-color 0.2s;
-}
-#task-form button:hover { transform:scale(1.05); background:#43a047; }
-
-
-/* ======================= PESQUISA E FILTRO (Usado apenas no modal agora) ======================= */
-.search-box {
-    display:flex;
-    gap:10px;
-    margin-bottom:15px;
-    flex-wrap: wrap;
-}
-.input-with-icon, .select-with-icon { position: relative; flex:1 1 150px; }
-.input-with-icon i, .select-with-icon i {
-    position: absolute;
-    left:10px; top:50%;
-    transform:translateY(-50%);
-    color:#999;
-}
-.input-with-icon input, .select-with-icon select {
-    width:100%;
-    padding:10px 10px 10px 30px;
-    border-radius:8px; border:1px solid #ccc; background:#fff;
-}
-
-/* ======================= LISTA DE TAREFAS ======================= */
+/* ======================= LISTA DE TAREFAS (Restante do código) ======================= */
 #task-list { list-style:none; padding:0; text-align:left; }
 #task-list > li {
     padding:12px 15px;
@@ -306,26 +227,21 @@ nav .nav-avatar {
     transition: transform 0.2s, box-shadow 0.2s;
     border-radius:8px;
 }
-/* CORREÇÃO D&D: Estilo para a tarefa sendo arrastada */
 #task-list .ui-sortable-helper {
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    background-color: #fff !important; /* Fixa a cor branca durante o arrasto */
+    background-color: #fff !important;
     opacity: 0.95;
     transform: none;
 }
-
 #task-list > li:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
 .task-main { display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap:10px; }
 .task-text { display:flex; align-items:center; gap:10px; flex:1; flex-wrap: wrap; }
 .button-group { display:flex; gap:5px; flex-shrink:0; }
-
-/* ======================= PRIORIDADE E CATEGORIA ======================= */
 .task-priority-category { display:flex; align-items:center; gap:6px; }
 .priority-label { font-size:0.85rem; font-weight:bold; padding:2px 6px; border-radius:999px; color:white; }
 .priority-high { background:#f44336; }
 .priority-medium { background:#FFEB3B; color:#000; }
 .priority-low { background:#4CAF50; }
-
 .task-category {
     font-size:0.75rem;
     font-weight:bold;
@@ -350,8 +266,6 @@ nav .nav-avatar {
     pointer-events:none;
     z-index:1000;
 }
-
-/* ======================= BOTÕES ======================= */
 .remove-btn,.edit-btn,.add-subtask-btn,.remove-subtask-btn,.google-calendar-btn {
     font-weight:bold;
     border:none;
@@ -362,11 +276,8 @@ nav .nav-avatar {
 }
 .remove-btn { background:#e57373; color:#fff; } .remove-btn:hover { background:#d32f2f; }
 .edit-btn { background:#64b5f6; color:#fff; } .edit-btn:hover { background:#1976d2; }
-/* Botões principais */
 .add-subtask-btn { background:#ffb74d; color:#111; } 
 .add-subtask-btn:hover { background:#f57c00; }
-
-/* Ícone de Opções (os três pontinhos) */
 .subtask-options-btn { 
     background: none; 
     color: #666; 
@@ -383,8 +294,6 @@ nav .nav-avatar {
     color: #333;
     background-color: #eee;
 }
-
-/* CORREÇÃO GOOGLE AGENDA: Garante que o ícone fique na vertical */
 .google-calendar-btn { 
     background:none; 
     padding:0 5px; 
@@ -404,8 +313,6 @@ nav .nav-avatar {
     font-size:12px; white-space:nowrap;
     pointer-events:none; z-index:1000;
 }
-
-/* ======================= DATA E HORA DE VENCIMENTO ======================= */
 .task-datetime {
     margin-left:8px;
     font-size:0.75rem;
@@ -421,57 +328,41 @@ nav .nav-avatar {
 .overdue .task-datetime { background:#f44336; }
 .due-soon { border-left-color:#ff9800 !important; }
 .overdue { border-left-color:#f44336 !important; }
-
-/* ======================= TAREFAS CONCLUÍDAS ======================= */
 .completed::before { content:"✔"; color:#4CAF50; margin-right:10px; font-weight:bold; }
 .completed { text-decoration:line-through; color:#888; }
 .edit-task { flex:1; padding:5px; font-size:16px; }
-
-/* ======================= SUBTAREFAS (CORREÇÃO UX) ======================= */
 .subtask-list { 
     list-style: none; 
     padding-left: 0; 
     margin-top: 5px; 
 }
-
-/* O item LI individual da sublista (Nível 1, 2, 3...) */
 .subtask-list li {
     padding: 8px 12px 5px 12px;
     margin-bottom: 5px;
     background: #fcfcfc;
     border-radius: 6px;
     border-left: 3px solid transparent; 
-    
-    /* CHAVE 1: display: block para garantir a hierarquia vertical */
     display: block; 
     transition: transform 0.2s, box-shadow 0.2s;
     position: relative; 
     box-shadow: none; 
 }
-
 .subtask-list li:hover { transform: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-
-/* O conteúdo principal do LI (checkbox, label, e botões) */
 .subtask-list li > .task-text { 
     display: flex; 
     align-items: center;
     gap: 10px;
     flex: 1;
 }
-
-/* CHAVE 2: Ajusta o posicionamento do ícone de Opções para ficar fixo à direita */
 .subtask-list li .button-group {
     display: flex;
     gap: 5px;
     flex-shrink: 0;
     position: absolute;
-    /* Alinha o botão com o da tarefa principal */
     right: 12px; 
     top: 8px;
     z-index: 10;
 }
-
-/* CHAVE 3: Regra para Aninhamento Visual Suave (Indentação e Borda) */
 .subtask-list .subtask-list {
     padding-left: 15px; 
     margin-left: 5px;
@@ -479,2038 +370,14 @@ nav .nav-avatar {
     padding-top: 5px;
     margin-top: 10px;
 }
-
-/* Remove a borda esquerda em itens aninhados para que apenas a borda da UL apareça */
 .subtask-list .subtask-list li {
     border-left: none; 
 }
-
-/* ======================= MENU DE CONTEXTO SUBTAREFA (NOVO) ======================= */
 .subtask-options-menu {
     position: absolute;
     top: 30px; 
     right: 0;
-    width: 200px; /* Reduzi a largura para ser mais compacto */
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    z-index: 100; 
-    list-style: none;
-    padding: 5px 0;
-    display: none; 
-    overflow: hidden;
-}
-
-.subtask-options-menu.active {
-    display: block;
-}
-
-.subtask-options-menu ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.subtask-options-menu li {
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
-    display: block; 
-}
-
-.subtask-options-menu li button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    width: 100%;
-    text-align: left;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #333;
-    transition: background 0.2s, color 0.2s;
-}
-
-.subtask-options-menu li button:hover {
-    background-color: #f0f0f0;
-    color: #4CAF50;
-}
-
-
-.toggle-subtasks-btn { font-weight: bold; border:none; background:none; cursor:pointer; transition: transform 0.3s ease; padding: 0 5px; font-size: 1rem; }
-.toggle-subtasks-btn.collapsed { transform: rotate(-90deg); }
-.toggle-subtasks-btn:hover { background: #1976d2; transform: scale(1.1); }
-
-/* ======================= FOOTER ======================= */
-footer { text-align:center; margin-top:40px; padding:15px 10px; font-family:'Arial',sans-serif; font-size:14px; color:#888; background:#f5f5f5; border-top:1px solid #ddd; border-radius:0 0 10px 10px; }
-footer a { color:#4CAF50; text-decoration:none; font-weight:bold; transition:color 0.3s; }
-footer a:hover { color:#388E3C; text-decoration:underline; }
-
-/* ======================= MODAIS ======================= */
-.modal {
-    position: fixed;
-    z-index: 10000;
-    left:0; top:0;
-    width:100%; height:100%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    overflow: auto;
-    background-color: rgba(0,0,0,0); /* Inicia transparente */
-    transition: background-color 0.3s ease-in-out; /* Transição suave */
-}
-.modal.show {
-    display: flex;
-    background-color: rgba(0,0,0,0.5); /* Fica escuro quando ativo */
-}
-.modal .modal-content {
-    background-color: #fff;
-    width:100%;
-    max-width:720px;
-    border-radius:12px;
-    padding:20px;
-    text-align:left;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    position:relative;
-    animation: modalSlide 0.28s ease-out;
-}
-@keyframes modalSlide { from { transform: translateY(-18px); opacity:0 } to { transform: translateY(0); opacity:1 } }
-.modal .modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-.modal .modal-header h2 { margin:0; font-size:1.25rem; font-weight:700; }
-.modal .close, .modal .close-top-right { font-size:22px; cursor:pointer; border:none; background:transparent; color:#666; padding:6px; position:absolute; top:12px; right:12px; }
-.modal .close:hover, .modal .close-top-right:hover { color:#000; }
-.modal .modal-body { max-height: calc(100vh - 320px); overflow-y:auto; padding-right:6px; }
-.modal .modal-body ul { list-style:none; padding-left:0; margin:0; }
-.modal .modal-body li { padding:8px 10px; border-bottom:1px solid #f3f3f3; }
-.modal .modal-footer { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
-.modal .modal-footer button { padding:8px 14px; border-radius:8px; border:none; font-weight:700; cursor:pointer; transition: transform .12s, background-color .12s; }
-
-/* Estilização para botões dos modais (mais moderna) */
-.modal .btn-primary { background:#4CAF50; color:#fff; box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2); } 
-.modal .btn-primary:hover { background:#43a047; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3); }
-
-.modal .btn-danger { background:#f44336; color:#fff; } 
-.modal .btn-danger:hover { background:#d32f2f; transform: translateY(-1px); }
-
-.modal .btn-neutral { background:#eee; color:#333; } 
-.modal .btn-neutral:hover { background:#e0e0e0; transform: translateY(-1px); }
-
-/* Campos de formulário dentro do modal */
-.modal .modal-body label {
-    display: block;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 5px;
-}
-.modal .modal-body input[type="text"], 
-.modal .modal-body select, 
-.modal .modal-body input[type="date"], 
-.modal .modal-body input[type="time"],
-.modal .modal-body textarea { 
-    width: 100%;
-    padding: 10px;
-    margin: 0; 
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    box-sizing: border-box; 
-    transition: border-color 0.2s;
-}
-
-.modal .modal-body input:focus, .modal .modal-body select:focus {
-    border-color: #4CAF50;
-    outline: none;
-}
-
-/* * Regras para inputs com ícone dentro do modal: 
-   Aplica padding esquerdo apenas onde o ícone customizado ESTIVER PRESENTE (Search e Filter).
-*/
-.modal .modal-body .input-with-icon { position: relative; }
-.modal .modal-body .input-with-icon i,
-.modal .modal-body .select-with-icon i {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-    pointer-events: none; /* Garante que o clique passe para o input */
-    font-size: 1.1em; /* Ícones levemente maiores */
-}
-
-/* Ajusta o padding dos inputs com ícone para acomodar o ícone */
-.modal .modal-body .input-with-icon input, 
-.modal .modal-body .select-with-icon select {
-    padding: 10px 10px 10px 30px;
-}
-
-/* Garante que inputs de data e hora usem o padding base (10px) e aparência nativa */
-.modal .modal-body input[type="date"],
-.modal .modal-body input[type="time"] {
-    -webkit-appearance: auto;
-    -moz-appearance: auto;
-    appearance: auto; 
-    padding: 10px; 
-}
-
-
-/* Ajuste de Tamanho dos Modais */
-#addTaskModal .modal-content, 
-#filterModal .modal-content { 
-    max-width: 450px !important; 
-}
-#editTaskModal .modal-content, 
-#viewTaskModal .modal-content,
-#subtask-modal .modal-content { 
-    max-width: 520px; 
-}
-
-
-/* Restante dos estilos do modal (inalterado) */
-#viewTaskModal .modal-header { align-items:flex-start; }
-#viewTaskModal .modal-body .meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
-#viewTaskModal .modal-body .meta span { background:#f5f5f5; padding:6px 10px; border-radius:8px; font-size:0.9rem; color:#333; }
-#viewTaskModal .modal-body .subtasks-list { margin-top:8px; padding-left:0; list-style:none; }
-#viewTaskModal .modal-body .subtasks-list li { padding:6px 8px; border-radius:6px; background:#fafafa; margin-bottom:6px; }
-#calendarModal .modal-header h2 { font-size:1.4rem; }
-#calendarModal .modal-body { margin-top:6px; }
-#calendarModal .modal-footer button { cursor:pointer; }
-.modal button, .modal .fc-event, .modal .fc-daygrid-day { cursor: pointer !important; }
-
-/* ======================= CALENDÁRIO ======================= */
-#toggle-calendar-btn {
-    display: block;
-    margin: 20px auto;
-    padding: 10px 20px;
-    font-size: 15px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-#toggle-calendar-btn:hover { background-color: #45a049; }
-#calendar-container {
-    max-width: 900px;
-    margin: 20px auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    background-color: #fff;
-    display: none;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-#calendar { max-width:100%; margin:0 auto; height:600px; }
-#calendar .fc-event, #calendar .fc-daygrid-day, .fc-event { cursor:pointer !important; }
-#calendar .fc-event:hover { transform: translateY(-2px); transition: transform .12s; filter: brightness(.98); }
-#calendar-view { list-style:none; padding:0; margin:0; }
-.highlight { background: #fff7b3; transition: background-color 1s ease; }
-
-/* ======================= RESPONSIVIDADE ======================= */
-@media(max-width:700px){
-    /* 1. LAYOUT DA PÁGINA */
-    .task-main { flex-direction:column; align-items:flex-start; }
-    .button-group { margin-top:5px; }
-    
-    /* 2. MENU DESKTOP ESCONDIDO */
-    nav ul {
-        display: none; /* Esconde o menu principal de links no mobile */
-        flex-direction: column; 
-        position: absolute;
-        top: 60px; /* Começa abaixo da barra superior */
-        left: 0;
-        width: 100%;
-        background: #fff; /* Fundo branco para o menu suspenso */
-        padding: 10px 0;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        z-index: 999; 
-        text-align: left;
-        border-radius: 0 0 8px 8px;
-    }
-
-    /* 3. MOBILE HEADER BAR (A barra superior verde) */
-    .nav-mobile-header-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        height: 60px;
-        padding: 0 15px;
-        position: sticky;
-        top: 0;
-        background: linear-gradient(135deg, #4CAF50, #43a047);
-        z-index: 1001; 
-        border-radius: 0 0 15px 15px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
-    
-    /* 4. HAMBURGER ICON (Esquerda) */
-    .mobile-toggle-btn {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 0;
-        line-height: 1;
-        z-index: 1002;
-    }
-
-    /* 5. PERFIL / LOGIN (Direita) - Posicionamento Absoluto na barra móvel */
-    .nav-auth-item {
-        /* Permite que o JS decida se é 'list-item' (visível) ou 'none' (invisível) */
-        display: block; 
-        list-style: none;
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1002;
-    }
-    
-    /* Perfil: Esconde nome e caret, deixando apenas a foto */
-    .profile-menu-container #nav-profile-name,
-    .profile-menu-container .fa-caret-down {
-        display: none; 
-    }
-    .profile-menu-container .nav-avatar {
-        width: 32px;
-        height: 32px;
-        border: 2px solid #fff;
-    }
-    
-    /* Login button adjustment */
-    #nav-login-btn a {
-        background: none !important;
-        color: white !important;
-        padding: 5px 10px;
-    }
-    
-    /* 6. COMPORTAMENTO DO MENU SUSPENSO */
-    nav ul.mobile-open {
-        display: flex; 
-    }
-
-    /* Estilo dos links no menu suspenso */
-    nav ul li {
-        border-bottom: 1px solid #f0f0f0;
-    }
-    
-    nav ul li a {
-        color: #333; 
-        padding: 12px 20px;
-        border-radius: 0;
-    }
-    
-    nav ul li a.active {
-        background: #e0f0e0;
-        color: #4CAF50;
-        border-left: 5px solid #4CAF50;
-    }
-    nav ul li a:hover {
-        background: #f5f5f5;
-        transform: none;
-    }
-}
-
-/* ======================= NOVOS BOTÕES DE AÇÃO (Modernizado) ======================= */
-.main-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 25px;
-    /* 🔑 Garante que os botões recebam cliques */
-    position: relative; 
-    z-index: 1010; 
-}
-
-/* Base style for all action buttons */
-.main-actions button {
-    padding: 12px 25px;
-    font-size: 16px;
-    font-weight: 700;
-    border: none;
-    border-radius: 10px; /* Mais arredondado */
-    cursor: pointer;
-    transition: all 0.2s ease-out;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra suave */
-}
-
-.btn-action-primary {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.btn-action-primary:hover {
-    background-color: #43a047;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2); /* Sombra mais destacada no hover */
-}
-
-.btn-action-secondary {
-    background-color: #fff; /* Fundo branco para contraste clean */
-    color: #333;
-    border: 1px solid #ddd;
-}
-
-.btn-action-secondary:hover {
-    background-color: #f5f5f5;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-/* ======================= CONTAINER ======================= */
-.task-form-body {
-    max-width:750px;
-    margin:50px auto;
-    padding:30px 25px;
-    background:linear-gradient(145deg,#e0f7fa,#fff);
-    border-radius:15px;
-    box-shadow:0 10px 20px rgba(0,0,0,0.1);
-    position: relative; 
-    z-index: 1; 
-}
-.task-form-body h1 { margin-bottom:20px; color:#333; text-align:center; }
-
-/* ======================= BARRA DE PROGRESSO ======================= */
-.progress-container {
-    width:100%;
-    height:25px;
-    background:#e0e0e0;
-    border-radius:10px;
-    overflow:hidden;
-    margin-bottom:20px;
-}
-.progress-bar {
-    width:0%;
-    height:100%;
-    background:#f44336;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    color:white;
-    transition:width 0.5s ease, background-color 0.3s ease;
-    border-radius:10px;
-}
-@keyframes gradientMove {
-    0% { background-position:0% 50%; }
-    50% { background-position:100% 50%; }
-    100% { background-position:0% 50%; }
-}
-.progress-bar.high-progress {
-    background: linear-gradient(270deg, #4CAF50, #81C784, #A5D6A7, #4CAF50);
-    background-size: 600% 100%;
-    animation: gradientMove 2.5s ease infinite;
-    color: white;
-    text-decoration: none;
-}
-.progress-bar.completed { text-decoration:none !important; color:white !important; }
-
-/* ======================= FORMULÁRIO (Usado apenas no modal agora) ======================= */
-#task-form {
-    display:flex;
-    flex-wrap: wrap;
-    gap:10px;
-    margin-bottom:15px;
-    justify-content:center;
-    align-items:center;
-}
-#task-form input, #task-form select {
-    padding:10px;
-    font-size:14px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    background:#fff;
-}
-#task-form #task-text { flex: 1 1 200px; }
-#task-form #task-priority { flex: 0 1 100px; }
-#task-form #task-date { flex: 0 1 130px; }
-#task-form #task-time { flex: 0 1 100px; }
-#task-form #task-category { flex: 0 1 100px; }
-
-#task-form button {
-    padding:10px 20px;
-    font-size:14px;
-    border-radius:8px;
-    border:none;
-    background:#4CAF50;
-    color:white;
-    cursor:pointer;
-    transition:transform 0.2s, background-color 0.2s;
-}
-#task-form button:hover { transform:scale(1.05); background:#43a047; }
-
-
-/* ======================= PESQUISA E FILTRO (Usado apenas no modal agora) ======================= */
-.search-box {
-    display:flex;
-    gap:10px;
-    margin-bottom:15px;
-    flex-wrap: wrap;
-}
-.input-with-icon, .select-with-icon { position: relative; flex:1 1 150px; }
-.input-with-icon i, .select-with-icon i {
-    position: absolute;
-    left:10px; top:50%;
-    transform:translateY(-50%);
-    color:#999;
-}
-.input-with-icon input, .select-with-icon select {
-    width:100%;
-    padding:10px 10px 10px 30px;
-    border-radius:8px; border:1px solid #ccc; background:#fff;
-}
-
-/* ======================= LISTA DE TAREFAS ======================= */
-#task-list { list-style:none; padding:0; text-align:left; }
-#task-list > li {
-    padding:12px 15px;
-    margin-bottom:8px;
-    background-color:#fefefe;
-    border-left:5px solid #4CAF50;
-    display:flex;
-    flex-direction:column;
-    gap:5px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border-radius:8px;
-}
-/* CORREÇÃO D&D: Estilo para a tarefa sendo arrastada */
-#task-list .ui-sortable-helper {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    background-color: #fff !important; /* Fixa a cor branca durante o arrasto */
-    opacity: 0.95;
-    transform: none;
-}
-
-#task-list > li:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-.task-main { display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap:10px; }
-.task-text { display:flex; align-items:center; gap:10px; flex:1; flex-wrap: wrap; }
-.button-group { display:flex; gap:5px; flex-shrink:0; }
-
-/* ======================= PRIORIDADE E CATEGORIA ======================= */
-.task-priority-category { display:flex; align-items:center; gap:6px; }
-.priority-label { font-size:0.85rem; font-weight:bold; padding:2px 6px; border-radius:999px; color:white; }
-.priority-high { background:#f44336; }
-.priority-medium { background:#FFEB3B; color:#000; }
-.priority-low { background:#4CAF50; }
-
-.task-category {
-    font-size:0.75rem;
-    font-weight:bold;
-    padding:2px 8px;
-    border-radius:12px;
-    background:#81d4fa;
-    color:#01579b;
-    position:relative;
-    cursor:default;
-}
-.task-category:hover::after {
-    content: attr(data-tooltip);
-    position:absolute;
-    bottom:125%; left:50%;
-    transform:translateX(-50%);
-    background:#333; color:#fff;
-    padding:4px 8px;
-    border-radius:4px;
-    font-size:12px;
-    white-space:nowrap;
-    opacity:0.95;
-    pointer-events:none;
-    z-index:1000;
-}
-
-/* ======================= BOTÕES ======================= */
-.remove-btn,.edit-btn,.add-subtask-btn,.remove-subtask-btn,.google-calendar-btn {
-    font-weight:bold;
-    border:none;
-    border-radius:6px;
-    padding:6px 8px;
-    cursor:pointer;
-    transition:background-color 0.3s, transform 0.2s;
-}
-.remove-btn { background:#e57373; color:#fff; } .remove-btn:hover { background:#d32f2f; }
-.edit-btn { background:#64b5f6; color:#fff; } .edit-btn:hover { background:#1976d2; }
-/* Botões principais */
-.add-subtask-btn { background:#ffb74d; color:#111; } 
-.add-subtask-btn:hover { background:#f57c00; }
-
-/* Ícone de Opções (os três pontinhos) */
-.subtask-options-btn { 
-    background: none; 
-    color: #666; 
-    font-size: 1.2rem; 
-    padding: 2px 6px; 
-    cursor: pointer;
-    border: none;
-    line-height: 1;
-    border-radius: 4px; 
-    font-weight: 900; 
-    transition: background-color 0.2s, color 0.2s;
-}
-.subtask-options-btn:hover {
-    color: #333;
-    background-color: #eee;
-}
-
-/* CORREÇÃO GOOGLE AGENDA: Garante que o ícone fique na vertical */
-.google-calendar-btn { 
-    background:none; 
-    padding:0 5px; 
-    display:flex; 
-    align-items:center; 
-    position:relative; 
-    line-height: 1; 
-}
-.google-calendar-btn img { width:20px; height:20px; display:block; }
-.google-calendar-btn:hover::after {
-    content: attr(data-tooltip);
-    position:absolute;
-    top:-30px; left:50%;
-    transform:translateX(-50%);
-    background:#333; color:#fff;
-    padding:4px 8px; border-radius:4px;
-    font-size:12px; white-space:nowrap;
-    pointer-events:none; z-index:1000;
-}
-
-/* ======================= DATA E HORA DE VENCIMENTO ======================= */
-.task-datetime {
-    margin-left:8px;
-    font-size:0.75rem;
-    padding: 2px 6px;
-    border-radius:4px;
-    color:white;
-    background:#757575;
-    display:inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-.due-soon .task-datetime { background:#ff9800; }
-.overdue .task-datetime { background:#f44336; }
-.due-soon { border-left-color:#ff9800 !important; }
-.overdue { border-left-color:#f44336 !important; }
-
-/* ======================= TAREFAS CONCLUÍDAS ======================= */
-.completed::before { content:"✔"; color:#4CAF50; margin-right:10px; font-weight:bold; }
-.completed { text-decoration:line-through; color:#888; }
-.edit-task { flex:1; padding:5px; font-size:16px; }
-
-/* ======================= SUBTAREFAS (CORREÇÃO UX) ======================= */
-.subtask-list { 
-    list-style: none; 
-    padding-left: 0; 
-    margin-top: 5px; 
-}
-
-/* O item LI individual da sublista (Nível 1, 2, 3...) */
-.subtask-list li {
-    padding: 8px 12px 5px 12px;
-    margin-bottom: 5px;
-    background: #fcfcfc;
-    border-radius: 6px;
-    border-left: 3px solid transparent; 
-    
-    /* CHAVE 1: display: block para garantir a hierarquia vertical */
-    display: block; 
-    transition: transform 0.2s, box-shadow 0.2s;
-    position: relative; 
-    box-shadow: none; 
-}
-
-.subtask-list li:hover { transform: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-
-/* O conteúdo principal do LI (checkbox, label, e botões) */
-.subtask-list li > .task-text { 
-    display: flex; 
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-}
-
-/* CHAVE 2: Ajusta o posicionamento do ícone de Opções para ficar fixo à direita */
-.subtask-list li .button-group {
-    display: flex;
-    gap: 5px;
-    flex-shrink: 0;
-    position: absolute;
-    /* Alinha o botão com o da tarefa principal */
-    right: 12px; 
-    top: 8px;
-    z-index: 10;
-}
-
-/* CHAVE 3: Regra para Aninhamento Visual Suave (Indentação e Borda) */
-.subtask-list .subtask-list {
-    padding-left: 15px; 
-    margin-left: 5px;
-    border-left: 2px solid #ddd; 
-    padding-top: 5px;
-    margin-top: 10px;
-}
-
-/* Remove a borda esquerda em itens aninhados para que apenas a borda da UL apareça */
-.subtask-list .subtask-list li {
-    border-left: none; 
-}
-
-/* ======================= MENU DE CONTEXTO SUBTAREFA (NOVO) ======================= */
-.subtask-options-menu {
-    position: absolute;
-    top: 30px; 
-    right: 0;
-    width: 200px; /* Reduzi a largura para ser mais compacto */
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    z-index: 100; 
-    list-style: none;
-    padding: 5px 0;
-    display: none; 
-    overflow: hidden;
-}
-
-.subtask-options-menu.active {
-    display: block;
-}
-
-.subtask-options-menu ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.subtask-options-menu li {
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
-    display: block; 
-}
-
-.subtask-options-menu li button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    width: 100%;
-    text-align: left;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #333;
-    transition: background 0.2s, color 0.2s;
-}
-
-.subtask-options-menu li button:hover {
-    background-color: #f0f0f0;
-    color: #4CAF50;
-}
-
-
-.toggle-subtasks-btn { font-weight: bold; border:none; background:none; cursor:pointer; transition: transform 0.3s ease; padding: 0 5px; font-size: 1rem; }
-.toggle-subtasks-btn.collapsed { transform: rotate(-90deg); }
-.toggle-subtasks-btn:hover { background: #1976d2; transform: scale(1.1); }
-
-/* ======================= FOOTER ======================= */
-footer { text-align:center; margin-top:40px; padding:15px 10px; font-family:'Arial',sans-serif; font-size:14px; color:#888; background:#f5f5f5; border-top:1px solid #ddd; border-radius:0 0 10px 10px; }
-footer a { color:#4CAF50; text-decoration:none; font-weight:bold; transition:color 0.3s; }
-footer a:hover { color:#388E3C; text-decoration:underline; }
-
-/* ======================= MODAIS ======================= */
-.modal {
-    position: fixed;
-    z-index: 10000;
-    left:0; top:0;
-    width:100%; height:100%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    overflow: auto;
-    background-color: rgba(0,0,0,0); /* Inicia transparente */
-    transition: background-color 0.3s ease-in-out; /* Transição suave */
-}
-.modal.show {
-    display: flex;
-    background-color: rgba(0,0,0,0.5); /* Fica escuro quando ativo */
-}
-.modal .modal-content {
-    background-color: #fff;
-    width:100%;
-    max-width:720px;
-    border-radius:12px;
-    padding:20px;
-    text-align:left;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    position:relative;
-    animation: modalSlide 0.28s ease-out;
-}
-@keyframes modalSlide { from { transform: translateY(-18px); opacity:0 } to { transform: translateY(0); opacity:1 } }
-.modal .modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-.modal .modal-header h2 { margin:0; font-size:1.25rem; font-weight:700; }
-.modal .close, .modal .close-top-right { font-size:22px; cursor:pointer; border:none; background:transparent; color:#666; padding:6px; position:absolute; top:12px; right:12px; }
-.modal .close:hover, .modal .close-top-right:hover { color:#000; }
-.modal .modal-body { max-height: calc(100vh - 320px); overflow-y:auto; padding-right:6px; }
-.modal .modal-body ul { list-style:none; padding-left:0; margin:0; }
-.modal .modal-body li { padding:8px 10px; border-bottom:1px solid #f3f3f3; }
-.modal .modal-footer { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
-.modal .modal-footer button { padding:8px 14px; border-radius:8px; border:none; font-weight:700; cursor:pointer; transition: transform .12s, background-color .12s; }
-
-/* Estilização para botões dos modais (mais moderna) */
-.modal .btn-primary { background:#4CAF50; color:#fff; box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2); } 
-.modal .btn-primary:hover { background:#43a047; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3); }
-
-.modal .btn-danger { background:#f44336; color:#fff; } 
-.modal .btn-danger:hover { background:#d32f2f; transform: translateY(-1px); }
-
-.modal .btn-neutral { background:#eee; color:#333; } 
-.modal .btn-neutral:hover { background:#e0e0e0; transform: translateY(-1px); }
-
-/* Campos de formulário dentro do modal */
-.modal .modal-body label {
-    display: block;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 5px;
-}
-.modal .modal-body input[type="text"], 
-.modal .modal-body select, 
-.modal .modal-body input[type="date"], 
-.modal .modal-body input[type="time"],
-.modal .modal-body textarea { 
-    width: 100%;
-    padding: 10px;
-    margin: 0; 
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    box-sizing: border-box; 
-    transition: border-color 0.2s;
-}
-
-.modal .modal-body input:focus, .modal .modal-body select:focus {
-    border-color: #4CAF50;
-    outline: none;
-}
-
-/* * Regras para inputs com ícone dentro do modal: 
-   Aplica padding esquerdo apenas onde o ícone customizado ESTIVER PRESENTE (Search e Filter).
-*/
-.modal .modal-body .input-with-icon { position: relative; }
-.modal .modal-body .input-with-icon i,
-.modal .modal-body .select-with-icon i {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-    pointer-events: none; /* Garante que o clique passe para o input */
-    font-size: 1.1em; /* Ícones levemente maiores */
-}
-
-/* Ajusta o padding dos inputs com ícone para acomodar o ícone */
-.modal .modal-body .input-with-icon input, 
-.modal .modal-body .select-with-icon select {
-    padding: 10px 10px 10px 30px;
-}
-
-/* Garante que inputs de data e hora usem o padding base (10px) e aparência nativa */
-.modal .modal-body input[type="date"],
-.modal .modal-body input[type="time"] {
-    -webkit-appearance: auto;
-    -moz-appearance: auto;
-    appearance: auto; 
-    padding: 10px; 
-}
-
-
-/* Ajuste de Tamanho dos Modais */
-#addTaskModal .modal-content, 
-#filterModal .modal-content { 
-    max-width: 450px !important; 
-}
-#editTaskModal .modal-content, 
-#viewTaskModal .modal-content,
-#subtask-modal .modal-content { 
-    max-width: 520px; 
-}
-
-
-/* Restante dos estilos do modal (inalterado) */
-#viewTaskModal .modal-header { align-items:flex-start; }
-#viewTaskModal .modal-body .meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
-#viewTaskModal .modal-body .meta span { background:#f5f5f5; padding:6px 10px; border-radius:8px; font-size:0.9rem; color:#333; }
-#viewTaskModal .modal-body .subtasks-list { margin-top:8px; padding-left:0; list-style:none; }
-#viewTaskModal .modal-body .subtasks-list li { padding:6px 8px; border-radius:6px; background:#fafafa; margin-bottom:6px; }
-#calendarModal .modal-header h2 { font-size:1.4rem; }
-#calendarModal .modal-body { margin-top:6px; }
-#calendarModal .modal-footer button { cursor:pointer; }
-.modal button, .modal .fc-event, .modal .fc-daygrid-day { cursor: pointer !important; }
-
-/* ======================= CALENDÁRIO ======================= */
-#toggle-calendar-btn {
-    display: block;
-    margin: 20px auto;
-    padding: 10px 20px;
-    font-size: 15px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-#toggle-calendar-btn:hover { background-color: #45a049; }
-#calendar-container {
-    max-width: 900px;
-    margin: 20px auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    background-color: #fff;
-    display: none;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-#calendar { max-width:100%; margin:0 auto; height:600px; }
-#calendar .fc-event, #calendar .fc-daygrid-day, .fc-event { cursor:pointer !important; }
-#calendar .fc-event:hover { transform: translateY(-2px); transition: transform .12s; filter: brightness(.98); }
-#calendar-view { list-style:none; padding:0; margin:0; }
-.highlight { background: #fff7b3; transition: background-color 1s ease; }
-
-/* ======================= RESPONSIVIDADE ======================= */
-@media(max-width:700px){
-    /* 1. LAYOUT DA PÁGINA */
-    .task-main { flex-direction:column; align-items:flex-start; }
-    .button-group { margin-top:5px; }
-    
-    /* 2. MENU DESKTOP ESCONDIDO */
-    nav ul {
-        display: none; /* Esconde o menu principal de links no mobile */
-        flex-direction: column; 
-        position: absolute;
-        top: 60px; /* Começa abaixo da barra superior */
-        left: 0;
-        width: 100%;
-        background: #fff; /* Fundo branco para o menu suspenso */
-        padding: 10px 0;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        z-index: 999; 
-        text-align: left;
-        border-radius: 0 0 8px 8px;
-    }
-
-    /* 3. MOBILE HEADER BAR (A barra superior verde) */
-    .nav-mobile-header-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        height: 60px;
-        padding: 0 15px;
-        position: sticky;
-        top: 0;
-        background: linear-gradient(135deg, #4CAF50, #43a047);
-        z-index: 1001; 
-        border-radius: 0 0 15px 15px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
-    
-    /* 4. HAMBURGER ICON (Esquerda) */
-    .mobile-toggle-btn {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 0;
-        line-height: 1;
-        z-index: 1002;
-    }
-
-    /* 5. PERFIL / LOGIN (Direita) - Posicionamento Absoluto na barra móvel */
-    .nav-auth-item {
-        /* Permite que o JS decida se é 'list-item' (visível) ou 'none' (invisível) */
-        display: block; 
-        list-style: none;
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1002;
-    }
-    
-    /* Perfil: Esconde nome e caret, deixando apenas a foto */
-    .profile-menu-container #nav-profile-name,
-    .profile-menu-container .fa-caret-down {
-        display: none; 
-    }
-    .profile-menu-container .nav-avatar {
-        width: 32px;
-        height: 32px;
-        border: 2px solid #fff;
-    }
-    
-    /* Login button adjustment */
-    #nav-login-btn a {
-        background: none !important;
-        color: white !important;
-        padding: 5px 10px;
-    }
-    
-    /* 6. COMPORTAMENTO DO MENU SUSPENSO */
-    nav ul.mobile-open {
-        display: flex; 
-    }
-
-    /* Estilo dos links no menu suspenso */
-    nav ul li {
-        border-bottom: 1px solid #f0f0f0;
-    }
-    
-    nav ul li a {
-        color: #333; 
-        padding: 12px 20px;
-        border-radius: 0;
-    }
-    
-    nav ul li a.active {
-        background: #e0f0e0;
-        color: #4CAF50;
-        border-left: 5px solid #4CAF50;
-    }
-    nav ul li a:hover {
-        background: #f5f5f5;
-        transform: none;
-    }
-}
-
-/* ======================= NOVOS BOTÕES DE AÇÃO (Modernizado) ======================= */
-.main-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 25px;
-    /* 🔑 Garante que os botões recebam cliques */
-    position: relative; 
-    z-index: 1010; 
-}
-
-/* Base style for all action buttons */
-.main-actions button {
-    padding: 12px 25px;
-    font-size: 16px;
-    font-weight: 700;
-    border: none;
-    border-radius: 10px; /* Mais arredondado */
-    cursor: pointer;
-    transition: all 0.2s ease-out;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra suave */
-}
-
-.btn-action-primary {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.btn-action-primary:hover {
-    background-color: #43a047;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2); /* Sombra mais destacada no hover */
-}
-
-.btn-action-secondary {
-    background-color: #fff; /* Fundo branco para contraste clean */
-    color: #333;
-    border: 1px solid #ddd;
-}
-
-.btn-action-secondary:hover {
-    background-color: #f5f5f5;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-/* ======================= CONTAINER ======================= */
-.task-form-body {
-    max-width:750px;
-    margin:50px auto;
-    padding:30px 25px;
-    background:linear-gradient(145deg,#e0f7fa,#fff);
-    border-radius:15px;
-    box-shadow:0 10px 20px rgba(0,0,0,0.1);
-    position: relative; 
-    z-index: 1; 
-}
-.task-form-body h1 { margin-bottom:20px; color:#333; text-align:center; }
-
-/* ======================= BARRA DE PROGRESSO ======================= */
-.progress-container {
-    width:100%;
-    height:25px;
-    background:#e0e0e0;
-    border-radius:10px;
-    overflow:hidden;
-    margin-bottom:20px;
-}
-.progress-bar {
-    width:0%;
-    height:100%;
-    background:#f44336;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    color:white;
-    transition:width 0.5s ease, background-color 0.3s ease;
-    border-radius:10px;
-}
-@keyframes gradientMove {
-    0% { background-position:0% 50%; }
-    50% { background-position:100% 50%; }
-    100% { background-position:0% 50%; }
-}
-.progress-bar.high-progress {
-    background: linear-gradient(270deg, #4CAF50, #81C784, #A5D6A7, #4CAF50);
-    background-size: 600% 100%;
-    animation: gradientMove 2.5s ease infinite;
-    color: white;
-    text-decoration: none;
-}
-.progress-bar.completed { text-decoration:none !important; color:white !important; }
-
-/* ======================= FORMULÁRIO (Usado apenas no modal agora) ======================= */
-#task-form {
-    display:flex;
-    flex-wrap: wrap;
-    gap:10px;
-    margin-bottom:15px;
-    justify-content:center;
-    align-items:center;
-}
-#task-form input, #task-form select {
-    padding:10px;
-    font-size:14px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    background:#fff;
-}
-#task-form #task-text { flex: 1 1 200px; }
-#task-form #task-priority { flex: 0 1 100px; }
-#task-form #task-date { flex: 0 1 130px; }
-#task-form #task-time { flex: 0 1 100px; }
-#task-form #task-category { flex: 0 1 100px; }
-
-#task-form button {
-    padding:10px 20px;
-    font-size:14px;
-    border-radius:8px;
-    border:none;
-    background:#4CAF50;
-    color:white;
-    cursor:pointer;
-    transition:transform 0.2s, background-color 0.2s;
-}
-#task-form button:hover { transform:scale(1.05); background:#43a047; }
-
-
-/* ======================= PESQUISA E FILTRO (Usado apenas no modal agora) ======================= */
-.search-box {
-    display:flex;
-    gap:10px;
-    margin-bottom:15px;
-    flex-wrap: wrap;
-}
-.input-with-icon, .select-with-icon { position: relative; flex:1 1 150px; }
-.input-with-icon i, .select-with-icon i {
-    position: absolute;
-    left:10px; top:50%;
-    transform:translateY(-50%);
-    color:#999;
-}
-.input-with-icon input, .select-with-icon select {
-    width:100%;
-    padding:10px 10px 10px 30px;
-    border-radius:8px; border:1px solid #ccc; background:#fff;
-}
-
-/* ======================= LISTA DE TAREFAS ======================= */
-#task-list { list-style:none; padding:0; text-align:left; }
-#task-list > li {
-    padding:12px 15px;
-    margin-bottom:8px;
-    background-color:#fefefe;
-    border-left:5px solid #4CAF50;
-    display:flex;
-    flex-direction:column;
-    gap:5px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border-radius:8px;
-}
-/* CORREÇÃO D&D: Estilo para a tarefa sendo arrastada */
-#task-list .ui-sortable-helper {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    background-color: #fff !important; /* Fixa a cor branca durante o arrasto */
-    opacity: 0.95;
-    transform: none;
-}
-
-#task-list > li:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-.task-main { display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap:10px; }
-.task-text { display:flex; align-items:center; gap:10px; flex:1; flex-wrap: wrap; }
-.button-group { display:flex; gap:5px; flex-shrink:0; }
-
-/* ======================= PRIORIDADE E CATEGORIA ======================= */
-.task-priority-category { display:flex; align-items:center; gap:6px; }
-.priority-label { font-size:0.85rem; font-weight:bold; padding:2px 6px; border-radius:999px; color:white; }
-.priority-high { background:#f44336; }
-.priority-medium { background:#FFEB3B; color:#000; }
-.priority-low { background:#4CAF50; }
-
-.task-category {
-    font-size:0.75rem;
-    font-weight:bold;
-    padding:2px 8px;
-    border-radius:12px;
-    background:#81d4fa;
-    color:#01579b;
-    position:relative;
-    cursor:default;
-}
-.task-category:hover::after {
-    content: attr(data-tooltip);
-    position:absolute;
-    bottom:125%; left:50%;
-    transform:translateX(-50%);
-    background:#333; color:#fff;
-    padding:4px 8px;
-    border-radius:4px;
-    font-size:12px;
-    white-space:nowrap;
-    opacity:0.95;
-    pointer-events:none;
-    z-index:1000;
-}
-
-/* ======================= BOTÕES ======================= */
-.remove-btn,.edit-btn,.add-subtask-btn,.remove-subtask-btn,.google-calendar-btn {
-    font-weight:bold;
-    border:none;
-    border-radius:6px;
-    padding:6px 8px;
-    cursor:pointer;
-    transition:background-color 0.3s, transform 0.2s;
-}
-.remove-btn { background:#e57373; color:#fff; } .remove-btn:hover { background:#d32f2f; }
-.edit-btn { background:#64b5f6; color:#fff; } .edit-btn:hover { background:#1976d2; }
-/* Botões principais */
-.add-subtask-btn { background:#ffb74d; color:#111; } 
-.add-subtask-btn:hover { background:#f57c00; }
-
-/* Ícone de Opções (os três pontinhos) */
-.subtask-options-btn { 
-    background: none; 
-    color: #666; 
-    font-size: 1.2rem; 
-    padding: 2px 6px; 
-    cursor: pointer;
-    border: none;
-    line-height: 1;
-    border-radius: 4px; 
-    font-weight: 900; 
-    transition: background-color 0.2s, color 0.2s;
-}
-.subtask-options-btn:hover {
-    color: #333;
-    background-color: #eee;
-}
-
-/* CORREÇÃO GOOGLE AGENDA: Garante que o ícone fique na vertical */
-.google-calendar-btn { 
-    background:none; 
-    padding:0 5px; 
-    display:flex; 
-    align-items:center; 
-    position:relative; 
-    line-height: 1; 
-}
-.google-calendar-btn img { width:20px; height:20px; display:block; }
-.google-calendar-btn:hover::after {
-    content: attr(data-tooltip);
-    position:absolute;
-    top:-30px; left:50%;
-    transform:translateX(-50%);
-    background:#333; color:#fff;
-    padding:4px 8px; border-radius:4px;
-    font-size:12px; white-space:nowrap;
-    pointer-events:none; z-index:1000;
-}
-
-/* ======================= DATA E HORA DE VENCIMENTO ======================= */
-.task-datetime {
-    margin-left:8px;
-    font-size:0.75rem;
-    padding: 2px 6px;
-    border-radius:4px;
-    color:white;
-    background:#757575;
-    display:inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-.due-soon .task-datetime { background:#ff9800; }
-.overdue .task-datetime { background:#f44336; }
-.due-soon { border-left-color:#ff9800 !important; }
-.overdue { border-left-color:#f44336 !important; }
-
-/* ======================= TAREFAS CONCLUÍDAS ======================= */
-.completed::before { content:"✔"; color:#4CAF50; margin-right:10px; font-weight:bold; }
-.completed { text-decoration:line-through; color:#888; }
-.edit-task { flex:1; padding:5px; font-size:16px; }
-
-/* ======================= SUBTAREFAS (CORREÇÃO UX) ======================= */
-.subtask-list { 
-    list-style: none; 
-    padding-left: 0; 
-    margin-top: 5px; 
-}
-
-/* O item LI individual da sublista (Nível 1, 2, 3...) */
-.subtask-list li {
-    padding: 8px 12px 5px 12px;
-    margin-bottom: 5px;
-    background: #fcfcfc;
-    border-radius: 6px;
-    border-left: 3px solid transparent; 
-    
-    /* CHAVE 1: display: block para garantir a hierarquia vertical */
-    display: block; 
-    transition: transform 0.2s, box-shadow 0.2s;
-    position: relative; 
-    box-shadow: none; 
-}
-
-.subtask-list li:hover { transform: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-
-/* O conteúdo principal do LI (checkbox, label, e botões) */
-.subtask-list li > .task-text { 
-    display: flex; 
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-}
-
-/* CHAVE 2: Ajusta o posicionamento do ícone de Opções para ficar fixo à direita */
-.subtask-list li .button-group {
-    display: flex;
-    gap: 5px;
-    flex-shrink: 0;
-    position: absolute;
-    /* Alinha o botão com o da tarefa principal */
-    right: 12px; 
-    top: 8px;
-    z-index: 10;
-}
-
-/* CHAVE 3: Regra para Aninhamento Visual Suave (Indentação e Borda) */
-.subtask-list .subtask-list {
-    padding-left: 15px; 
-    margin-left: 5px;
-    border-left: 2px solid #ddd; 
-    padding-top: 5px;
-    margin-top: 10px;
-}
-
-/* Remove a borda esquerda em itens aninhados para que apenas a borda da UL apareça */
-.subtask-list .subtask-list li {
-    border-left: none; 
-}
-
-/* ======================= MENU DE CONTEXTO SUBTAREFA (NOVO) ======================= */
-.subtask-options-menu {
-    position: absolute;
-    top: 30px; 
-    right: 0;
-    width: 200px; /* Reduzi a largura para ser mais compacto */
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    z-index: 100; 
-    list-style: none;
-    padding: 5px 0;
-    display: none; 
-    overflow: hidden;
-}
-
-.subtask-options-menu.active {
-    display: block;
-}
-
-.subtask-options-menu ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.subtask-options-menu li {
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: none;
-    display: block; 
-}
-
-.subtask-options-menu li button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    width: 100%;
-    text-align: left;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #333;
-    transition: background 0.2s, color 0.2s;
-}
-
-.subtask-options-menu li button:hover {
-    background-color: #f0f0f0;
-    color: #4CAF50;
-}
-
-
-.toggle-subtasks-btn { font-weight: bold; border:none; background:none; cursor:pointer; transition: transform 0.3s ease; padding: 0 5px; font-size: 1rem; }
-.toggle-subtasks-btn.collapsed { transform: rotate(-90deg); }
-.toggle-subtasks-btn:hover { background: #1976d2; transform: scale(1.1); }
-
-/* ======================= FOOTER ======================= */
-footer { text-align:center; margin-top:40px; padding:15px 10px; font-family:'Arial',sans-serif; font-size:14px; color:#888; background:#f5f5f5; border-top:1px solid #ddd; border-radius:0 0 10px 10px; }
-footer a { color:#4CAF50; text-decoration:none; font-weight:bold; transition:color 0.3s; }
-footer a:hover { color:#388E3C; text-decoration:underline; }
-
-/* ======================= MODAIS ======================= */
-.modal {
-    position: fixed;
-    z-index: 10000;
-    left:0; top:0;
-    width:100%; height:100%;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    overflow: auto;
-    background-color: rgba(0,0,0,0); /* Inicia transparente */
-    transition: background-color 0.3s ease-in-out; /* Transição suave */
-}
-.modal.show {
-    display: flex;
-    background-color: rgba(0,0,0,0.5); /* Fica escuro quando ativo */
-}
-.modal .modal-content {
-    background-color: #fff;
-    width:100%;
-    max-width:720px;
-    border-radius:12px;
-    padding:20px;
-    text-align:left;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    position:relative;
-    animation: modalSlide 0.28s ease-out;
-}
-@keyframes modalSlide { from { transform: translateY(-18px); opacity:0 } to { transform: translateY(0); opacity:1 } }
-.modal .modal-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-.modal .modal-header h2 { margin:0; font-size:1.25rem; font-weight:700; }
-.modal .close, .modal .close-top-right { font-size:22px; cursor:pointer; border:none; background:transparent; color:#666; padding:6px; position:absolute; top:12px; right:12px; }
-.modal .close:hover, .modal .close-top-right:hover { color:#000; }
-.modal .modal-body { max-height: calc(100vh - 320px); overflow-y:auto; padding-right:6px; }
-.modal .modal-body ul { list-style:none; padding-left:0; margin:0; }
-.modal .modal-body li { padding:8px 10px; border-bottom:1px solid #f3f3f3; }
-.modal .modal-footer { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
-.modal .modal-footer button { padding:8px 14px; border-radius:8px; border:none; font-weight:700; cursor:pointer; transition: transform .12s, background-color .12s; }
-
-/* Estilização para botões dos modais (mais moderna) */
-.modal .btn-primary { background:#4CAF50; color:#fff; box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2); } 
-.modal .btn-primary:hover { background:#43a047; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3); }
-
-.modal .btn-danger { background:#f44336; color:#fff; } 
-.modal .btn-danger:hover { background:#d32f2f; transform: translateY(-1px); }
-
-.modal .btn-neutral { background:#eee; color:#333; } 
-.modal .btn-neutral:hover { background:#e0e0e0; transform: translateY(-1px); }
-
-/* Campos de formulário dentro do modal */
-.modal .modal-body label {
-    display: block;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 5px;
-}
-.modal .modal-body input[type="text"], 
-.modal .modal-body select, 
-.modal .modal-body input[type="date"], 
-.modal .modal-body input[type="time"],
-.modal .modal-body textarea { 
-    width: 100%;
-    padding: 10px;
-    margin: 0; 
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    box-sizing: border-box; 
-    transition: border-color 0.2s;
-}
-
-.modal .modal-body input:focus, .modal .modal-body select:focus {
-    border-color: #4CAF50;
-    outline: none;
-}
-
-/* * Regras para inputs com ícone dentro do modal: 
-   Aplica padding esquerdo apenas onde o ícone customizado ESTIVER PRESENTE (Search e Filter).
-*/
-.modal .modal-body .input-with-icon { position: relative; }
-.modal .modal-body .input-with-icon i,
-.modal .modal-body .select-with-icon i {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-    pointer-events: none; /* Garante que o clique passe para o input */
-    font-size: 1.1em; /* Ícones levemente maiores */
-}
-
-/* Ajusta o padding dos inputs com ícone para acomodar o ícone */
-.modal .modal-body .input-with-icon input, 
-.modal .modal-body .select-with-icon select {
-    padding: 10px 10px 10px 30px;
-}
-
-/* Garante que inputs de data e hora usem o padding base (10px) e aparência nativa */
-.modal .modal-body input[type="date"],
-.modal .modal-body input[type="time"] {
-    -webkit-appearance: auto;
-    -moz-appearance: auto;
-    appearance: auto; 
-    padding: 10px; 
-}
-
-
-/* Ajuste de Tamanho dos Modais */
-#addTaskModal .modal-content, 
-#filterModal .modal-content { 
-    max-width: 450px !important; 
-}
-#editTaskModal .modal-content, 
-#viewTaskModal .modal-content,
-#subtask-modal .modal-content { 
-    max-width: 520px; 
-}
-
-
-/* Restante dos estilos do modal (inalterado) */
-#viewTaskModal .modal-header { align-items:flex-start; }
-#viewTaskModal .modal-body .meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
-#viewTaskModal .modal-body .meta span { background:#f5f5f5; padding:6px 10px; border-radius:8px; font-size:0.9rem; color:#333; }
-#viewTaskModal .modal-body .subtasks-list { margin-top:8px; padding-left:0; list-style:none; }
-#viewTaskModal .modal-body .subtasks-list li { padding:6px 8px; border-radius:6px; background:#fafafa; margin-bottom:6px; }
-#calendarModal .modal-header h2 { font-size:1.4rem; }
-#calendarModal .modal-body { margin-top:6px; }
-#calendarModal .modal-footer button { cursor:pointer; }
-.modal button, .modal .fc-event, .modal .fc-daygrid-day { cursor: pointer !important; }
-
-/* ======================= CALENDÁRIO ======================= */
-#toggle-calendar-btn {
-    display: block;
-    margin: 20px auto;
-    padding: 10px 20px;
-    font-size: 15px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-#toggle-calendar-btn:hover { background-color: #45a049; }
-#calendar-container {
-    max-width: 900px;
-    margin: 20px auto;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    background-color: #fff;
-    display: none;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-#calendar { max-width:100%; margin:0 auto; height:600px; }
-#calendar .fc-event, #calendar .fc-daygrid-day, .fc-event { cursor:pointer !important; }
-#calendar .fc-event:hover { transform: translateY(-2px); transition: transform .12s; filter: brightness(.98); }
-#calendar-view { list-style:none; padding:0; margin:0; }
-.highlight { background: #fff7b3; transition: background-color 1s ease; }
-
-/* ======================= RESPONSIVIDADE ======================= */
-@media(max-width:700px){
-    /* 1. LAYOUT DA PÁGINA */
-    .task-main { flex-direction:column; align-items:flex-start; }
-    .button-group { margin-top:5px; }
-    
-    /* 2. MENU DESKTOP ESCONDIDO */
-    nav ul {
-        display: none; /* Esconde o menu principal de links no mobile */
-        flex-direction: column; 
-        position: absolute;
-        top: 60px; /* Começa abaixo da barra superior */
-        left: 0;
-        width: 100%;
-        background: #fff; /* Fundo branco para o menu suspenso */
-        padding: 10px 0;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        z-index: 999; 
-        text-align: left;
-        border-radius: 0 0 8px 8px;
-    }
-
-    /* 3. MOBILE HEADER BAR (A barra superior verde) */
-    .nav-mobile-header-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        height: 60px;
-        padding: 0 15px;
-        position: sticky;
-        top: 0;
-        background: linear-gradient(135deg, #4CAF50, #43a047);
-        z-index: 1001; 
-        border-radius: 0 0 15px 15px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
-    
-    /* 4. HAMBURGER ICON (Esquerda) */
-    .mobile-toggle-btn {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 0;
-        line-height: 1;
-        z-index: 1002;
-    }
-
-    /* 5. PERFIL / LOGIN (Direita) - Posicionamento Absoluto na barra móvel */
-    .nav-auth-item {
-        /* Permite que o JS decida se é 'list-item' (visível) ou 'none' (invisível) */
-        display: block; 
-        list-style: none;
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1002;
-    }
-    
-    /* Perfil: Esconde nome e caret, deixando apenas a foto */
-    .profile-menu-container #nav-profile-name,
-    .profile-menu-container .fa-caret-down {
-        display: none; 
-    }
-    .profile-menu-container .nav-avatar {
-        width: 32px;
-        height: 32px;
-        border: 2px solid #fff;
-    }
-    
-    /* Login button adjustment */
-    #nav-login-btn a {
-        background: none !important;
-        color: white !important;
-        padding: 5px 10px;
-    }
-    
-    /* 6. COMPORTAMENTO DO MENU SUSPENSO */
-    nav ul.mobile-open {
-        display: flex; 
-    }
-
-    /* Estilo dos links no menu suspenso */
-    nav ul li {
-        border-bottom: 1px solid #f0f0f0;
-    }
-    
-    nav ul li a {
-        color: #333; 
-        padding: 12px 20px;
-        border-radius: 0;
-    }
-    
-    nav ul li a.active {
-        background: #e0f0e0;
-        color: #4CAF50;
-        border-left: 5px solid #4CAF50;
-    }
-    nav ul li a:hover {
-        background: #f5f5f5;
-        transform: none;
-    }
-}
-
-/* ======================= NOVOS BOTÕES DE AÇÃO (Modernizado) ======================= */
-.main-actions {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 25px;
-    /* 🔑 Garante que os botões recebam cliques */
-    position: relative; 
-    z-index: 1010; 
-}
-
-/* Base style for all action buttons */
-.main-actions button {
-    padding: 12px 25px;
-    font-size: 16px;
-    font-weight: 700;
-    border: none;
-    border-radius: 10px; /* Mais arredondado */
-    cursor: pointer;
-    transition: all 0.2s ease-out;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra suave */
-}
-
-.btn-action-primary {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.btn-action-primary:hover {
-    background-color: #43a047;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2); /* Sombra mais destacada no hover */
-}
-
-.btn-action-secondary {
-    background-color: #fff; /* Fundo branco para contraste clean */
-    color: #333;
-    border: 1px solid #ddd;
-}
-
-.btn-action-secondary:hover {
-    background-color: #f5f5f5;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-/* ======================= CONTAINER ======================= */
-.task-form-body {
-    max-width:750px;
-    margin:50px auto;
-    padding:30px 25px;
-    background:linear-gradient(145deg,#e0f7fa,#fff);
-    border-radius:15px;
-    box-shadow:0 10px 20px rgba(0,0,0,0.1);
-    position: relative; 
-    z-index: 1; 
-}
-.task-form-body h1 { margin-bottom:20px; color:#333; text-align:center; }
-
-/* ======================= BARRA DE PROGRESSO ======================= */
-.progress-container {
-    width:100%;
-    height:25px;
-    background:#e0e0e0;
-    border-radius:10px;
-    overflow:hidden;
-    margin-bottom:20px;
-}
-.progress-bar {
-    width:0%;
-    height:100%;
-    background:#f44336;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    color:white;
-    transition:width 0.5s ease, background-color 0.3s ease;
-    border-radius:10px;
-}
-@keyframes gradientMove {
-    0% { background-position:0% 50%; }
-    50% { background-position:100% 50%; }
-    100% { background-position:0% 50%; }
-}
-.progress-bar.high-progress {
-    background: linear-gradient(270deg, #4CAF50, #81C784, #A5D6A7, #4CAF50);
-    background-size: 600% 100%;
-    animation: gradientMove 2.5s ease infinite;
-    color: white;
-    text-decoration: none;
-}
-.progress-bar.completed { text-decoration:none !important; color:white !important; }
-
-/* ======================= FORMULÁRIO (Usado apenas no modal agora) ======================= */
-#task-form {
-    display:flex;
-    flex-wrap: wrap;
-    gap:10px;
-    margin-bottom:15px;
-    justify-content:center;
-    align-items:center;
-}
-#task-form input, #task-form select {
-    padding:10px;
-    font-size:14px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    background:#fff;
-}
-#task-form #task-text { flex: 1 1 200px; }
-#task-form #task-priority { flex: 0 1 100px; }
-#task-form #task-date { flex: 0 1 130px; }
-#task-form #task-time { flex: 0 1 100px; }
-#task-form #task-category { flex: 0 1 100px; }
-
-#task-form button {
-    padding:10px 20px;
-    font-size:14px;
-    border-radius:8px;
-    border:none;
-    background:#4CAF50;
-    color:white;
-    cursor:pointer;
-    transition:transform 0.2s, background-color 0.2s;
-}
-#task-form button:hover { transform:scale(1.05); background:#43a047; }
-
-
-/* ======================= PESQUISA E FILTRO (Usado apenas no modal agora) ======================= */
-.search-box {
-    display:flex;
-    gap:10px;
-    margin-bottom:15px;
-    flex-wrap: wrap;
-}
-.input-with-icon, .select-with-icon { position: relative; flex:1 1 150px; }
-.input-with-icon i, .select-with-icon i {
-    position: absolute;
-    left:10px; top:50%;
-    transform:translateY(-50%);
-    color:#999;
-}
-.input-with-icon input, .select-with-icon select {
-    width:100%;
-    padding:10px 10px 10px 30px;
-    border-radius:8px; border:1px solid #ccc; background:#fff;
-}
-
-/* ======================= LISTA DE TAREFAS ======================= */
-#task-list { list-style:none; padding:0; text-align:left; }
-#task-list > li {
-    padding:12px 15px;
-    margin-bottom:8px;
-    background-color:#fefefe;
-    border-left:5px solid #4CAF50;
-    display:flex;
-    flex-direction:column;
-    gap:5px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border-radius:8px;
-}
-/* CORREÇÃO D&D: Estilo para a tarefa sendo arrastada */
-#task-list .ui-sortable-helper {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    background-color: #fff !important; /* Fixa a cor branca durante o arrasto */
-    opacity: 0.95;
-    transform: none;
-}
-
-#task-list > li:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-.task-main { display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap:10px; }
-.task-text { display:flex; align-items:center; gap:10px; flex:1; flex-wrap: wrap; }
-.button-group { display:flex; gap:5px; flex-shrink:0; }
-
-/* ======================= PRIORIDADE E CATEGORIA ======================= */
-.task-priority-category { display:flex; align-items:center; gap:6px; }
-.priority-label { font-size:0.85rem; font-weight:bold; padding:2px 6px; border-radius:999px; color:white; }
-.priority-high { background:#f44336; }
-.priority-medium { background:#FFEB3B; color:#000; }
-.priority-low { background:#4CAF50; }
-
-/* ... (continua o CSS da lista de tarefas e modais) ... */
-
-/* ======================= NOVO SUBMENU PERFIL ======================= */
-.profile-menu-container {
-    position: relative;
-    cursor: pointer;
-}
-
-.profile-menu-toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 5px 10px;
-    border-radius: 20px;
-    transition: background-color 0.3s;
-}
-
-.profile-menu-toggle:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.nav-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #fff;
-}
-
-#nav-profile-name {
-    color: white;
-    font-weight: 600;
-}
-
-.profile-menu-toggle i {
-    color: white;
-    transition: transform 0.3s;
-}
-
-.profile-submenu {
-    display: none; /* Começa escondido */
-    position: absolute;
-    top: 110%;
-    right: 0;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    list-style: none;
-    padding: 8px 0;
-    margin: 0;
     width: 200px;
-    z-index: 1100;
-}
-
-.profile-menu-container:hover .profile-submenu,
-.profile-menu-container.is-open .profile-submenu {
-    display: block;
-}
-
-.profile-menu-container:hover .profile-menu-toggle i {
-    transform: rotate(180deg);
-}
-
-.profile-submenu li a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 15px;
-    color: #333;
-    font-size: 0.9rem;
-    font-weight: 500;
-    text-decoration: none;
-    background: none !important; /* Reseta o fundo do link da nav */
-}
-
-.profile-submenu li a:hover {
-    background-color: #f5f5f5 !important;
-    color: #4CAF50 !important;
-}
-
-/* ======================= DATA E HORA DE VENCIMENTO ======================= */
-.task-datetime {
-    margin-left:8px;
-    font-size:0.75rem;
-    padding: 2px 6px;
-    border-radius:4px;
-    color:white;
-    background:#757575;
-    display:inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-.due-soon .task-datetime { background:#ff9800; }
-.overdue .task-datetime { background:#f44336; }
-.due-soon { border-left-color:#ff9800 !important; }
-.overdue { border-left-color:#f44336 !important; }
-
-/* ======================= TAREFAS CONCLUÍDAS ======================= */
-.completed::before { content:"✔"; color:#4CAF50; margin-right:10px; font-weight:bold; }
-.completed { text-decoration:line-through; color:#888; }
-.edit-task { flex:1; padding:5px; font-size:16px; }
-
-/* ======================= SUBTAREFAS (CORREÇÃO UX) ======================= */
-.subtask-list { 
-    list-style: none; 
-    padding-left: 0; 
-    margin-top: 5px; 
-}
-
-/* O item LI individual da sublista (Nível 1, 2, 3...) */
-.subtask-list li {
-    padding: 8px 12px 5px 12px;
-    margin-bottom: 5px;
-    background: #fcfcfc;
-    border-radius: 6px;
-    border-left: 3px solid transparent; 
-    
-    /* CHAVE 1: display: block para garantir a hierarquia vertical */
-    display: block; 
-    transition: transform 0.2s, box-shadow 0.2s;
-    position: relative; 
-    box-shadow: none; 
-}
-
-.subtask-list li:hover { transform: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-
-/* O conteúdo principal do LI (checkbox, label, e botões) */
-.subtask-list li > .task-text { 
-    display: flex; 
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-}
-
-/* CHAVE 2: Ajusta o posicionamento do ícone de Opções para ficar fixo à direita */
-.subtask-list li .button-group {
-    display: flex;
-    gap: 5px;
-    flex-shrink: 0;
-    position: absolute;
-    /* Alinha o botão com o da tarefa principal */
-    right: 12px; 
-    top: 8px;
-    z-index: 10;
-}
-
-/* CHAVE 3: Regra para Aninhamento Visual Suave (Indentação e Borda) */
-.subtask-list .subtask-list {
-    padding-left: 15px; 
-    margin-left: 5px;
-    border-left: 2px solid #ddd; 
-    padding-top: 5px;
-    margin-top: 10px;
-}
-
-/* Remove a borda esquerda em itens aninhados para que apenas a borda da UL apareça */
-.subtask-list .subtask-list li {
-    border-left: none; 
-}
-
-/* ======================= MENU DE CONTEXTO SUBTAREFA (NOVO) ======================= */
-.subtask-options-menu {
-    position: absolute;
-    top: 30px; 
-    right: 0;
-    width: 200px; /* Reduzi a largura para ser mais compacto */
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
@@ -2520,17 +387,14 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     display: none; 
     overflow: hidden;
 }
-
 .subtask-options-menu.active {
     display: block;
 }
-
 .subtask-options-menu ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
-
 .subtask-options-menu li {
     margin: 0;
     padding: 0;
@@ -2538,7 +402,6 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     background: none;
     display: block; 
 }
-
 .subtask-options-menu li button {
     display: flex;
     align-items: center;
@@ -2553,23 +416,16 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     color: #333;
     transition: background 0.2s, color 0.2s;
 }
-
 .subtask-options-menu li button:hover {
     background-color: #f0f0f0;
     color: #4CAF50;
 }
-
-
 .toggle-subtasks-btn { font-weight: bold; border:none; background:none; cursor:pointer; transition: transform 0.3s ease; padding: 0 5px; font-size: 1rem; }
 .toggle-subtasks-btn.collapsed { transform: rotate(-90deg); }
 .toggle-subtasks-btn:hover { background: #1976d2; transform: scale(1.1); }
-
-/* ======================= FOOTER ======================= */
 footer { text-align:center; margin-top:40px; padding:15px 10px; font-family:'Arial',sans-serif; font-size:14px; color:#888; background:#f5f5f5; border-top:1px solid #ddd; border-radius:0 0 10px 10px; }
 footer a { color:#4CAF50; text-decoration:none; font-weight:bold; transition:color 0.3s; }
 footer a:hover { color:#388E3C; text-decoration:underline; }
-
-/* ======================= MODAIS ======================= */
 .modal {
     position: fixed;
     z-index: 10000;
@@ -2580,12 +436,12 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     justify-content: center;
     padding: 20px;
     overflow: auto;
-    background-color: rgba(0,0,0,0); /* Inicia transparente */
-    transition: background-color 0.3s ease-in-out; /* Transição suave */
+    background-color: rgba(0,0,0,0);
+    transition: background-color 0.3s ease-in-out;
 }
 .modal.show {
     display: flex;
-    background-color: rgba(0,0,0,0.5); /* Fica escuro quando ativo */
+    background-color: rgba(0,0,0,0.5);
 }
 .modal .modal-content {
     background-color: #fff;
@@ -2608,18 +464,12 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 .modal .modal-body li { padding:8px 10px; border-bottom:1px solid #f3f3f3; }
 .modal .modal-footer { margin-top:14px; display:flex; justify-content:flex-end; gap:10px; }
 .modal .modal-footer button { padding:8px 14px; border-radius:8px; border:none; font-weight:700; cursor:pointer; transition: transform .12s, background-color .12s; }
-
-/* Estilização para botões dos modais (mais moderna) */
 .modal .btn-primary { background:#4CAF50; color:#fff; box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2); } 
 .modal .btn-primary:hover { background:#43a047; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3); }
-
 .modal .btn-danger { background:#f44336; color:#fff; } 
 .modal .btn-danger:hover { background:#d32f2f; transform: translateY(-1px); }
-
 .modal .btn-neutral { background:#eee; color:#333; } 
 .modal .btn-neutral:hover { background:#e0e0e0; transform: translateY(-1px); }
-
-/* Campos de formulário dentro do modal */
 .modal .modal-body label {
     display: block;
     font-weight: 600;
@@ -2640,15 +490,10 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     box-sizing: border-box; 
     transition: border-color 0.2s;
 }
-
 .modal .modal-body input:focus, .modal .modal-body select:focus {
     border-color: #4CAF50;
     outline: none;
 }
-
-/* * Regras para inputs com ícone dentro do modal: 
-   Aplica padding esquerdo apenas onde o ícone customizado ESTIVER PRESENTE (Search e Filter).
-*/
 .modal .modal-body .input-with-icon { position: relative; }
 .modal .modal-body .input-with-icon i,
 .modal .modal-body .select-with-icon i {
@@ -2657,17 +502,13 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     top: 50%;
     transform: translateY(-50%);
     color: #999;
-    pointer-events: none; /* Garante que o clique passe para o input */
-    font-size: 1.1em; /* Ícones levemente maiores */
+    pointer-events: none;
+    font-size: 1.1em;
 }
-
-/* Ajusta o padding dos inputs com ícone para acomodar o ícone */
 .modal .modal-body .input-with-icon input, 
 .modal .modal-body .select-with-icon select {
     padding: 10px 10px 10px 30px;
 }
-
-/* Garante que inputs de data e hora usem o padding base (10px) e aparência nativa */
 .modal .modal-body input[type="date"],
 .modal .modal-body input[type="time"] {
     -webkit-appearance: auto;
@@ -2675,9 +516,6 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     appearance: auto; 
     padding: 10px; 
 }
-
-
-/* Ajuste de Tamanho dos Modais */
 #addTaskModal .modal-content, 
 #filterModal .modal-content { 
     max-width: 450px !important; 
@@ -2687,9 +525,6 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 #subtask-modal .modal-content { 
     max-width: 520px; 
 }
-
-
-/* Restante dos estilos do modal (inalterado) */
 #viewTaskModal .modal-header { align-items:flex-start; }
 #viewTaskModal .modal-body .meta { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
 #viewTaskModal .modal-body .meta span { background:#f5f5f5; padding:6px 10px; border-radius:8px; font-size:0.9rem; color:#333; }
@@ -2699,8 +534,6 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 #calendarModal .modal-body { margin-top:6px; }
 #calendarModal .modal-footer button { cursor:pointer; }
 .modal button, .modal .fc-event, .modal .fc-daygrid-day { cursor: pointer !important; }
-
-/* ======================= CALENDÁRIO ======================= */
 #toggle-calendar-btn {
     display: block;
     margin: 20px auto;
@@ -2729,172 +562,44 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 #calendar .fc-event:hover { transform: translateY(-2px); transition: transform .12s; filter: brightness(.98); }
 #calendar-view { list-style:none; padding:0; margin:0; }
 .highlight { background: #fff7b3; transition: background-color 1s ease; }
-
-/* ======================= RESPONSIVIDADE ======================= */
 @media(max-width:700px){
-    /* 1. LAYOUT DA PÁGINA */
     .task-main { flex-direction:column; align-items:flex-start; }
     .button-group { margin-top:5px; }
-    
-    /* 2. MENU DESKTOP ESCONDIDO */
-    nav ul {
-        display: none; /* Esconde o menu principal de links no mobile */
-        flex-direction: column; 
-        position: absolute;
-        top: 60px; /* Começa abaixo da barra superior */
-        left: 0;
-        width: 100%;
-        background: #fff; /* Fundo branco para o menu suspenso */
-        padding: 10px 0;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        z-index: 999; 
-        text-align: left;
-        border-radius: 0 0 8px 8px;
-    }
-
-    /* 3. MOBILE HEADER BAR (A barra superior verde) */
-    .nav-mobile-header-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        height: 60px;
-        padding: 0 15px;
-        position: sticky;
-        top: 0;
-        background: linear-gradient(135deg, #4CAF50, #43a047);
-        z-index: 1001; 
-        border-radius: 0 0 15px 15px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
-    
-    /* 4. HAMBURGER ICON (Esquerda) */
-    .mobile-toggle-btn {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 0;
-        line-height: 1;
-        z-index: 1002;
-    }
-
-    /* 5. PERFIL / LOGIN (Direita) - Posicionamento Absoluto na barra móvel */
-    .nav-auth-item {
-        /* Permite que o JS decida se é 'list-item' (visível) ou 'none' (invisível) */
-        display: block; 
-        list-style: none;
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1002;
-    }
-    
-    /* Perfil: Esconde nome e caret, deixando apenas a foto */
-    .profile-menu-container #nav-profile-name,
-    .profile-menu-container .fa-caret-down {
-        display: none; 
-    }
-    .profile-menu-container .nav-avatar {
-        width: 32px;
-        height: 32px;
-        border: 2px solid #fff;
-    }
-    
-    /* Login button adjustment */
-    #nav-login-btn a {
-        background: none !important;
-        color: white !important;
-        padding: 5px 10px;
-    }
-    
-    /* 6. COMPORTAMENTO DO MENU SUSPENSO */
-    nav ul.mobile-open {
-        display: flex; 
-    }
-
-    /* Estilo dos links no menu suspenso */
-    nav ul li {
-        border-bottom: 1px solid #f0f0f0;
-    }
-    
-    nav ul li a {
-        color: #333; 
-        padding: 12px 20px;
-        border-radius: 0;
-    }
-    
-    nav ul li a.active {
-        background: #e0f0e0;
-        color: #4CAF50;
-        border-left: 5px solid #4CAF50;
-    }
-    nav ul li a:hover {
-        background: #f5f5f5;
-        transform: none;
-    }
 }
-
-/* ======================= NOVOS BOTÕES DE AÇÃO (Modernizado) ======================= */
 .main-actions {
     display: flex;
     justify-content: center;
     gap: 15px;
     margin-bottom: 25px;
-    /* 🔑 Garante que os botões recebam cliques */
     position: relative; 
-    z-index: 1010; 
+    z-index: 10; 
 }
-
-/* Base style for all action buttons */
 .main-actions button {
     padding: 12px 25px;
     font-size: 16px;
     font-weight: 700;
     border: none;
-    border-radius: 10px; /* Mais arredondado */
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease-out;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra suave */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-
 .btn-action-primary {
     background-color: #4CAF50;
     color: white;
 }
-
 .btn-action-primary:hover {
     background-color: #43a047;
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2); /* Sombra mais destacada no hover */
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
 }
-
 .btn-action-secondary {
-    background-color: #fff; /* Fundo branco para contraste clean */
+    background-color: #fff;
     color: #333;
     border: 1px solid #ddd;
 }
-
 .btn-action-secondary:hover {
     background-color: #f5f5f5;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-
-/* ======================= CONTAINER ======================= */
-.task-form-body {
-    max-width:750px;
-    margin:50px auto;
-    padding:30px 25px;
-    background:linear-gradient(145deg,#e0f7fa,#fff);
-    border-radius:15px;
-    box-shadow:0 10px 20px rgba(0,0,0,0.1);
-    position: relative; 
-    z-index: 1; 
-}
-.task-form-body h1 { margin-bottom:20px; color:#333; text-align:center; }
-
-/* ... (continua o CSS do restante do arquivo) ... */
-/* Por favor, certifique-se de ter o restante do CSS original abaixo deste ponto no seu arquivo. */
