@@ -186,3 +186,92 @@
 .comment-content strong {
     margin-right: 5px;
 }
+
+/* Adicione ao final de feed.css */
+
+.post-author-link, .comment-author-link {
+    text-decoration: none; /* Remove o sublinhado */
+    color: inherit; /* Faz o link herdar a cor do texto pai */
+}
+
+/* Adiciona um sublinhado sutil ao passar o mouse sobre o nome de usuário */
+.post-author-link:hover .username,
+.comment-author-link:hover strong {
+    text-decoration: underline;
+}
+
+/* Adicione ao final de feed.css */
+
+/* Ajusta o cabeçalho do post para alinhar o menu à direita */
+.post-header {
+    justify-content: space-between;
+    position: relative; /* Necessário para posicionar o menu */
+}
+
+/* Agrupa a foto e o nome para mantê-los juntos à esquerda */
+.post-author-details {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Estilo para o botão de opções (três pontinhos) */
+.post-options-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #888;
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 50%;
+}
+
+.post-options-btn:hover {
+    background-color: #f0f0f0;
+}
+
+/* O menu dropdown que aparece ao clicar */
+.options-menu {
+    display: none; /* Começa escondido */
+    position: absolute;
+    top: 45px; /* Posição abaixo do header */
+    right: 15px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 10;
+    overflow: hidden;
+    border: 1px solid #eee;
+    width: 200px;
+}
+
+.options-menu.active {
+    display: block; /* Mostra o menu */
+}
+
+.options-menu button {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.options-menu button:hover {
+    background-color: #f5f5f5;
+}
+
+/* Estilo específico para o botão de apagar */
+.options-menu .delete-btn {
+    color: #e74c3c; /* Vermelho */
+}
+
+.options-menu .delete-btn:hover {
+    background-color: #e74c3c;
+    color: white;
+}

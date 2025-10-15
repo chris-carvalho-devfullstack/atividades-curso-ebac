@@ -69,12 +69,14 @@ function showConfirmModal(title, message, onConfirm) {
 }
 
 // public-profile.js
-import { auth, db } from "./firebase-config.js";
+import { auth, db, storage } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { 
     doc, getDoc, setDoc, deleteDoc, serverTimestamp, writeBatch,
     collection, query, where, orderBy, getDocs, onSnapshot, updateDoc, arrayUnion, arrayRemove
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
+
 
 // Elementos da página
 const usernameHeader = document.getElementById('public-username-header');
@@ -220,8 +222,6 @@ async function updateFriendButtonStatus(profileUid) {
 }
 
 
-// --- INÍCIO DAS NOVAS FUNÇÕES ---
-
 /**
  * Carrega as publicações de um usuário específico.
  */
@@ -233,7 +233,6 @@ async function loadUserPosts(uid) {
     const postsRef = collection(db, 'posts');
     const q = query(postsRef, where('userId', '==', uid), orderBy('timestamp', 'desc'));
 
-    // Usamos onSnapshot para atualizações em tempo real (curtidas/comentários)
     onSnapshot(q, (snapshot) => {
         if (snapshot.empty) {
             postsListContainer.innerHTML = '<p style="text-align: center;">Este usuário ainda não fez nenhuma publicação.</p>';
@@ -260,39 +259,76 @@ function renderPostOnProfile(post, postId) {
 
     const timestamp = post.timestamp ? post.timestamp.toDate().toLocaleString('pt-BR') : 'Agora mesmo';
     const isLiked = currentUser && post.likes.includes(currentUser.uid);
+    const isOwner = currentUser && currentUser.uid === post.userId;
 
     postCard.innerHTML = `
         <div class="post-header">
-            <img src="${post.userProfileImage}" alt="Foto do Perfil">
-            <div class="post-author-info">
-                <span class="username">${post.username}</span>
-                <span class="timestamp">${timestamp}</span>
+            <div class="post-author-details">
+                <a href="public-profile.html?uid=${post.userId}" class="post-author-link">
+                    <img src="${post.userProfileImage}" alt="Foto do Perfil">
+                </a>
+                <div class="post-author-info">
+                    <a href="public-profile.html?uid=${post.userId}" class="post-author-link">
+                        <span class="username">${post.username}</span>
+                    </a>
+                    <span class="timestamp">${timestamp}</span>
+                </div>
             </div>
+            ${isOwner ? `
+            <div class="post-options">
+                <button class="post-options-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <div class="options-menu">
+                    <button class="delete-btn"><i class="fa-solid fa-trash"></i> Apagar Publicação</button>
+                </div>
+            </div>` : ''}
         </div>
         <div class="post-content"><p>${post.content}</p></div>
         ${post.imageUrl ? `<div class="post-media"><img src="${post.imageUrl}" alt="Mídia da publicação"></div>` : ''}
         <div class="post-footer">
             <button class="action-btn like-btn ${isLiked ? 'liked' : ''}"><i class="fa fa-heart"></i> ${post.likes.length}</button>
             <button class="action-btn comment-btn"><i class="fa fa-comment"></i> ${post.comments.length}</button>
-            <button class="action-btn share-btn"><i class="fa fa-share"></i></button>
+            <button class="action-btn share-btn"><i class="fa fa-share"></i> Compartilhar</button>
         </div>
         <div class="comments-section" style="display: none;">
-            <form class="comment-form">
-                <input type="text" placeholder="Adicione um comentário..." required>
-                <button type="submit">Comentar</button>
-            </form>
+            <form class="comment-form"><input type="text" placeholder="Adicione um comentário..." required><button type="submit">Comentar</button></form>
             <div class="comments-list"></div>
         </div>
     `;
 
     postsListContainer.appendChild(postCard);
 
+    if (isOwner) {
+        const optionsBtn = postCard.querySelector('.post-options-btn');
+        const optionsMenu = postCard.querySelector('.options-menu');
+        
+        optionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.options-menu.active').forEach(menu => {
+                if (menu !== optionsMenu) {
+                    menu.classList.remove('active');
+                }
+            });
+            optionsMenu.classList.toggle('active');
+        });
+
+        postCard.querySelector('.delete-btn').addEventListener('click', () => {
+            showConfirmModal('Apagar Publicação', 'Tem certeza que deseja apagar esta publicação? A ação não pode ser desfeita.', () => {
+                deletePost(postId, post.imageUrl);
+            });
+        });
+    }
+
     const commentsList = postCard.querySelector('.comments-list');
     if (post.comments && post.comments.length > 0) {
-        post.comments.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds).forEach(comment => {
+        post.comments.sort((a, b) => (a.timestamp.seconds || 0) - (b.timestamp.seconds || 0)).forEach(comment => {
             const commentElement = document.createElement('div');
             commentElement.className = 'comment';
-            commentElement.innerHTML = `<img src="${comment.userProfileImage}" alt="Foto"><div class="comment-content"><strong>${comment.username}</strong> <span>${comment.commentText}</span></div>`;
+            commentElement.innerHTML = `
+                <a href="public-profile.html?uid=${comment.userId}" class="comment-author-link"><img src="${comment.userProfileImage}" alt="Foto"></a>
+                <div class="comment-content">
+                    <a href="public-profile.html?uid=${comment.userId}" class="comment-author-link"><strong>${comment.username}</strong></a>
+                    <span>${comment.commentText}</span>
+                </div>`;
             commentsList.appendChild(commentElement);
         });
     }
@@ -305,42 +341,34 @@ function renderPostOnProfile(post, postId) {
     postCard.querySelector('.comment-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const input = e.target.querySelector('input');
-        addComment(postId, input.value);
-        input.value = '';
+        if(input.value.trim()){
+             addComment(postId, input.value);
+            input.value = '';
+        }
     });
+    postCard.querySelector('.share-btn').addEventListener('click', () => sharePost(postId, post.content));
 }
 
-/**
- * Lógica para curtir/descurtir uma publicação.
- */
 async function toggleLike(postId) {
     if (!currentUser) return alert("Você precisa estar logado para curtir.");
     const postRef = doc(db, 'posts', postId);
     const postDoc = await getDoc(postRef);
     if (!postDoc.exists()) return;
-
-    const postData = postDoc.data();
-    const isLiked = postData.likes.includes(currentUser.uid);
-
+    const isLiked = postDoc.data().likes.includes(currentUser.uid);
     await updateDoc(postRef, {
         likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
     });
 }
 
-/**
- * Adiciona um comentário a uma publicação.
- */
 async function addComment(postId, commentText) {
     if (!currentUser) return alert("Você precisa estar logado para comentar.");
     if (!commentText.trim()) return;
-
     const postRef = doc(db, 'posts', postId);
     const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-    const userData = userDoc.data();
     const newComment = {
         userId: currentUser.uid,
-        username: userData.username || 'Anônimo',
-        userProfileImage: userData.fotoURL || 'https://via.placeholder.com/150',
+        username: userDoc.data().username || 'Anônimo',
+        userProfileImage: userDoc.data().fotoURL || 'https://via.placeholder.com/150',
         commentText,
         timestamp: new Date()
     };
@@ -349,8 +377,43 @@ async function addComment(postId, commentText) {
     });
 }
 
-// --- FIM DAS NOVAS FUNÇÕES ---
+async function sharePost(postId, postText) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const profileUid = urlParams.get('uid') || currentUser.uid;
+    const url = `${window.location.origin}/public-profile.html?uid=${profileUid}`;
+    
+    const shareData = {
+        title: 'Veja esta publicação!',
+        text: postText,
+        url: url,
+    };
 
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            await navigator.clipboard.writeText(url);
+            alert('Link do perfil copiado!');
+        }
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error('Erro ao compartilhar:', err);
+        }
+    }
+}
+
+async function deletePost(postId, imageUrl) {
+    try {
+        await deleteDoc(doc(db, 'posts', postId));
+        if (imageUrl) {
+            const imageRef = ref(storage, imageUrl);
+            await deleteObject(imageRef);
+        }
+    } catch (error) {
+        console.error("Erro ao apagar publicação:", error);
+        alert("Erro ao apagar a publicação.");
+    }
+}
 
 // Listener principal que inicia o carregamento da página
 onAuthStateChanged(auth, (user) => {
@@ -358,12 +421,18 @@ onAuthStateChanged(auth, (user) => {
         window.location.href = 'login.html';
         return;
     }
-    currentUser = user; // Define o usuário logado globalmente
-
+    currentUser = user; 
     const urlParams = new URLSearchParams(window.location.search);
     const profileUid = urlParams.get('uid');
     const uidToLoad = profileUid || user.uid;
 
     loadPublicProfile(uidToLoad);
-    loadUserPosts(uidToLoad); // Carrega os posts do usuário do perfil
+    loadUserPosts(uidToLoad);
+});
+
+// Listener para fechar os menus de opções ao clicar em qualquer lugar da tela
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.post-options')) {
+        document.querySelectorAll('.options-menu.active').forEach(menu => menu.classList.remove('active'));
+    }
 });
