@@ -1,0 +1,381 @@
+/* admin.css */
+
+/* ============================================= */
+/* LAYOUT GERAL DO PAINEL                        */
+/* ============================================= */
+.admin-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+}
+
+.admin-section {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.admin-section h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* ============================================= */
+/* SEÇÃO DE ESTATÍSTICAS                         */
+/* ============================================= */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background-color: #f0f8ff;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 5px solid #4CAF50;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.stat-card i {
+    font-size: 2rem;
+    color: #4CAF50;
+    margin-bottom: 10px;
+}
+
+.stat-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+}
+
+.stat-card p {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* ============================================= */
+/* GERENCIAMENTO DE USUÁRIOS (TABELA E BUSCA)    */
+/* ============================================= */
+.user-search-container {
+    margin-bottom: 20px;
+}
+
+#user-search-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+#users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+#users-table th,
+#users-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+    vertical-align: middle;
+}
+
+#users-table th {
+    background-color: #f2f2f2;
+}
+
+#users-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+.user-info-cell {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-info-cell img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* ============================================= */
+/* BOTÕES DE AÇÃO MODERNOS PARA A TABELA         */
+/* ============================================= */
+#users-table .user-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#users-table .user-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: white;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+}
+
+#users-table .user-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+#users-table .user-actions button::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+#users-table .user-actions button:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+.btn-view { background-color: #007bff; }
+.btn-view:hover { background-color: #0056b3; }
+.btn-edit { background-color: #ffc107; }
+.btn-edit:hover { background-color: #e0a800; }
+.btn-delete { background-color: #dc3545; }
+.btn-delete:hover { background-color: #c82333; }
+
+
+/* ============================================= */
+/* ESTILOS MODERNOS PARA O MODAL DE EDIÇÃO      */
+/* ============================================= */
+#editUserModal .modal-content {
+    max-width: 650px;
+    background: #fcfcfc;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#editUserModal .modal-header {
+    background-color: #f7f7f7;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#editUserModal .modal-header h2 {
+    font-size: 1.25rem;
+    color: #333;
+}
+
+#editUserModal .modal-body {
+    padding: 24px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+#editUserModal #edit-user-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 20px;
+}
+
+#editUserModal .input-group-full-width {
+    grid-column: 1 / -1;
+}
+
+#editUserModal .input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+#editUserModal .input-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#editUserModal .input-group input,
+#editUserModal .input-group textarea,
+#editUserModal .input-group select {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease-in-out;
+}
+
+#editUserModal .input-group input:focus,
+#editUserModal .input-group textarea:focus,
+#editUserModal .input-group select:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+#editUserModal .input-group input[disabled] {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+#editUserModal .modal-footer {
+    background-color: #f7f7f7;
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0e0;
+}
+
+#editUserModal .modal-footer button {
+    font-size: 0.9rem;
+    padding: 10px 20px;
+}
+
+/* ============================================= */
+/* ESTILOS PARA O MODAL DE VISUALIZAÇÃO          */
+/* ============================================= */
+.view-modal-content {
+    max-width: 700px;
+    padding: 0;
+    border-radius: 15px;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+
+.view-modal-header {
+    position: relative;
+    margin-bottom: 70px;
+}
+
+#view-cover-photo {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+.view-profile-picture {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 130px;
+}
+
+#view-profile-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 5px solid #fff;
+    object-fit: cover;
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.view-modal-body {
+    padding: 20px 30px 30px 30px;
+    text-align: center;
+}
+
+.view-modal-body h2 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-size: 1.8rem;
+}
+
+.view-modal-body .username-display {
+    color: #6c757d;
+    font-size: 1rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.view-modal-body .bio-section {
+    margin: 20px 0;
+    padding: 15px;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+.view-modal-body .bio-section h3 {
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.view-modal-body .bio-section p {
+    color: #555;
+    line-height: 1.6;
+}
+
+.view-modal-body .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    text-align: left;
+    margin-top: 30px;
+}
+
+.view-modal-body .info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #444;
+    font-size: 0.95rem;
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.view-modal-body .info-item i {
+    color: #4CAF50;
+    font-size: 1.2rem;
+    width: 25px;
+    text-align: center;
+}
+
+.view-modal-body .info-item a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.view-modal-body .info-item a:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Administração</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <nav>
+        <ul id="main-nav-list" class="nav-links">
+            <li><a href="./index.html"><i class="fa-solid fa-house"></i> Início</a></li>
+            <li><a href="admin.html" class="active"><i class="fa-solid fa-user-shield"></i> Admin</a></li>
+        </ul>
+    </nav>
+
+    <header class="task-form-header">
+        <h1>Painel de Super Administrador</h1>
+        <p>Gerencie usuários e visualize as estatísticas do site.</p>
+    </header>
+
+    <main class="admin-container">
+        <section class="admin-section stats-section">
+            <h2>Estatísticas Gerais</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fa fa-users"></i>
+                    <h3>Total de Usuários</h3>
+                    <p id="total-users-stat">0</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fa fa-file-alt"></i>
+                    <h3>Total de Posts</h3>
+                    <p id="total-posts-stat">0</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fa fa-check-circle"></i>
+                    <h3>Total de Tarefas</h3>
+                    <p id="total-tasks-stat">0</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-section user-management-section">
+            <h2>Gerenciamento de Usuários</h2>
+            <div class="user-search-container">
+                <input type="text" id="user-search-input" placeholder="Buscar usuário por email, nome ou UID...">
+            </div>
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Email</th>
+                        <th>Função (Role)</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    </tbody>
+            </table>
+        </section>
+    </main>
+
+    <div id="editUserModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Perfil Completo</h2>
+                <button id="edit-modal-close-top" class="close-top-right">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-user-form">
+                    <div class="input-group">
+                        <label for="edit-fullname"><i class="fa fa-user"></i> Nome Completo</label>
+                        <input type="text" id="edit-fullname" placeholder="Nome completo do usuário">
+                    </div>
+                    <div class="input-group">
+                        <label for="edit-username"><i class="fa fa-at"></i> Nome de Usuário</label>
+                        <input type="text" id="edit-username" placeholder="Ex: @novousuario" maxlength="15">
+                    </div>
+                    <div class="input-group input-group-full-width">
+                        <label for="edit-bio"><i class="fa fa-info-circle"></i> Sobre</label>
+                        <textarea id="edit-bio" placeholder="Biografia do usuário..." rows="3" maxlength="200"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label for="edit-birthdate"><i class="fa fa-calendar-days"></i> Data de Nascimento</label>
+                        <input type="date" id="edit-birthdate">
+                    </div>
+                    <div class="input-group">
+                        <label for="edit-phone"><i class="fa fa-phone"></i> Celular</label>
+                        <input type="tel" id="edit-phone" placeholder="(99) 9 9999-9999" maxlength="15">
+                    </div>
+                    <div class="input-group">
+                        <label for="edit-instagram"><i class="fa-brands fa-instagram"></i> Instagram</label>
+                        <input type="text" id="edit-instagram" placeholder="@perfil-instagram">
+                    </div>
+                    <div class="input-group">
+                        <label for="edit-linkedin"><i class="fa-brands fa-linkedin"></i> LinkedIn</label>
+                        <input type="url" id="edit-linkedin" placeholder="https://linkedin.com/in/perfil">
+                    </div>
+                    <div class="input-group input-group-full-width">
+                        <label for="edit-email"><i class="fa fa-envelope"></i> Email</label>
+                        <input type="email" id="edit-email" disabled>
+                    </div>
+                    <div class="input-group input-group-full-width">
+                        <label for="edit-user-role">Função (Role)</label>
+                        <select id="edit-user-role">
+                            <option value="user">user</option>
+                            <option value="admin">admin</option>
+                        </select>
+                    </div>
+                    <p id="edit-message" class="message input-group-full-width"></p>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="save-user-changes-btn" class="btn-primary">Salvar Alterações</button>
+                <button id="cancel-edit-btn" class="btn-neutral">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewUserModal" class="modal" style="display: none;">
+        <div class="modal-content view-modal-content">
+            <button id="view-modal-close-top" class="close-top-right">&times;</button>
+            <div class="view-modal-header">
+                <img id="view-cover-photo" src="https://via.placeholder.com/800x250/e0e0e0/ffffff?text=+" alt="Foto de Capa">
+                <div class="view-profile-picture">
+                    <img id="view-profile-image" src="https://via.placeholder.com/150" alt="Foto de Perfil">
+                </div>
+            </div>
+            <div class="view-modal-body">
+                <h2 id="view-fullname">Carregando...</h2>
+                <p id="view-username" class="username-display">@usuario</p>
+                <div class="bio-section">
+                    <h3>Sobre</h3>
+                    <p id="view-bio">Este usuário ainda não escreveu uma bio.</p>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item"><i class="fa fa-envelope"></i><span id="view-email"></span></div>
+                    <div class="info-item"><i class="fa fa-user-shield"></i><span id="view-role"></span></div>
+                    <div class="info-item"><i class="fa fa-calendar-days"></i><span id="view-birthdate"></span></div>
+                    <div class="info-item"><i class="fa fa-phone"></i><span id="view-phone"></span></div>
+                    <div class="info-item"><i class="fa-brands fa-instagram"></i><span id="view-instagram"></span></div>
+                    <div class="info-item"><i class="fa-brands fa-linkedin"></i><a href="#" id="view-linkedin" target="_blank" rel="noopener noreferrer"></a></div>
+                </div>
+            </div>
+             <div class="modal-footer">
+                <button id="view-modal-close-btn" class="btn-neutral">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="admin.js"></script>
+</body>
+</html>

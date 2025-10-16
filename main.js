@@ -88,7 +88,8 @@ const checkCompletionStatusRecursively = (subtasks) => {
 
 function getNewTaskOrderIndex() {
     if (tasks.length === 0) return 1.0; 
-    return tasks[0].orderIndex - 1.0; 
+    const firstTaskOrder = tasks[0].orderIndex || 0;
+    return firstTaskOrder - 1.0;
 }
 
 async function addTaskToFirestore(task) {
@@ -152,9 +153,7 @@ function loadTasksRealTime() {
             const task = doc.data();
             task.id = doc.id; 
             if (!task.category) task.category = 'geral'; 
-            
             if (!task.subtasks) task.subtasks = []; 
-            
             tasks.push(task); 
             addTaskHTML(task); 
         });
@@ -260,7 +259,6 @@ function addTaskHTML(task) {
     let editBtn = $('<button class="edit-btn" type="button">✎</button>');
     let removeBtn = $('<button class="remove-btn" type="button">🗑️</button>');
     
-    // Botão Adicionar Sub (referencia a tarefa principal)
     let addSubBtn = $('<button class="add-subtask-btn" type="button">➕ Sub</button>')
         .attr('data-task-id', task.id); 
     
@@ -269,9 +267,7 @@ function addTaskHTML(task) {
     taskDiv.append(textDiv, btnGroup);
     li.append(taskDiv);
 
-    // Renderiza a lista de sub-tarefas (chamada recursiva)
     let subtaskList = $('<ul class="subtask-list"></ul>');
-    // Chama a função recursiva para a lista principal
     task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st, task.id)); 
     li.append(subtaskList);
     initSubtaskSortable(subtaskList);
@@ -280,22 +276,17 @@ function addTaskHTML(task) {
     updateTaskDueVisual(li, task);
 }
 
-// NOVO: Função de renderização RECURSIVA para Sub-tarefas
 function addSubtaskHTML(list, subtask, taskId, parentId = null) {
-    
     let li = $('<li></li>')
         .attr('data-id', subtask.id)
         .attr('data-parent-id', parentId || taskId)
-        // Adiciona classe de prioridade para subtasks terem cor
         .addClass('priority-' + (subtask.priority || 'medium'));
     
-    // O item LI deve ser relativo para posicionar o menu de contexto ABSOLUTAMENTE
     li.css('position', 'relative'); 
 
     let textDiv = $('<div class="task-text"></div>');
     let checkbox = $('<input type="checkbox" class="subtask-checkbox">').prop('checked', subtask.completed);
     
-    // O clique no label AGORA abre o modal de edição
     let label = $('<label class="subtask-label"></label>').text(subtask.text)
         .attr('data-task-id', taskId)
         .attr('data-subtask-id', subtask.id)
@@ -308,7 +299,6 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     
     textDiv.append(checkbox, label);
     
-    // Mostra data e hora se existirem
     if (subtask.dueDate) {
         let dateText = new Date(subtask.dueDate + 'T00:00:00').toLocaleDateString();
         let timeText = subtask.dueTime ? ` ${subtask.dueTime}` : '';
@@ -317,21 +307,17 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
         textDiv.append(dateLabel);
     }
     
-    // GRUPO DE BOTÕES (AGORA APENAS O ÍCONE DE OPÇÕES)
     let btnGroup = $('<div class="button-group subtask-btn-group"></div>'); 
 
-    // ÍCONE DE OPÇÕES (os três pontinhos)
     let optionsBtn = $('<button class="subtask-options-btn" type="button">⋮</button>')
         .attr('data-task-id', taskId)
         .attr('data-subtask-id', subtask.id)
         .attr('data-parent-id', parentId || taskId)
-        // O handler para o menu de contexto
         .on('click', function(e) { 
             e.stopPropagation();
             toggleSubtaskMenu($(this), taskId, subtask.id, parentId || taskId);
         });
 
-    // Adiciona o botão e o menu de contexto DENTRO do button-group para posicionamento
     let contextMenu = $(`
         <div class="subtask-options-menu">
             <ul>
@@ -345,10 +331,8 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
 
     btnGroup.append(optionsBtn, contextMenu);
     
-    // Adiciona o conteúdo (texto/checkbox/data) e o grupo de botões ao LI
     li.append(textDiv, btnGroup);
 
-    // RENDERIZAÇÃO RECURSIVA para a hierarquia visual
     if (subtask.subtasks && subtask.subtasks.length > 0) {
         let nestedSubtaskList = $('<ul class="subtask-list nested-subtask-list"></ul>');
         subtask.subtasks.forEach(st => addSubtaskHTML(nestedSubtaskList, st, taskId, subtask.id));
@@ -359,50 +343,38 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     updateTaskDueVisual(li, subtask);
 }
 
-// NOVO: Função que lida com o menu de contexto da sub-tarefa (CORRIGIDO)
 function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
-    // Esconde todos os outros menus abertos
     $('.subtask-options-menu').removeClass('active');
     
-    // O menu é irmão do botão
     const $menu = $button.siblings('.subtask-options-menu').first();
     $menu.toggleClass('active');
 
-    // Mapear os botões do menu para as ações:
-    
-    // 1. Editar
     $menu.find('.menu-edit').off('click').on('click', (e) => {
         e.stopPropagation();
         openSubtaskModalForEdit(taskId, subtaskId);
         $menu.removeClass('active');
     });
 
-    // 2. Adicionar Abaixo (Cria no mesmo nível)
     $menu.find('.menu-add-below').off('click').on('click', (e) => {
         e.stopPropagation();
         openSubtaskModalForCreate(taskId, parentId); 
         $menu.removeClass('active');
     });
 
-    // 3. Adicionar Filho (Cria um nível abaixo)
     $menu.find('.menu-add-child').off('click').on('click', (e) => {
         e.stopPropagation();
         openSubtaskModalForCreate(taskId, subtaskId); 
         $menu.removeClass('active');
     });
 
-    // 4. Excluir (NOVO: Chama o modal)
     $menu.find('.menu-remove').off('click').on('click', async (e) => {
         e.stopPropagation();
         $menu.removeClass('active');
         deleteSubtaskViaModal(taskId, subtaskId); 
     });
     
-    // Fecha o menu ao clicar fora
-    // Usa um timeout para garantir que o evento de clique termine antes de fechar
     setTimeout(() => {
         $(document).one('click', (e) => {
-            // Se o clique não foi no próprio menu ou botão
             if (!$(e.target).closest('.subtask-options-menu').length && !$(e.target).is('.subtask-options-btn')) {
                 $('.subtask-options-menu').removeClass('active');
             }
@@ -410,8 +382,6 @@ function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
     }, 100);
 }
 
-
-// NOVO: Implementação da função deleteSubtaskViaModal (Substitui o prompt)
 function deleteSubtaskViaModal(taskId, subId) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -419,14 +389,11 @@ function deleteSubtaskViaModal(taskId, subId) {
     const subtask = findNestedSubtask(task.subtasks, subId);
     if (!subtask) return;
 
-    // 1. Configura o modal de confirmação
     $('#confirm-title').text('Apagar Subtarefa');
     $('#confirm-text').html(`Deseja realmente apagar a subtarefa <strong>"${subtask.text}"</strong> e todos os seus itens aninhados? Esta ação não pode ser desfeita.`);
     
-    // 2. Exibe o modal
     showModal('#confirmModal');
 
-    // 3. Configura o handler de confirmação (com exclusão)
     $('#confirm-ok-btn').off('click').on('click', async function() {
         $('#confirm-ok-btn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Excluindo...');
         
@@ -442,23 +409,17 @@ function deleteSubtaskViaModal(taskId, subId) {
         const updatedSubtasks = recursiveRemove(task.subtasks);
         await saveSubtasksToFirestore(taskId, updatedSubtasks);
         
-        // Limpeza e fechamento
         hideModal('#confirmModal');
         $('#confirm-ok-btn').prop('disabled', false).html('Confirmar');
     });
 
-    // 4. Configura o handler de cancelamento
     $('#confirm-cancel-btn').off('click').on('click', function() {
         hideModal('#confirmModal');
         $('#confirm-ok-btn').prop('disabled', false).html('Confirmar');
     });
 }
 
-
-/* ---------- EDICAO / CRIACAO DE SUBTAREFA VIA MODAL (MODIFICADO) ---------- */
-
 function openSubtaskModalForCreate(taskId, parentId) {
-    // Reseta/Define o estado do modal
     currentSubtaskData = { 
         taskId, subtaskId: null, isEdit: false, parentId,
         priority: 'medium', category: 'geral', dueDate: '', dueTime: '' 
@@ -485,7 +446,6 @@ function openSubtaskModalForEdit(taskId, subtaskId) {
     const subtask = findNestedSubtask(task.subtasks, subtaskId);
     if (!subtask) return;
     
-    // Define o estado com os dados da subtask
     currentSubtaskData = { 
         taskId, subtaskId, isEdit: true, parentId: null,
         priority: subtask.priority || 'medium', 
@@ -504,17 +464,15 @@ function openSubtaskModalForEdit(taskId, subtaskId) {
     showModal('#subtask-modal');
 }
 
-/* ---------- DRAG & DROP UTILS ---------- */
 function initSubtaskSortable(sublist) {
     sublist.sortable({
         connectWith: '.subtask-list',
         update: function () {
-             // Lógica de persistência para ordenação de subtasks aninhadas é complexa e omitida aqui.
+             // Lógica de persistência futura
         }
     });
 }
 
-/* ---------- FILTRO / PESQUISA ---------- */
 function applyFilter() {
     let searchVal = $('#search-input').val().toLowerCase();
     let priorityVal = $('#filter-priority').val();
@@ -533,7 +491,6 @@ function applyFilter() {
     });
 }
 
-/* ---------- BARRA DE PROGRESSO ---------- */
 function updateProgress() {
     let total = tasks.length;
     let completed = tasks.filter(t => t.completed).length; 
@@ -553,10 +510,8 @@ function updateProgress() {
     $('.progress-bar').toggleClass('completed', percent === 100);
 }
 
-/* ---------- DATAS ---------- */
 function updateTaskDueVisual(li, task) {
     li.removeClass('due-soon overdue');
-    // Verifica se a subtask tem classe priority-low/medium/high
     li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
 
     if (!task || !task.dueDate || task.completed) return;
@@ -574,7 +529,6 @@ function checkAllDueDates() {
     $('#task-list>li').each(function () {
         updateTaskDueVisual($(this), tasks.find(t => t.id === $(this).attr('data-id')));
     });
-    // Adiciona verificação para subtasks, já que elas agora chamam updateTaskDueVisual
     $('.subtask-list li').each(function () {
         const taskId = $(this).closest('li[data-id][data-category]').attr('data-id');
         const subId = $(this).attr('data-id');
@@ -586,7 +540,6 @@ function checkAllDueDates() {
     });
 }
 
-/* ---------- GOOGLE AGENDA ---------- */
 function exportTaskToGoogleLink(task) {
     if (!task.dueDate) { alert("A tarefa precisa ter uma data para exportar!"); return; }
     
@@ -603,60 +556,72 @@ function exportTaskToGoogleLink(task) {
     window.open(url,'_blank');
 }
 
-/* ---------- FULLCALENDAR ---------- */
+/* ---------- FULLCALENDAR (REVISADO) ---------- */
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
-    if(calendarEl && typeof FullCalendar!=='undefined' && FullCalendar.Calendar){
-        calendar = new FullCalendar.Calendar(calendarEl,{
-            initialView:'timeGridWeek', 
+    if (calendarEl && typeof FullCalendar !== 'undefined' && FullCalendar.Calendar && !calendarInitialized) {
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
             locale: 'pt-br',
-            headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,listWeek'},
-            events: [], 
-            eventClick:function(info){
-                try{
-                    const id=info.event.id;
-                    const li=$(`#task-list li[data-id="${id}"]`);
-                    if(li.length) {
-                        hideModal('.modal.show');
-                        li.find('label').first().click();
-                        try { li[0].scrollIntoView({behavior:'smooth', block:'center'}); } catch(e){}
-                        setTimeout(() => {
-                            try { li.addClass('highlight'); setTimeout(()=>li.removeClass('highlight'), 1200); } catch(e){}
-                        }, 300);
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
+            events: [],
+            eventClick: function (info) {
+                const { taskId, subtaskId } = info.event.extendedProps;
+                
+                hideModal('.modal.show');
+
+                if (subtaskId) {
+                    openSubtaskModalForEdit(taskId, subtaskId);
+                } else {
+                    const li = $(`#task-list > li[data-id="${taskId}"]`);
+                    if (li.length) {
+                        li.find('.edit-btn').first().click();
                     }
-                } catch(e){}
+                }
             }
         });
-        calendar.render(); calendarInitialized=true;
+        calendar.render();
+        calendarInitialized = true;
     }
 }
 
-function syncTaskToCalendar(task) {
-    if (!calendar) return;
-    let existing = calendar.getEventById(task.id);
-    if (task.dueDate) {
-        let startDateTime = task.dueDate + (task.dueTime ? `T${task.dueTime}` : '');
-        let eventData = {
-            id: task.id,
-            title: task.text,
-            start: startDateTime,
-            allDay: !task.dueTime, 
-            color: task.completed ? '#4CAF50' : undefined
-        };
-        if (existing) { existing.remove(); }
-        calendar.addEvent(eventData);
-    } else if (existing) {
-        existing.remove();
-    }
+function syncAllToCalendar() {
+    if (!calendarInitialized) return;
+
+    calendar.getEvents().forEach(event => event.remove());
+
+    const addEventToCalendar = (item, parentTaskId = null) => {
+        if (item.dueDate) {
+            calendar.addEvent({
+                id: parentTaskId ? `${parentTaskId}_${item.id}` : item.id,
+                title: item.text,
+                start: item.dueDate + (item.dueTime ? `T${item.dueTime}` : ''),
+                allDay: !item.dueTime,
+                color: item.completed ? '#6c757d' : (item.priority === 'high' ? '#dc3545' : item.priority === 'medium' ? '#ffc107' : '#28a745'),
+                extendedProps: {
+                    taskId: parentTaskId || item.id,
+                    subtaskId: parentTaskId ? item.id : null
+                }
+            });
+        }
+    };
+
+    tasks.forEach(task => {
+        addEventToCalendar(task);
+        if (task.subtasks && task.subtasks.length > 0) {
+            const traverseSubtasks = (subtasks, parentId) => {
+                subtasks.forEach(sub => {
+                    addEventToCalendar(sub, parentId);
+                    if (sub.subtasks && sub.subtasks.length > 0) {
+                        traverseSubtasks(sub.subtasks, parentId);
+                    }
+                });
+            };
+            traverseSubtasks(task.subtasks, task.id);
+        }
+    });
 }
 
-function removeEventFromCalendar(taskId){ if(calendar){ let ev=calendar.getEventById(taskId); if(ev) ev.remove(); } }
-function syncAllToCalendar(){
-    if(calendar) {
-        calendar.getEvents().forEach(e=>e.remove());
-        tasks.forEach(syncTaskToCalendar); 
-    }
-}
 
 function showModal(selector, options = {}) {
     const $modal = (typeof selector === 'string') ? $(selector) : selector;
@@ -719,15 +684,12 @@ onAuthStateChanged(auth, (user) => {
         
         $(document).ready(function () {
             
+            initCalendar();
             migrateLocalTasksToFirestore(); 
             loadTasksRealTime(); 
 
-            initCalendar(); 
             setInterval(checkAllDueDates, 60 * 1000); 
 
-            /* ------------------ NOVA LÓGICA DO MENU RESPONSIVO ------------------ */
-            
-            // MENU HAMBURGUER - abre/fecha menu principal no mobile
             const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
             const mainNavList = document.getElementById("main-nav-list");
 
@@ -737,9 +699,6 @@ onAuthStateChanged(auth, (user) => {
                 });
             }
 
-            /* ------------------ EVENT HANDLERS (DOM INTERACTION) ------------------ */
-
-            /* ---------- Mostrar/Esconder Formulário e Filtros (MODAL) ---------- */
             $('#toggle-form-btn').off('click').on('click', function() {
                 showModal('#addTaskModal'); 
                 setTimeout(() => { $('#task-text').focus(); }, 150); 
@@ -773,8 +732,6 @@ onAuthStateChanged(auth, (user) => {
                 if (e.key === 'Escape' || e.keyCode === 27) $('.modal.show').each(function () { hideModal($(this)); });
             });
 
-
-            /* ---------- ADD TAREFA (MODIFICADO: FECHA O MODAL) ---------- */
             $('#task-form').off('submit').on('submit', function (e) {
                 e.preventDefault();
                 let text = $('#task-text').val().trim();
@@ -797,8 +754,6 @@ onAuthStateChanged(auth, (user) => {
                 hideModal('#addTaskModal');
             });
 
-
-            /* ---------- MARCAR / DESMARCAR TAREFA PRINCIPAL (MODIFICADO) ---------- */
             $(document).off('change', '.task-checkbox').on('change', '.task-checkbox', async function () {
                 let li = $(this).closest('li');
                 let taskId = li.attr('data-id');
@@ -823,7 +778,6 @@ onAuthStateChanged(auth, (user) => {
                 });
             });
 
-            /* ---------- MARCAR / DESMARCAR SUBTAREFA (MODIFICADO - QUALQUER NÍVEL) ---------- */
             $(document).off('change', '.subtask-checkbox').on('change', '.subtask-checkbox', async function () {
                 let li = $(this).closest('li');
                 let subId = li.attr('data-id');
@@ -856,7 +810,6 @@ onAuthStateChanged(auth, (user) => {
                 });
             });
 
-            /* ---------- REMOVER TAREFA (MODIFICADO) ---------- */
             $(document).off('click', '.remove-btn').on('click', '.remove-btn', function () {
                 let li = $(this).closest('li');
                 let taskId = li.attr('data-id');
@@ -888,7 +841,6 @@ onAuthStateChanged(auth, (user) => {
                 if (!taskId) return;
                 openSubtaskModalForCreate(taskId, taskId); 
             });
-
 
             $('#subtask-add-btn').off('click').on('click', async function () { 
                 const { taskId, subtaskId, isEdit, parentId } = currentSubtaskData;
@@ -934,8 +886,6 @@ onAuthStateChanged(auth, (user) => {
                 currentSubtaskData = { taskId: null, subtaskId: null, isEdit: false, parentId: null };
             });
 
-
-            /* ---------- EDITAR TAREFA VIA MODAL (MODIFICADO) ---------- */
             $(document).on('click','.edit-btn',function(){
                 let li = $(this).closest('li'); currentTaskLi=li;
                 let task = tasks.find(t => t.id === li.attr('data-id')); if(!task) return;
@@ -972,8 +922,6 @@ onAuthStateChanged(auth, (user) => {
             $('#filter-priority').on('change', applyFilter);
             $('#filter-category').on('change', applyFilter);
 
-
-            /* ---------- DRAG & DROP (RE-HABILITADO) ---------- */
             $('#task-list').sortable({
                 update: async function (event, ui) {
                     if (!CURRENT_USER_UID) return;
@@ -992,7 +940,6 @@ onAuthStateChanged(auth, (user) => {
 
                     try {
                         await batch.commit();
-                        console.log("✅ Nova ordem salva no Firestore com sucesso!");
                     } catch (error) {
                         console.error("🚨 Erro ao salvar a nova ordem:", error);
                         $(this).sortable('cancel');
@@ -1001,14 +948,12 @@ onAuthStateChanged(auth, (user) => {
                 }
             });
 
-            /* ---------- TOGGLE SUBTASKS (INALTERADO) ---------- */
             $(document).on('click', '.toggle-subtasks-btn', function () {
                 let li = $(this).closest('li');
                 li.find('.subtask-list').slideToggle(200);
                 $(this).toggleClass('collapsed');
             });
 
-            /* ---------- MODAL DE VISUALIZAÇÃO (MODIFICADO PARA RECURSÃO) ---------- */
             $(document).on('click', '#task-list li > .task-main > .task-text > label', function(){
                 let li = $(this).closest('li');
                 let task = tasks.find(t => t.id === li.attr('data-id'));
@@ -1051,7 +996,6 @@ onAuthStateChanged(auth, (user) => {
                 });
             });
 
-            /* ---------- SCROLL NAV (INALTERADO) ---------- */
             let lastScrollTop = 0;
             const nav = document.querySelector("nav");
             window.addEventListener("scroll",()=>{ let currentScroll=window.pageYOffset||document.documentElement.scrollTop; if(currentScroll>lastScrollTop&&currentScroll>100) nav.classList.add("hidden"); else if(currentScroll<lastScrollTop) nav.classList.remove("hidden"); lastScrollTop=currentScroll<=0?0:currentScroll; });
@@ -1061,9 +1005,8 @@ onAuthStateChanged(auth, (user) => {
                 if($container.is(':visible')) $container.slideUp(180);
                 else $container.slideDown(180,function(){
                     if(!calendarInitialized) initCalendar();
-                    else if(calendar) {
-                        try { calendar.render(); } catch(e){}
-                        setTimeout(()=>{ try{ calendar.render(); } catch(e){} }, 60);
+                    if(calendar) {
+                        setTimeout(() => calendar.render(), 10);
                     }
                 });
             });
