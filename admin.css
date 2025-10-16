@@ -379,3 +379,107 @@
 .view-modal-body .info-item a:hover {
     text-decoration: underline;
 }
+
+/* ============================================= */
+/* SEÇÃO: MODERAÇÃO DE POSTS (VISUAL COMPACTO)   */
+/* ============================================= */
+
+/* Container para posts no Admin */
+.post-management-section #admin-posts-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espaçamento entre os posts */
+}
+
+/* Estilo geral do Card de Post para Moderação (Override de feed.css) */
+.post-management-section .post-card {
+    max-width: 100%;
+    padding: 10px; /* Reduz o padding interno */
+    border: 1px solid #ddd;
+    border-left: 5px solid #dc3545; /* Destaque em vermelho para moderação */
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Cabeçalho compacto */
+.post-management-section .post-header {
+    padding: 0 0 10px 0; /* Reduz o padding do header */
+    margin-bottom: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Foto de perfil menor */
+.post-management-section .post-header img {
+    width: 35px;
+    height: 35px;
+}
+
+/* Informações do autor menores */
+.post-management-section .post-author-info .username {
+    font-size: 1rem;
+}
+.post-management-section .post-author-info .timestamp {
+    font-size: 0.7rem;
+}
+
+/* Conteúdo do post (reduzindo padding e limitando linhas) */
+.post-management-section .post-content {
+    padding: 5px 0 5px 0;
+    max-height: 100px; 
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 4; /* Limita a 4 linhas de texto */
+    -webkit-box-orient: vertical;
+    white-space: pre-wrap; /* Mantém quebras de linha */
+}
+
+/* MOSTRAR mídia (imagem) e DEFINIR TAMANHO FIXO DO CONTAINER */
+.post-management-section .post-media {
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    margin-top: 10px;
+    margin-bottom: 5px;
+    
+    /* TAMANHO PADRONIZADO DO CONTAINER */
+    height: 200px; 
+    width: 100%; 
+    
+    overflow: hidden; 
+    border-radius: 6px;
+    background-color: #f5f5f5; /* Fundo claro para o espaço vazio */
+    box-sizing: border-box;
+}
+
+/* Imagem: Preservar aspecto, PADRONIZANDO PELO TAMANHO DO CONTAINER */
+.post-management-section .post-media img {
+    /* Ocupa 100% do container (200px de altura), mas é limitado pelo object-fit */
+    width: 100%;
+    height: 100%;
+    
+    /* ESSA É A CHAVE: Preserva o aspecto e garante que a imagem inteira caiba (pode deixar barras laterais/superior) */
+    object-fit: contain; 
+    display: block;
+}
+
+/* Ocultar footer (likes/comentários) */
+.post-management-section .post-footer {
+    display: none;
+}
+
+/* Estilo do botão de apagar Post para destaque */
+.post-management-section .admin-delete-post-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s;
+}
+
+.post-management-section .admin-delete-post-btn:hover {
+    background-color: #c82333;
+}

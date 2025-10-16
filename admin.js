@@ -1,5 +1,5 @@
-// admin.js (Versão Final com Gerenciamento de Posts)
-import { auth, db, storage } from "./firebase-config.js";
+// admin.js (Versão ATUALIZADA - APENAS Usuários e Estatísticas)
+import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { 
     doc, 
@@ -10,10 +10,7 @@ import {
     deleteDoc,
     query,
     where,
-    orderBy // Importar orderBy para ordenar os posts
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
-
 
 let currentUser = null;
 let currentEditingUser = null;
@@ -29,7 +26,7 @@ onAuthStateChanged(auth, async (user) => {
         if (userDoc.exists() && userDoc.data().role === 'admin') {
             loadStats();
             loadUsers();
-            loadAllPosts(); // <- NOVA FUNÇÃO SENDO CHAMADA AQUI
+            setupSearchListener(); 
         } else {
             alert("Acesso negado. Você não é um administrador.");
             window.location.href = "index.html";
@@ -62,6 +59,7 @@ async function loadUsers() {
     usersSnapshot.forEach(userDoc => {
         const userData = userDoc.data();
         const tr = document.createElement('tr');
+        tr.dataset.search = `${userData.email} ${userData.fullname} ${userData.username} ${userDoc.id}`.toLowerCase();
         tr.innerHTML = `
             <td>
                 <div class="user-info-cell">
@@ -83,94 +81,23 @@ async function loadUsers() {
     });
 }
 
-// =============================================
-// NOVA SEÇÃO: GERENCIAMENTO DE POSTS
-// =============================================
-
-// Carrega todos os posts de todos os usuários
-async function loadAllPosts() {
-    const postsContainer = document.getElementById('admin-posts-feed');
-    postsContainer.innerHTML = '<p>Carregando posts...</p>';
-
-    const postsRef = collection(db, 'posts');
-    const q = query(postsRef, orderBy('timestamp', 'desc')); // Ordena do mais novo para o mais antigo
-
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-        postsContainer.innerHTML = '<p>Nenhum post encontrado no site.</p>';
-        return;
-    }
-
-    postsContainer.innerHTML = ''; // Limpa a mensagem de "carregando"
-    querySnapshot.forEach(postDoc => {
-        renderPostForAdmin(postDoc.id, postDoc.data());
-    });
-}
-
-// Renderiza um post no painel do admin
-function renderPostForAdmin(postId, postData) {
-    const postsContainer = document.getElementById('admin-posts-feed');
-    const postCard = document.createElement('div');
-    postCard.className = 'post-card';
-
-    const timestamp = postData.timestamp ? postData.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível';
-
-    // Conteúdo do post, similar ao feed.js
-    postCard.innerHTML = `
-        <div class="post-header">
-            <div class="post-author-details">
-                <a href="public-profile.html?uid=${postData.userId}" target="_blank"><img src="${postData.userProfileImage}" alt="Foto"></a>
-                <div class="post-author-info">
-                    <a href="public-profile.html?uid=${postData.userId}" target="_blank"><span class="username">${postData.username}</span></a>
-                    <span class="timestamp">${timestamp}</span>
-                </div>
-            </div>
-            <div class="post-options">
-                <button class="admin-delete-post-btn" data-post-id="${postId}" data-image-url="${postData.imageUrl || ''}"><i class="fa fa-trash"></i> Apagar Post</button>
-            </div>
-        </div>
-        <div class="post-content"><p>${postData.content}</p></div>
-        ${postData.imageUrl ? `<div class="post-media"><img src="${postData.imageUrl}" alt="Mídia"></div>` : ''}
-    `;
-
-    postsContainer.appendChild(postCard);
-}
-
-// Event listener para os botões de apagar post
-document.getElementById('admin-posts-feed').addEventListener('click', (e) => {
-    const deleteButton = e.target.closest('.admin-delete-post-btn');
-    if (deleteButton) {
-        const postId = deleteButton.getAttribute('data-post-id');
-        const imageUrl = deleteButton.getAttribute('data-image-url');
-        
-        if (confirm(`Tem certeza que deseja apagar este post? Esta ação não pode ser desfeita.`)) {
-            adminDeletePost(postId, imageUrl);
-        }
-    }
-});
-
-// Função para o admin apagar qualquer post
-async function adminDeletePost(postId, imageUrl) {
-    try {
-        await deleteDoc(doc(db, 'posts', postId));
-        if (imageUrl) {
-            const imageRef = ref(storage, imageUrl);
-            await deleteObject(imageRef);
-        }
-        alert('Post apagado com sucesso!');
-        loadAllPosts(); // Recarrega a lista de posts
-        loadStats(); // Atualiza as estatísticas
-    } catch (error) {
-        console.error("Erro ao apagar post (admin):", error);
-        alert("Ocorreu um erro ao apagar o post.");
+// Função de busca local
+function setupSearchListener() {
+    const searchInput = document.getElementById('user-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#users-table-body tr');
+            rows.forEach(row => {
+                if (row.dataset.search && row.dataset.search.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
     }
 }
-
-
-// =============================================
-// LÓGICA DOS MODAIS E AÇÕES DE USUÁRIO (sem alterações)
-// =============================================
 
 // Lógica de eventos para a tabela
 document.getElementById('users-table-body').addEventListener('click', (e) => {
@@ -187,8 +114,7 @@ document.getElementById('users-table-body').addEventListener('click', (e) => {
 });
 
 // Resto do código (openViewModal, closeViewModal, openEditModal, closeEditModal, save-user-changes-btn, deleteUser)
-// ... cole aqui o resto do seu código JS que já está funcionando ...
-// (O código para os modais de visualizar e editar usuário continua o mesmo)
+// ... (funções modais e de CRUD de usuário continuam as mesmas) ...
 async function openViewModal(uid) {
     const userDoc = await getDoc(doc(db, "users", uid));
     if (userDoc.exists()) {

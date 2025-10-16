@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderação de Publicações - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="feed.css">
+</head>
+<body>
+    <nav>
+        <ul id="main-nav-list" class="nav-links">
+            <li><a href="./index.html"><i class="fa-solid fa-house"></i> Início</a></li>
+            <li><a href="admin.html"><i class="fa-solid fa-user-shield"></i> Usuários Admin</a></li>
+            <li><a href="moderacao-posts.html" class="active"><i class="fa-solid fa-comment-slash"></i> Moderação Posts</a></li>
+        </ul>
+    </nav>
+
+    <header class="task-form-header">
+        <h1>Moderação de Publicações</h1>
+        <p>Visualize e remova posts inadequados de todos os usuários.</p>
+    </header>
+
+    <main class="admin-container">
+        <section class="admin-section post-management-section">
+            <h2>Feed de Publicações</h2>
+            <div id="admin-posts-feed">
+                <p>Carregando posts...</p>
+            </div>
+        </section>
+    </main>
+
+    <div id="confirmModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+          <h2 id="confirm-modal-title">Confirmar Ação</h2>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-modal-text">Você tem certeza?</p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirm-modal-ok-btn" class="btn-danger">Confirmar</button>
+          <button id="confirm-modal-cancel-btn" class="btn-neutral">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="moderacao-posts.js"></script>
+</body>
+</html>
