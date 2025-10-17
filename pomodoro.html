@@ -1,137 +1,84 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pomodoro Avançado</title>
-<link rel="stylesheet" href="pomodoro.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Avançado</title>
+    <link rel="stylesheet" href="pomodoro.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <!-- Menu superior -->
-    <nav>
-        <div class="nav-mobile-header-bar">
-            <!-- Menu hamburguer à esquerda -->
-            <button id="mobile-menu-toggle" class="mobile-toggle-btn">
-                <i class="fa-solid fa-bars"></i>
+    <div id="nav-placeholder"></div>
+
+    <div class="pomodoro-header">
+        <h1>Pomodoro Avançado</h1>
+        <p>Selecione uma tarefa e acompanhe seus Pomodoros</p>
+    </div>
+
+    <div class="pomodoro-main">
+        <div class="task-selector">
+            <select id="pomodoro-task">
+                <option value="">Nenhuma tarefa selecionada</option>
+            </select>
+        </div>
+
+        <div class="timer-container">
+            <svg class="timer-svg" width="250" height="250">
+                <circle class="bg-circle" cx="125" cy="125" r="100"></circle>
+                <circle class="progress-circle" cx="125" cy="125" r="100"></circle>
+            </svg>
+            <div class="timer-text">
+                <h2 id="timer">25:00</h2>
+                <p id="session-type">Sessão: Pomodoro</p>
+            </div>
+        </div>
+
+        <div class="timer-controls">
+            <button id="start-btn"><i class="fa fa-play"></i> Iniciar</button>
+            <button id="pause-btn"><i class="fa fa-pause"></i> Pausar</button>
+            <button id="reset-btn"><i class="fa fa-rotate-left"></i> Resetar</button>
+            <button id="skip-btn"><i class="fa fa-forward"></i> Pular</button>
+        </div>
+
+        <p id="current-task">Tarefa atual: Nenhuma</p>
+
+        <h2>Histórico de Pomodoros</h2>
+        <table id="pomodoro-history">
+            <thead>
+                <tr>
+                    <th>Tarefa</th>
+                    <th>Sessão</th>
+                    <th>Data/Hora</th>
+                    <th>Duração (min)</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="history-controls" style="margin-top: 10px;">
+            <button id="reset-history-btn" style="background:#f44336;color:white;padding:8px 12px;border:none;border-radius:5px;margin-right:5px;cursor:pointer;">
+                <i class="fa fa-trash"></i> Resetar Histórico
             </button>
-
-            <!-- Botão login (mobile) -->
-            <li id="mobile-nav-login-btn" class="nav-auth-item" style="display: none;">
-                <a href="login.html" class="btn-login-nav">
-                    <i class="fa-solid fa-right-to-bracket"></i> Entrar
-                </a>
-            </li>
-
-            <!-- Avatar do perfil (mobile) -->
-            <li class="profile-menu-container nav-auth-item" id="mobile-profile-container" style="display: none;">
-                <div class="profile-menu-toggle" id="mobile-profile-toggle">
-                    <img id="mobile-nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
-                </div>
-                <ul class="profile-submenu" id="mobile-profile-submenu">
-                    <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
-                    <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
-                    <li><a href="#" id="mobile-logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
-                </ul>
-            </li>
-        </div>
-
-        <ul id="main-nav-list" class="nav-links">
-            <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
-            <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
-            <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
-            <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
-            <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li>
-
-            <!-- Login desktop -->
-            <li id="nav-login-btn" class="nav-auth-item" style="display: none;">
-                <a href="login.html" class="btn-login-nav">
-                    <i class="fa-solid fa-right-to-bracket"></i> Entrar
-                </a>
-            </li>
-
-            <!-- Perfil desktop -->
-            <li class="profile-menu-container nav-auth-item" id="desktop-profile-container" style="display: none;">
-                <div class="profile-menu-toggle" id="desktop-profile-toggle">
-                    <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
-                    <span id="nav-profile-name">Carregando...</span>
-                    <i class="fa-solid fa-caret-down"></i>
-                </div>
-                <ul class="profile-submenu" id="desktop-profile-submenu">
-                    <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
-                    <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
-                    <li><a href="#" id="logout-btn-submenu"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
-                </ul>
-            </li>
-        </ul>
-    </nav>
-
-<div class="pomodoro-header">
-    <h1>Pomodoro Avançado</h1>
-    <p>Selecione uma tarefa e acompanhe seus Pomodoros</p>
-</div>
-
-<div class="pomodoro-main">
-    <div class="task-selector">
-        <select id="pomodoro-task">
-            <option value="">Nenhuma tarefa selecionada</option>
-        </select>
-    </div>
-
-    <div class="timer-container">
-        <svg class="timer-svg" width="250" height="250">
-            <circle class="bg-circle" cx="125" cy="125" r="100"></circle>
-            <circle class="progress-circle" cx="125" cy="125" r="100"></circle>
-        </svg>
-        <div class="timer-text">
-            <h2 id="timer">25:00</h2>
-            <p id="session-type">Sessão: Pomodoro</p>
+            <button id="export-history-btn" style="background:#4CAF50;color:white;padding:8px 12px;border:none;border-radius:5px;cursor:pointer;">
+                <i class="fa fa-download"></i> Exportar CSV
+            </button>
         </div>
     </div>
 
-    <div class="timer-controls">
-        <button id="start-btn"><i class="fa fa-play"></i> Iniciar</button>
-        <button id="pause-btn"><i class="fa fa-pause"></i> Pausar</button>
-        <button id="reset-btn"><i class="fa fa-rotate-left"></i> Resetar</button>
-        <button id="skip-btn"><i class="fa fa-forward"></i> Pular</button>
-    </div>
+    <footer>
+        Desenvolvido por Christian de Carvalho
+    </footer>
 
-    <p id="current-task">Tarefa atual: Nenhuma</p>
-
-    <h2>Histórico de Pomodoros</h2>
-    <table id="pomodoro-history">
-        <thead>
-            <tr>
-                <th>Tarefa</th>
-                <th>Sessão</th>
-                <th>Data/Hora</th>
-                <th>Duração (min)</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-    <div class="history-controls" style="margin-top: 10px;">
-    <button id="reset-history-btn" style="background:#f44336;color:white;padding:8px 12px;border:none;border-radius:5px;margin-right:5px;cursor:pointer;">
-        <i class="fa fa-trash"></i> Resetar Histórico
+    <button id="dark-mode-toggle" class="dark-mode-btn">
+        <i class="fa-solid fa-moon"></i>
     </button>
-    <button id="export-history-btn" style="background:#4CAF50;color:white;padding:8px 12px;border:none;border-radius:5px;cursor:pointer;">
-        <i class="fa fa-download"></i> Exportar CSV
-    </button>
-</div>
 
-</div>
-
-<footer>
-    Desenvolvido por Christian de Carvalho
-</footer>
-
-<!-- Botão flutuante modo escuro -->
-<button id="dark-mode-toggle" class="dark-mode-btn">
-  <i class="fa-solid fa-moon"></i>
-</button>
-
-<audio id="alarm-sound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="pomodoro.js"></script>
+    <audio id="alarm-sound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3" preload="auto"></audio>
+    
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="auth-listener.js"></script>
+    <script type="module" src="nav.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="pomodoro.js"></script>
 </body>
 </html>
