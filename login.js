@@ -1,11 +1,14 @@
 // login.js
-import { auth } from './firebase-config.js';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  GoogleAuthProvider, 
-  signInWithPopup 
+import { auth, db } from './firebase-config.js';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  getAdditionalUserInfo
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
 
 // Inicializa o provider do Google
 const provider = new GoogleAuthProvider();
@@ -34,6 +37,25 @@ showLogin.addEventListener("click", () => {
   signupError.textContent = "";
 });
 
+// Função para verificar se é um novo usuário e redirecionar
+const handleAuthRedirect = (result) => {
+    const additionalUserInfo = getAdditionalUserInfo(result);
+    if (additionalUserInfo?.isNewUser) {
+        // Se for um novo usuário, cria um documento inicial no Firestore
+        const user = result.user;
+        const userRef = doc(db, "users", user.uid);
+        setDoc(userRef, {
+            email: user.email,
+            fullname: user.displayName || '',
+            createdAt: new Date()
+        }, { merge: true });
+        window.location.href = "profile.html"; // Redireciona para completar o perfil
+    } else {
+        window.location.href = "index.html"; // Vai para a página principal se já for um usuário existente
+    }
+}
+
+
 // ===== LOGIN EMAIL/SENHA =====
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -41,8 +63,8 @@ loginForm.addEventListener("submit", async (e) => {
   const password = document.getElementById("login-password").value;
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
-    window.location.href = "index.html";
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    handleAuthRedirect(result);
   } catch (error) {
     console.error("Erro login email/senha:", error.code, error.message);
     loginError.textContent = "Email ou senha incorretos.";
@@ -53,9 +75,7 @@ loginForm.addEventListener("submit", async (e) => {
 googleBtn.addEventListener("click", async () => {
   try {
     const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    console.log("Usuário logado com Google:", user.displayName, user.email);
-    window.location.href = "index.html";
+    handleAuthRedirect(result);
   } catch (error) {
     console.error("Erro login Google:", error.code, error.message);
     loginError.textContent = `Erro ao fazer login com Google: ${error.code}`;
@@ -69,10 +89,8 @@ signupForm.addEventListener("submit", async (e) => {
   const password = document.getElementById("signup-password").value;
 
   try {
-    await createUserWithEmailAndPassword(auth, email, password);
-    signupError.textContent = "Cadastro realizado! Faça login.";
-    signupForm.classList.remove("active");
-    loginForm.classList.add("active");
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    handleAuthRedirect(result);
   } catch (error) {
     console.error("Erro cadastro:", error.code, error.message);
     signupError.textContent = `Erro ao cadastrar: ${error.code}`;

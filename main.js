@@ -32,10 +32,73 @@ let calendarInitialized = false;
 // Função utilitária básica
 function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
 
+// ===============================================
+// LÓGICA DE AUTENTICAÇÃO E INICIALIZAÇÃO
+// ===============================================
+onAuthStateChanged(auth, (user) => {
+    const loginPrompt = document.getElementById('login-prompt');
+    const goToLoginBtn = document.getElementById('go-to-login-btn');
+
+    if (user) {
+        // Usuário está LOGADO
+        CURRENT_USER_UID = user.uid;
+        if(loginPrompt) loginPrompt.style.display = 'none';
+
+        $(document).ready(function() {
+            initializeAuthenticatedSession();
+        });
+
+    } else {
+        // Usuário está DESLOGADO
+        CURRENT_USER_UID = null;
+        if(loginPrompt) loginPrompt.style.display = 'block';
+        if(goToLoginBtn) {
+            goToLoginBtn.addEventListener('click', () => {
+                window.location.href = 'login.html';
+            });
+        }
+        
+        $(document).ready(function() {
+            initializeGuestSession();
+        });
+    }
+});
+
+function initializeAuthenticatedSession() {
+    console.log("Sessão autenticada iniciada.");
+    initCalendar();
+    migrateLocalTasksToFirestore(); 
+    loadTasksRealTime();
+    setupCommonEventListeners();
+}
+
+function initializeGuestSession() {
+    console.log("Sessão de convidado iniciada.");
+    loadTasksFromLocalStorage();
+    setupCommonEventListeners();
+}
 
 // ===============================================
-// 3. FUNÇÕES RECURSIVAS DE MANIPULAÇÃO DE DADOS
+// 3. FUNÇÕES DE MANIPULAÇÃO DE DADOS (LOCAL & FIRESTORE)
 // ===============================================
+
+// Funções para localStorage
+function getLocalTasks() {
+    return JSON.parse(localStorage.getItem('tasks')) || [];
+}
+
+function saveLocalTasks(tasksArray) {
+    localStorage.setItem('tasks', JSON.stringify(tasksArray));
+    renderAllTasks(tasksArray);
+    updateProgress();
+}
+
+function loadTasksFromLocalStorage() {
+    tasks = getLocalTasks();
+    renderAllTasks(tasks);
+    updateProgress();
+    checkAllDueDates();
+}
 
 /**
  * Funções auxiliares para encontrar e atualizar sub-tarefas em qualquer nível.
@@ -137,7 +200,7 @@ async function saveSubtasksToFirestore(taskId, subtasks) {
 
 
 // ===============================================
-// 5. ESCUTA EM TEMPO REAL
+// 5. ESCUTA EM TEMPO REAL (FIRESTORE)
 // ===============================================
 function loadTasksRealTime() {
     if (!CURRENT_USER_UID) return;
@@ -146,7 +209,6 @@ function loadTasksRealTime() {
     const q = query(tasksRef, orderBy("orderIndex", "asc"));
 
     onSnapshot(q, (snapshot) => {
-        $('#task-list').empty();
         tasks = [];
 
         snapshot.forEach((doc) => {
@@ -155,9 +217,9 @@ function loadTasksRealTime() {
             if (!task.category) task.category = 'geral';
             if (!task.subtasks) task.subtasks = [];
             tasks.push(task);
-            addTaskHTML(task);
         });
-
+        
+        renderAllTasks(tasks);
         updateProgress();
         checkAllDueDates();
         applyFilter();
@@ -188,7 +250,7 @@ function migrateLocalTasksToFirestore() {
         let orderIndex = 0;
 
         localTasks.forEach(async (task) => {
-             const { id, ...taskData } = task;
+             const { id, ...taskData } = task; // Remove o ID local antigo
 
              await addDoc(tasksRef, {
                 ...taskData,
@@ -199,7 +261,8 @@ function migrateLocalTasksToFirestore() {
 
         localStorage.removeItem('tasks');
         console.log("Migração concluída e LocalStorage limpo.");
-        alert("🎉 Tarefas antigas do LocalStorage foram migradas para o Firebase! Recarregue a página se elas ainda não aparecerão.");
+        alert("🎉 Tarefas locais foram salvas na sua conta! A página será recarregada.");
+        location.reload();
 
     } catch (e) {
         console.error('Erro durante a migração do LocalStorage:', e);
@@ -209,6 +272,11 @@ function migrateLocalTasksToFirestore() {
 // ===============================================
 // 7. FUNÇÕES DE RENDERIZAÇÃO E UTILIDADE
 // ===============================================
+
+function renderAllTasks(tasksArray) {
+    $('#task-list').empty();
+    tasksArray.forEach(task => addTaskHTML(task));
+}
 
 /* ---------- ADD TAREFA HTML (CORRIGIDO) ---------- */
 function addTaskHTML(task) {
@@ -282,7 +350,7 @@ function addTaskHTML(task) {
     updateTaskDueVisual(li, task);
 }
 
-
+// ... (restante das suas funções de renderização: addSubtaskHTML, toggleSubtaskMenu, etc., permanecem as mesmas)
 function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     let li = $('<li></li>')
         .attr('data-id', subtask.id)
@@ -414,7 +482,13 @@ function deleteSubtaskViaModal(taskId, subId) {
         };
 
         const updatedSubtasks = recursiveRemove(task.subtasks);
-        await saveSubtasksToFirestore(taskId, updatedSubtasks);
+        
+        if (CURRENT_USER_UID) {
+            await saveSubtasksToFirestore(taskId, updatedSubtasks);
+        } else {
+            task.subtasks = updatedSubtasks;
+            saveLocalTasks(tasks);
+        }
 
         hideModal('#confirmModal');
         $('#confirm-ok-btn').prop('disabled', false).html('Confirmar');
@@ -426,6 +500,7 @@ function deleteSubtaskViaModal(taskId, subId) {
     });
 }
 
+// ... (todas as outras funções de UI como openSubtaskModalForCreate, applyFilter, updateProgress, etc., permanecem as mesmas)
 function openSubtaskModalForCreate(taskId, parentId) {
     currentSubtaskData = {
         taskId, subtaskId: null, isEdit: false, parentId,
@@ -680,350 +755,366 @@ function hideModal(selector) {
     $modal.off('keydown.focusTrap');
 }
 
-
 // ===============================================
-// 8. LÓGICA DE AUTENTICAÇÃO E EVENT HANDLERS
+// 8. EVENT HANDLERS
 // ===============================================
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        CURRENT_USER_UID = user.uid;
+function setupCommonEventListeners() {
+    setInterval(checkAllDueDates, 60 * 1000);
 
-        $(document).ready(function () {
+    const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
+    const mainNavList = document.getElementById("main-nav-list");
 
-            initCalendar();
-            migrateLocalTasksToFirestore();
-            loadTasksRealTime();
+    if (mobileMenuToggle && mainNavList) {
+        mobileMenuToggle.addEventListener("click", () => {
+            mainNavList.classList.toggle("active");
+        });
+    }
 
-            setInterval(checkAllDueDates, 60 * 1000);
+    $('#toggle-form-btn').off('click').on('click', function() {
+        showModal('#addTaskModal');
+        setTimeout(() => { $('#task-text').focus(); }, 150);
+    });
 
-            const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
-            const mainNavList = document.getElementById("main-nav-list");
+    $('#toggle-filter-btn').off('click').on('click', function() {
+        showModal('#filterModal');
+        setTimeout(() => { $('#search-input').focus(); }, 150);
+    });
 
-            if (mobileMenuToggle && mainNavList) {
-                mobileMenuToggle.addEventListener("click", () => {
-                    mainNavList.classList.toggle("active");
-                });
+    $('#add-task-cancel-btn').on('click', function() {
+        hideModal('#addTaskModal');
+    });
+
+    $('#filter-apply-btn').on('click', function() {
+        applyFilter();
+        hideModal('#filterModal');
+    });
+
+    $('#filter-cancel-btn').on('click', function() {
+        hideModal('#filterModal');
+    });
+
+    $('.modal .close, .modal .close-top-right').on('click', function() {
+        hideModal($(this).closest('.modal'));
+    });
+    $('#edit-cancel-btn').on('click', () => hideModal('#editTaskModal'));
+    $('#subtask-cancel-btn').on('click', () => hideModal('#subtask-modal'));
+    $('#view-close-btn').on('click', () => hideModal('#viewTaskModal'));
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape' || e.keyCode === 27) $('.modal.show').each(function () { hideModal($(this)); });
+    });
+
+    $('#task-form').off('submit').on('submit', function (e) {
+        e.preventDefault();
+        let text = $('#task-text').val().trim();
+        let priority = $('#task-priority').val();
+        let dueDate = $('#task-date').val();
+        let dueTime = $('#task-time').val();
+        let category = $('#task-category').val() || 'geral';
+        if (!text) return;
+
+        let task = { text, completed: false, priority, dueDate, dueTime, category, subtasks: [] };
+        
+        if (CURRENT_USER_UID) {
+            addTaskToFirestore(task);
+        } else {
+            task.id = generateId(); // Adiciona um ID local
+            tasks.push(task);
+            saveLocalTasks(tasks);
+        }
+
+        $('#task-text').val('');
+        $('#task-priority').val('medium');
+        $('#task-date').val('');
+        $('#task-time').val('');
+        $('#task-category').val('geral');
+
+        hideModal('#addTaskModal');
+    });
+
+    $(document).off('change', '.task-checkbox').on('change', '.task-checkbox', async function () {
+        let li = $(this).closest('li');
+        let taskId = li.attr('data-id');
+        let isCompleted = $(this).prop('checked');
+
+        let task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        const recursiveCheck = (subtasks) => {
+            return subtasks.map(st => ({
+                ...st,
+                completed: isCompleted,
+                subtasks: st.subtasks ? recursiveCheck(st.subtasks) : []
+            }));
+        };
+
+        const subtasks = recursiveCheck(task.subtasks);
+        
+        if (CURRENT_USER_UID) {
+            await updateTaskInFirestore(taskId, {
+                completed: isCompleted,
+                subtasks: subtasks
+            });
+        } else {
+            task.completed = isCompleted;
+            task.subtasks = subtasks;
+            saveLocalTasks(tasks);
+        }
+    });
+
+    $(document).off('change', '.subtask-checkbox').on('change', '.subtask-checkbox', async function () {
+        let li = $(this).closest('li');
+        let subId = li.attr('data-id');
+        let taskId = $(this).closest('li[data-id][data-category]').attr('data-id');
+
+        let task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        const isCompleted = $(this).prop('checked');
+
+        const updateTargetAndChildren = (subtasks) => {
+            return subtasks.map(st => {
+                if (st.id === subId) {
+                    st.completed = isCompleted;
+                    if (st.subtasks) st.subtasks = st.subtasks.map(child => ({...child, completed: isCompleted}));
+                } else if (st.subtasks && st.subtasks.length > 0) {
+                    st.subtasks = updateTargetAndChildren(st.subtasks);
+                }
+                return st;
+            });
+        };
+
+        let updatedSubtasks = updateTargetAndChildren(task.subtasks);
+        const isMainTaskCompleted = checkCompletionStatusRecursively(updatedSubtasks);
+
+        if (CURRENT_USER_UID) {
+            await updateTaskInFirestore(taskId, {
+                subtasks: updatedSubtasks,
+                completed: isMainTaskCompleted
+            });
+        } else {
+            task.subtasks = updatedSubtasks;
+            task.completed = isMainTaskCompleted;
+            saveLocalTasks(tasks);
+        }
+    });
+
+    $(document).off('click', '.remove-btn').on('click', '.remove-btn', function () {
+        let li = $(this).closest('li');
+        let taskId = li.attr('data-id');
+        let task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        $('#confirm-title').text('Apagar Tarefa');
+        $('#confirm-text').text(`Deseja realmente apagar a tarefa "${task.text}"? Esta ação não pode ser desfeita.`);
+        showModal('#confirmModal');
+
+        $('#confirm-ok-btn').off('click').on('click', function() {
+            if (CURRENT_USER_UID) {
+                deleteTaskFromFirestore(taskId);
+            } else {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveLocalTasks(tasks);
             }
-
-            $('#toggle-form-btn').off('click').on('click', function() {
-                showModal('#addTaskModal');
-                setTimeout(() => { $('#task-text').focus(); }, 150);
-            });
-
-            $('#toggle-filter-btn').off('click').on('click', function() {
-                showModal('#filterModal');
-                setTimeout(() => { $('#search-input').focus(); }, 150);
-            });
-
-            $('#add-task-cancel-btn').on('click', function() {
-                hideModal('#addTaskModal');
-            });
-
-            $('#filter-apply-btn').on('click', function() {
-                applyFilter();
-                hideModal('#filterModal');
-            });
-
-            $('#filter-cancel-btn').on('click', function() {
-                hideModal('#filterModal');
-            });
-
-            $('.modal .close, .modal .close-top-right').on('click', function() {
-                hideModal($(this).closest('.modal'));
-            });
-            $('#edit-cancel-btn').on('click', () => hideModal('#editTaskModal'));
-            $('#subtask-cancel-btn').on('click', () => hideModal('#subtask-modal'));
-            $('#view-close-btn').on('click', () => hideModal('#viewTaskModal'));
-            $(document).on('keydown', function (e) {
-                if (e.key === 'Escape' || e.keyCode === 27) $('.modal.show').each(function () { hideModal($(this)); });
-            });
-
-            $('#task-form').off('submit').on('submit', function (e) {
-                e.preventDefault();
-                let text = $('#task-text').val().trim();
-                let priority = $('#task-priority').val();
-                let dueDate = $('#task-date').val();
-                let dueTime = $('#task-time').val();
-                let category = $('#task-category').val() || 'geral';
-                if (!text) return;
-
-                let task = { text, completed: false, priority, dueDate, dueTime, category, subtasks: [] };
-
-                addTaskToFirestore(task);
-
-                $('#task-text').val('');
-                $('#task-priority').val('medium');
-                $('#task-date').val('');
-                $('#task-time').val('');
-                $('#task-category').val('geral');
-
-                hideModal('#addTaskModal');
-            });
-
-            $(document).off('change', '.task-checkbox').on('change', '.task-checkbox', async function () {
-                let li = $(this).closest('li');
-                let taskId = li.attr('data-id');
-                let isCompleted = $(this).prop('checked');
-
-                let task = tasks.find(t => t.id === taskId);
-                if (!task) return;
-
-                const recursiveCheck = (subtasks) => {
-                    return subtasks.map(st => ({
-                        ...st,
-                        completed: isCompleted,
-                        subtasks: st.subtasks ? recursiveCheck(st.subtasks) : []
-                    }));
-                };
-
-                const subtasks = recursiveCheck(task.subtasks);
-
-                await updateTaskInFirestore(taskId, {
-                    completed: isCompleted,
-                    subtasks: subtasks
-                });
-            });
-
-            $(document).off('change', '.subtask-checkbox').on('change', '.subtask-checkbox', async function () {
-                let li = $(this).closest('li');
-                let subId = li.attr('data-id');
-                let taskId = $(this).closest('li[data-id][data-category]').attr('data-id');
-
-                let task = tasks.find(t => t.id === taskId);
-                if (!task) return;
-
-                const isCompleted = $(this).prop('checked');
-
-                const updateTargetAndChildren = (subtasks) => {
-                    return subtasks.map(st => {
-                        if (st.id === subId) {
-                            st.completed = isCompleted;
-                            if (st.subtasks) st.subtasks = st.subtasks.map(child => ({...child, completed: isCompleted}));
-                        } else if (st.subtasks && st.subtasks.length > 0) {
-                            st.subtasks = updateTargetAndChildren(st.subtasks);
-                        }
-                        return st;
-                    });
-                };
-
-                let updatedSubtasks = updateTargetAndChildren(task.subtasks);
-
-                const isMainTaskCompleted = checkCompletionStatusRecursively(updatedSubtasks);
-
-                await updateTaskInFirestore(taskId, {
-                    subtasks: updatedSubtasks,
-                    completed: isMainTaskCompleted
-                });
-            });
-
-            $(document).off('click', '.remove-btn').on('click', '.remove-btn', function () {
-                let li = $(this).closest('li');
-                let taskId = li.attr('data-id');
-                let task = tasks.find(t => t.id === taskId);
-                if (!task) return;
-
-                $('#confirm-title').text('Apagar Tarefa');
-                $('#confirm-text').text(`Deseja realmente apagar a tarefa "${task.text}"? Esta ação não pode ser desfeita.`);
-                showModal('#confirmModal');
-
-                $('#confirm-ok-btn').off('click').on('click', function() {
-                    deleteTaskFromFirestore(taskId);
-                    hideModal('#confirmModal');
-                });
-
-                $('#confirm-cancel-btn').off('click').on('click', function() {
-                    hideModal('#confirmModal');
-                });
-            });
-
-            $(document).on('click', '.add-nested-subtask-btn', function() {
-                const taskId = $(this).data('task-id');
-                const parentId = $(this).data('parent-id');
-                openSubtaskModalForCreate(taskId, parentId);
-            });
-
-            $(document).on('click', '.add-subtask-btn', function () {
-                const taskId = $(this).data('task-id') || $(this).closest('li').data('id');
-                if (!taskId) return;
-                openSubtaskModalForCreate(taskId, taskId);
-            });
-
-            $('#subtask-add-btn').off('click').on('click', async function () {
-                const { taskId, subtaskId, isEdit, parentId } = currentSubtaskData;
-                const subtaskText = $('#subtask-input').val().trim();
-
-                const newSubtaskData = {
-                    text: subtaskText,
-                    priority: $('#subtask-priority').val(),
-                    category: $('#subtask-category').val(),
-                    dueDate: $('#subtask-date').val(),
-                    dueTime: $('#subtask-time').val(),
-                };
-
-                if (!newSubtaskData.text || !taskId) return;
-
-                const task = tasks.find(t => t.id === taskId);
-                if (!task) return;
-
-                let updatedSubtasks;
-
-                if (isEdit) {
-                    updatedSubtasks = updateNestedSubtasks(task.subtasks, subtaskId, (sub) => {
-                        return { ...sub, ...newSubtaskData };
-                    });
-
-                } else {
-                    const newSubtask = { id: generateId(), completed: false, subtasks: [], ...newSubtaskData };
-
-                    if (parentId === taskId) {
-                        updatedSubtasks = [...task.subtasks, newSubtask];
-                    } else {
-                        updatedSubtasks = updateNestedSubtasks(task.subtasks, parentId, (sub) => {
-                            sub.subtasks = sub.subtasks || [];
-                            sub.subtasks.push(newSubtask);
-                            return sub;
-                        });
-                    }
-                }
-
-                await saveSubtasksToFirestore(taskId, updatedSubtasks);
-
-                hideModal('#subtask-modal');
-                currentSubtaskData = { taskId: null, subtaskId: null, isEdit: false, parentId: null };
-            });
-
-            $(document).on('click','.edit-btn',function(){
-                let li = $(this).closest('li'); currentTaskLi=li;
-                let task = tasks.find(t => t.id === li.attr('data-id')); if(!task) return;
-                $('#edit-task-name').val(task.text);
-                $('#edit-task-priority').val(task.priority);
-                $('#edit-task-category').val(task.category);
-                $('#edit-task-date').val(task.dueDate);
-                $('#edit-task-time').val(task.dueTime);
-                showModal('#editTaskModal');
-            });
-
-            $('#edit-save-btn').off('click').on('click', async function(){
-                if(!currentTaskLi) return;
-                let taskId = currentTaskLi.attr('data-id');
-
-                let task = tasks.find(t => t.id === taskId);
-                if(!task) return;
-
-                const updatedData = {
-                    text: $('#edit-task-name').val().trim() || 'Tarefa',
-                    priority: $('#edit-task-priority').val(),
-                    category: $('#edit-task-category').val(),
-                    dueDate: $('#edit-task-date').val(),
-                    dueTime: $('#edit-task-time').val(),
-                };
-
-                await updateTaskInFirestore(taskId, updatedData);
-
-                hideModal('#editTaskModal');
-                currentTaskLi=null;
-            });
-
-            $('#search-input').on('input', applyFilter);
-            $('#filter-priority').on('change', applyFilter);
-            $('#filter-category').on('change', applyFilter);
-
-            $('#task-list').sortable({
-                update: async function (event, ui) {
-                    if (!CURRENT_USER_UID) return;
-
-                    const orderedIds = $('#task-list>li').map(function() {
-                        return $(this).attr('data-id');
-                    }).get();
-
-                    const batch = writeBatch(db);
-                    const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
-
-                    orderedIds.forEach((taskId, newIndex) => {
-                        const taskRef = doc(tasksRef, taskId);
-                        batch.update(taskRef, { orderIndex: newIndex });
-                    });
-
-                    try {
-                        await batch.commit();
-                    } catch (error) {
-                        console.error("🚨 Erro ao salvar a nova ordem:", error);
-                        $(this).sortable('cancel');
-                        alert("Erro ao salvar a nova ordem. Verifique sua conexão ou regras de segurança.");
-                    }
-                }
-            });
-
-            $(document).on('click', '.toggle-subtasks-btn', function () {
-                let li = $(this).closest('li');
-                li.find('.subtask-list').slideToggle(200);
-                $(this).toggleClass('collapsed');
-            });
-
-            $(document).on('click', '#task-list li > .task-main > .task-text > label', function(){
-                let li = $(this).closest('li');
-                let task = tasks.find(t => t.id === li.attr('data-id'));
-                if(!task) return;
-
-                const renderNestedSubtasks = (subtasks, $list) => {
-                    if (!subtasks || subtasks.length === 0) return;
-                    subtasks.forEach(st => {
-                        const $li = $('<li></li>').text(st.text + (st.completed ? ' ✅' : '')).appendTo($list);
-                        if (st.subtasks && st.subtasks.length > 0) {
-                            const $ul = $('<ul class="subtasks-list" style="margin-left: 20px; border-left: 2px solid #ddd; padding-left: 10px;"></ul>').appendTo($li);
-                            renderNestedSubtasks(st.subtasks, $ul);
-                        }
-                    });
-                };
-
-                $('#view-task-name').text(task.text);
-                $('#view-task-priority').text(task.priority.charAt(0).toUpperCase()+task.priority.slice(1));
-                $('#view-task-category').text(task.category.charAt(0).toUpperCase()+task.category.slice(1));
-
-                let dateText = task.dueDate ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString() : 'Sem data';
-                let timeText = task.dueTime ? ` às ${task.dueTime}` : '';
-                $('#view-task-date').text(dateText + timeText);
-
-                let $subtasks = $('#view-task-subtasks').empty();
-                if(task.subtasks.length){
-                    renderNestedSubtasks(task.subtasks, $subtasks);
-                } else $subtasks.append('<li>Nenhuma subtarefa</li>');
-
-                showModal('#viewTaskModal');
-
-                $('#view-edit-btn').off('click').on('click',function(){
-                    hideModal('#viewTaskModal');
-                    li.find('.edit-btn').first().click();
-                });
-
-                $('#view-delete-btn').off('click').on('click',function(){
-                    hideModal('#viewTaskModal');
-                    li.find('.remove-btn').first().click();
-                });
-            });
-
-            let lastScrollTop = 0;
-            const nav = document.querySelector("nav");
-            window.addEventListener("scroll",()=>{ let currentScroll=window.pageYOffset||document.documentElement.scrollTop; if(currentScroll>lastScrollTop&&currentScroll>100) nav.classList.add("hidden"); else if(currentScroll<lastScrollTop) nav.classList.remove("hidden"); lastScrollTop=currentScroll<=0?0:currentScroll; });
-
-            $('#toggle-calendar-btn').on('click',function(){
-                const $container=$('#calendar-container');
-                if($container.is(':visible')) $container.slideUp(180);
-                else $container.slideDown(180,function(){
-                    if(!calendarInitialized) initCalendar();
-                    if(calendar) {
-                        setTimeout(() => calendar.render(), 10);
-                    }
-                });
-            });
-
+            hideModal('#confirmModal');
         });
 
-    } else {
-        const currentPage = window.location.pathname.split('/').pop();
-        if (currentPage !== 'login.html' && currentPage !== 'signup.html') {
-            window.location.href = "login.html";
+        $('#confirm-cancel-btn').off('click').on('click', function() {
+            hideModal('#confirmModal');
+        });
+    });
+
+    $(document).on('click', '.add-nested-subtask-btn', function() {
+        const taskId = $(this).data('task-id');
+        const parentId = $(this).data('parent-id');
+        openSubtaskModalForCreate(taskId, parentId);
+    });
+
+    $(document).on('click', '.add-subtask-btn', function () {
+        const taskId = $(this).data('task-id') || $(this).closest('li').data('id');
+        if (!taskId) return;
+        openSubtaskModalForCreate(taskId, taskId);
+    });
+
+    $('#subtask-add-btn').off('click').on('click', async function () {
+        const { taskId, subtaskId, isEdit, parentId } = currentSubtaskData;
+        const subtaskText = $('#subtask-input').val().trim();
+
+        const newSubtaskData = {
+            text: subtaskText,
+            priority: $('#subtask-priority').val(),
+            category: $('#subtask-category').val(),
+            dueDate: $('#subtask-date').val(),
+            dueTime: $('#subtask-time').val(),
+        };
+
+        if (!newSubtaskData.text || !taskId) return;
+
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        let updatedSubtasks;
+
+        if (isEdit) {
+            updatedSubtasks = updateNestedSubtasks(task.subtasks, subtaskId, (sub) => {
+                return { ...sub, ...newSubtaskData };
+            });
+
+        } else {
+            const newSubtask = { id: generateId(), completed: false, subtasks: [], ...newSubtaskData };
+
+            if (parentId === taskId) {
+                updatedSubtasks = [...task.subtasks, newSubtask];
+            } else {
+                updatedSubtasks = updateNestedSubtasks(task.subtasks, parentId, (sub) => {
+                    sub.subtasks = sub.subtasks || [];
+                    sub.subtasks.push(newSubtask);
+                    return sub;
+                });
+            }
         }
-    }
-});
+        
+        if (CURRENT_USER_UID) {
+            await saveSubtasksToFirestore(taskId, updatedSubtasks);
+        } else {
+            task.subtasks = updatedSubtasks;
+            saveLocalTasks(tasks);
+        }
+
+        hideModal('#subtask-modal');
+        currentSubtaskData = { taskId: null, subtaskId: null, isEdit: false, parentId: null };
+    });
+
+    $(document).on('click','.edit-btn',function(){
+        let li = $(this).closest('li'); currentTaskLi=li;
+        let task = tasks.find(t => t.id === li.attr('data-id')); if(!task) return;
+        $('#edit-task-name').val(task.text);
+        $('#edit-task-priority').val(task.priority);
+        $('#edit-task-category').val(task.category);
+        $('#edit-task-date').val(task.dueDate);
+        $('#edit-task-time').val(task.dueTime);
+        showModal('#editTaskModal');
+    });
+
+    $('#edit-save-btn').off('click').on('click', async function(){
+        if(!currentTaskLi) return;
+        let taskId = currentTaskLi.attr('data-id');
+
+        let task = tasks.find(t => t.id === taskId);
+        if(!task) return;
+
+        const updatedData = {
+            text: $('#edit-task-name').val().trim() || 'Tarefa',
+            priority: $('#edit-task-priority').val(),
+            category: $('#edit-task-category').val(),
+            dueDate: $('#edit-task-date').val(),
+            dueTime: $('#edit-task-time').val(),
+        };
+        
+        if (CURRENT_USER_UID) {
+            await updateTaskInFirestore(taskId, updatedData);
+        } else {
+            const taskIndex = tasks.findIndex(t => t.id === taskId);
+            if (taskIndex > -1) {
+                tasks[taskIndex] = { ...tasks[taskIndex], ...updatedData };
+                saveLocalTasks(tasks);
+            }
+        }
+
+        hideModal('#editTaskModal');
+        currentTaskLi=null;
+    });
+
+    $('#search-input').on('input', applyFilter);
+    $('#filter-priority').on('change', applyFilter);
+    $('#filter-category').on('change', applyFilter);
+
+    $('#task-list').sortable({
+        update: async function (event, ui) {
+            if (!CURRENT_USER_UID) return;
+
+            const orderedIds = $('#task-list>li').map(function() {
+                return $(this).attr('data-id');
+            }).get();
+
+            const batch = writeBatch(db);
+            const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
+
+            orderedIds.forEach((taskId, newIndex) => {
+                const taskRef = doc(tasksRef, taskId);
+                batch.update(taskRef, { orderIndex: newIndex });
+            });
+
+            try {
+                await batch.commit();
+            } catch (error) {
+                console.error("🚨 Erro ao salvar a nova ordem:", error);
+                $(this).sortable('cancel');
+                alert("Erro ao salvar a nova ordem. Verifique sua conexão ou regras de segurança.");
+            }
+        }
+    });
+
+    $(document).on('click', '.toggle-subtasks-btn', function () {
+        let li = $(this).closest('li');
+        li.find('.subtask-list').slideToggle(200);
+        $(this).toggleClass('collapsed');
+    });
+
+    $(document).on('click', '#task-list li > .task-main > .task-text > label', function(){
+        let li = $(this).closest('li');
+        let task = tasks.find(t => t.id === li.attr('data-id'));
+        if(!task) return;
+
+        const renderNestedSubtasks = (subtasks, $list) => {
+            if (!subtasks || subtasks.length === 0) return;
+            subtasks.forEach(st => {
+                const $li = $('<li></li>').text(st.text + (st.completed ? ' ✅' : '')).appendTo($list);
+                if (st.subtasks && st.subtasks.length > 0) {
+                    const $ul = $('<ul class="subtasks-list" style="margin-left: 20px; border-left: 2px solid #ddd; padding-left: 10px;"></ul>').appendTo($li);
+                    renderNestedSubtasks(st.subtasks, $ul);
+                }
+            });
+        };
+
+        $('#view-task-name').text(task.text);
+        $('#view-task-priority').text(task.priority.charAt(0).toUpperCase()+task.priority.slice(1));
+        $('#view-task-category').text(task.category.charAt(0).toUpperCase()+task.category.slice(1));
+
+        let dateText = task.dueDate ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString() : 'Sem data';
+        let timeText = task.dueTime ? ` às ${task.dueTime}` : '';
+        $('#view-task-date').text(dateText + timeText);
+
+        let $subtasks = $('#view-task-subtasks').empty();
+        if(task.subtasks.length){
+            renderNestedSubtasks(task.subtasks, $subtasks);
+        } else $subtasks.append('<li>Nenhuma subtarefa</li>');
+
+        showModal('#viewTaskModal');
+
+        $('#view-edit-btn').off('click').on('click',function(){
+            hideModal('#viewTaskModal');
+            li.find('.edit-btn').first().click();
+        });
+
+        $('#view-delete-btn').off('click').on('click',function(){
+            hideModal('#viewTaskModal');
+            li.find('.remove-btn').first().click();
+        });
+    });
+
+    let lastScrollTop = 0;
+    const nav = document.querySelector("nav");
+    window.addEventListener("scroll",()=>{ let currentScroll=window.pageYOffset||document.documentElement.scrollTop; if(currentScroll>lastScrollTop&&currentScroll>100) nav.classList.add("hidden"); else if(currentScroll<lastScrollTop) nav.classList.remove("hidden"); lastScrollTop=currentScroll<=0?0:currentScroll; });
+
+    $('#toggle-calendar-btn').on('click',function(){
+        const $container=$('#calendar-container');
+        if($container.is(':visible')) $container.slideUp(180);
+        else $container.slideDown(180,function(){
+            if(!calendarInitialized) initCalendar();
+            if(calendar) {
+                setTimeout(() => calendar.render(), 10);
+            }
+        });
+    });
+}

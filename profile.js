@@ -17,6 +17,7 @@ const fullnameInput = document.getElementById("profile-fullname");
 const usernameInput = document.getElementById("profile-username");
 const bioInput = document.getElementById("profile-bio");
 const birthdateInput = document.getElementById("profile-birthdate");
+const genderInput = document.getElementById("profile-gender"); // Novo campo de gênero
 const phoneInput = document.getElementById("profile-phone");
 const instagramInput = document.getElementById("profile-instagram");
 const linkedinInput = document.getElementById("profile-linkedin");
@@ -60,6 +61,7 @@ async function carregarDados(uid) {
             usernameInput.value = data.username || "";
             bioInput.value = data.bio || "";
             birthdateInput.value = data.birthdate || "";
+            genderInput.value = data.gender || "not-informed"; // Carrega o gênero
             phoneInput.value = data.phone || "";
             instagramInput.value = data.instagram || "";
             linkedinInput.value = data.linkedin || "";
@@ -202,6 +204,7 @@ profileForm.addEventListener("submit", async (e) => {
             usernameSearch: lowercaseUsernameSearch,
             bio: bioInput.value,
             birthdate: birthdateInput.value,
+            gender: genderInput.value, // Salva o gênero
             phone: phoneInput.value,
             instagram: instagramInput.value,
             linkedin: linkedinInput.value,

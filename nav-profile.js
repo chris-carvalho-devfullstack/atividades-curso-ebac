@@ -69,7 +69,8 @@ async function handleLogout(e) {
     e.preventDefault();
     try {
         await signOut(auth);
-        window.location.href = 'login.html';
+        // CORREÇÃO: Redireciona para a página inicial após o logout
+        window.location.href = 'index.html';
     } catch (err) {
         console.error('Erro ao fazer signOut:', err);
     }

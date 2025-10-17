@@ -602,3 +602,43 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
 .nav-auth-item {
     list-style-type: none; /* Remove o pontinho da lista */
 }
+
+/* ESTILOS PARA O PROMPT DE LOGIN */
+#login-prompt {
+    background-color: #e0f7fa;
+    border: 2px dashed #4CAF50;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+#login-prompt h3 {
+    margin-top: 0;
+    color: #004d40;
+}
+
+#login-prompt p {
+    margin-bottom: 15px;
+    color: #00796b;
+}
+
+#login-prompt button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-color: #4CAF50;
+    color: white;
+}
+
+#login-prompt button:hover {
+    background-color: #43a047;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}

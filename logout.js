@@ -9,9 +9,8 @@ if (logoutBtn) {
     e.preventDefault();
     try {
       await signOut(auth);
-      // opcional: limpar variáveis locais se quiser
-      // localStorage.removeItem('tasks'); // só se realmente quiser limpar
-      window.location.href = 'login.html';
+      // CORREÇÃO: Redireciona para a página inicial após o logout
+      window.location.href = 'index.html';
     } catch (err) {
       console.error('Erro ao fazer signOut:', err);
       alert('Não foi possível sair. Veja o console para detalhes.');
