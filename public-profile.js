@@ -9,6 +9,37 @@ import {
 import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
 // =================================================================
+// FUNÇÃO DE NOTIFICAÇÃO
+// =================================================================
+
+/**
+ * Cria uma notificação no Firestore para um usuário específico.
+ * @param {string} userId - O UID do usuário que receberá a notificação.
+ * @param {string} type - O tipo de notificação (ex: 'friend_request', 'like', 'comment').
+ * @param {string} message - A mensagem da notificação.
+ * @param {string} url - O URL para onde o usuário será redirecionado ao clicar.
+ */
+async function createNotification(userId, type, message, url) {
+    // Evita que usuários notifiquem a si mesmos
+    if (auth.currentUser && userId === auth.currentUser.uid) {
+        return;
+    }
+    try {
+        const notificationsRef = collection(db, 'users', userId, 'notifications');
+        await addDoc(notificationsRef, {
+            type,
+            message,
+            url,
+            read: false,
+            timestamp: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Erro ao criar notificação:", error);
+    }
+}
+
+
+// =================================================================
 // FUNÇÕES DE MODAL
 // =================================================================
 
@@ -27,7 +58,7 @@ function showInfoModal(title, message) {
 function showConfirmModal(title, message, onConfirm) {
     const modal = document.getElementById('confirmModal');
     if (!modal) { if (confirm(`${title}\n\n${message}`)) onConfirm(); return; }
-    
+
     const modalTitle = modal.querySelector('#confirm-modal-title');
     const modalBody = modal.querySelector('.modal-body');
     const okBtn = modal.querySelector('#confirm-modal-ok-btn');
@@ -36,7 +67,7 @@ function showConfirmModal(title, message, onConfirm) {
     okBtn.textContent = "Confirmar";
     modalBody.innerHTML = `<p id="confirm-modal-text">${message}</p>`;
     if (modalTitle) modalTitle.textContent = title;
-    
+
     modal.style.display = 'flex';
 
     okBtn.onclick = () => { onConfirm(); modal.style.display = 'none'; };
@@ -53,10 +84,6 @@ const coverPreview = document.getElementById('cover-photo-preview');
 const fullname = document.getElementById('public-fullname');
 const bio = document.getElementById('public-bio');
 const addFriendBtn = document.getElementById('add-friend-btn');
-const birthdate = document.getElementById('public-birthdate');
-const phone = document.getElementById('public-phone');
-const instagram = document.getElementById('public-instagram');
-const linkedin = document.getElementById('public-linkedin');
 let currentUser;
 let profileUid;
 
@@ -90,11 +117,12 @@ async function loadPublicProfile(profileUid) {
             coverPreview.src = data.coverURL || "https://via.placeholder.com/800x250/e0e0e0/ffffff?text=+";
             fullname.textContent = data.fullname || "Nome não informado";
             bio.textContent = data.bio || "Este usuário ainda não escreveu uma bio.";
-            
-            birthdate.textContent = data.birthdate || "Data não informada";
-            phone.textContent = data.phone || "Contato não informado";
-            instagram.textContent = data.instagram || "Instagram não informado";
 
+            document.getElementById('public-birthdate').textContent = data.birthdate || "Data não informada";
+            document.getElementById('public-phone').textContent = data.phone || "Contato não informado";
+            document.getElementById('public-instagram').textContent = data.instagram || "Instagram não informado";
+            
+            const linkedin = document.getElementById('public-linkedin');
             if (data.linkedin) {
                 linkedin.href = data.linkedin;
                 linkedin.textContent = data.linkedin;
@@ -136,7 +164,7 @@ async function updateFriendButtonStatus(profileUid) {
     } else if (requestReceivedDoc.exists()){
         addFriendBtn.textContent = "Aceitar Pedido";
         addFriendBtn.className = 'btn-primary';
-        addFriendBtn.onclick = () => window.location.href = 'friends.html';
+        addFriendBtn.onclick = () => window.location.href = 'friends.html?tab=requests';
     } else {
         addFriendBtn.textContent = "Adicionar Amigo";
         addFriendBtn.className = 'btn-primary';
@@ -149,6 +177,17 @@ async function sendFriendRequest(profileUid) {
     addFriendBtn.textContent = "Enviando...";
     try {
         await setDoc(doc(db, "users", profileUid, "friendRequests", currentUser.uid), { from: currentUser.uid, timestamp: serverTimestamp() });
+        
+        // *** CRIAR NOTIFICAÇÃO PARA O DESTINATÁRIO ***
+        const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const currentUsername = currentUserDoc.data().username || 'Alguém';
+        await createNotification(
+            profileUid,
+            'friend_request',
+            `@${currentUsername} enviou um pedido de amizade.`,
+            '/friends.html?tab=requests'
+        );
+
         showInfoModal("Sucesso!", "Seu pedido de amizade foi enviado.");
         updateFriendButtonStatus(profileUid);
     } catch (error) {
@@ -172,7 +211,7 @@ async function removeFriend(currentUserUid, friendUid) {
 }
 
 // =================================================================
-// LÓGICA DE TAREFAS PÚBLICAS (NOVO)
+// LÓGICA DE TAREFAS PÚBLICAS
 // =================================================================
 
 async function loadPublicTasks(uid) {
@@ -221,15 +260,26 @@ function renderPublicTask(taskId, taskData) {
 
 async function requestTaskImport(ownerUid, taskId, buttonElement) {
     try {
+        const taskText = buttonElement.parentElement.querySelector('.task-text').textContent;
         const requestsRef = collection(db, "users", ownerUid, "taskImportRequests");
         await addDoc(requestsRef, {
             fromUid: currentUser.uid,
             fromUsername: auth.currentUser.displayName || 'Usuário',
             taskId: taskId,
-            taskText: buttonElement.parentElement.querySelector('.task-text').textContent,
             status: 'pending',
             timestamp: serverTimestamp()
         });
+        
+        // *** CRIAR NOTIFICAÇÃO PARA O DONO DA TAREFA ***
+        const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const currentUsername = currentUserDoc.data().username || 'Alguém';
+        await createNotification(
+            ownerUid,
+            'task_import_request',
+            `@${currentUsername} quer importar sua tarefa: "${taskText}".`,
+            '/friends.html?tab=task-requests'
+        );
+
         showInfoModal('Sucesso!', 'Sua solicitação para importar a tarefa foi enviada.');
         buttonElement.innerHTML = '<i class="fa fa-check"></i> Solicitado';
     } catch (error) {
@@ -241,7 +291,7 @@ async function requestTaskImport(ownerUid, taskId, buttonElement) {
 }
 
 // =================================================================
-// LÓGICA DE POSTS E COMENTÁRIOS (ATUALIZADA PARA CONSISTÊNCIA)
+// LÓGICA DE POSTS E COMENTÁRIOS
 // =================================================================
 
 function loadUserPosts(uid) {
@@ -262,7 +312,7 @@ function renderPostOnProfile(post, postId) {
 
     const isLiked = currentUser && post.likes.includes(currentUser.uid);
     const isOwner = currentUser && currentUser.uid === post.userId;
-    const linkedContent = linkifyContent(post.content); // Usa a função corrigida
+    const linkedContent = linkifyContent(post.content);
 
     postCard.innerHTML = `
         <div class="post-header">
@@ -294,7 +344,7 @@ function renderPostOnProfile(post, postId) {
     }
 
     loadAndRenderComments(postId, postCard.querySelector('.comments-list'));
-    postCard.querySelector('.like-btn').addEventListener('click', () => toggleLike(postId));
+    postCard.querySelector('.like-btn').addEventListener('click', () => toggleLike(postId, post.userId));
     postCard.querySelector('.comment-btn').addEventListener('click', (e) => {
         const commentsSection = e.target.closest('.post-card').querySelector('.comments-section');
         commentsSection.style.display = commentsSection.style.display === 'none' ? 'block' : 'none';
@@ -302,9 +352,63 @@ function renderPostOnProfile(post, postId) {
     postCard.querySelector('.comment-form').addEventListener('submit', e => {
         e.preventDefault();
         const input = e.target.querySelector('input');
-        if (input.value.trim()) { addComment(postId, input.value.trim(), e.target.dataset.parentId); input.value = ''; }
+        if (input.value.trim()) { addComment(postId, input.value.trim(), e.target.dataset.parentId, post.userId); input.value = ''; }
     });
     postCard.querySelector('.share-btn').addEventListener('click', () => sharePost(postId, post.content));
+}
+
+async function addComment(postId, text, parentId, postOwnerId) {
+    const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+    const userData = userDoc.data();
+    const batch = writeBatch(db);
+    const newCommentRef = doc(collection(db, 'posts', postId, 'comments'));
+    batch.set(newCommentRef, { userId: currentUser.uid, username: userData.username, userProfileImage: userData.fotoURL, commentText: text, parentId: parentId, timestamp: serverTimestamp(), likes: [] });
+    
+    const postRef = doc(db, 'posts', postId);
+    const postDoc = await getDoc(postRef);
+    batch.update(postRef, { commentCount: (postDoc.data().commentCount || 0) + 1 });
+    await batch.commit();
+
+    // *** CRIAR NOTIFICAÇÃO PARA O DONO DO POST ***
+    await createNotification(
+        postOwnerId,
+        'comment',
+        `@${userData.username} comentou na sua publicação.`,
+        `/feed.html#post-${postId}` // Idealmente, o feed.html deve conseguir rolar para o post
+    );
+}
+
+async function toggleLike(postId, postOwnerId) {
+    const ref = doc(db, 'posts', postId);
+    const docSnap = await getDoc(ref);
+    if (docSnap.exists()) {
+        const postData = docSnap.data();
+        const isLiked = postData.likes.includes(currentUser.uid);
+        
+        await updateDoc(ref, { likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
+
+        // *** CRIAR NOTIFICAÇÃO DE LIKE (APENAS QUANDO CURTE, NÃO QUANDO DESCURTE) ***
+        if (!isLiked) {
+            const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
+            const currentUsername = currentUserDoc.data().username || 'Alguém';
+            await createNotification(
+                postOwnerId,
+                'like',
+                `@${currentUsername} curtiu sua publicação.`,
+                `/feed.html#post-${postId}`
+            );
+        }
+    }
+}
+
+
+// (O resto das funções de comentário, share, delete, etc. não precisam criar notificações e permanecem iguais)
+// ...
+function linkifyContent(text) {
+    if (!text) return '';
+    let linkedText = text.replace(/#(\w+)/g, '<a href="hashtag.html?tag=$1" class="hashtag-link">#$1</a>');
+    linkedText = linkedText.replace(/@(\w+)/g, '<a href="#" class="usertag-link" data-username="$1">@$1</a>');
+    return linkedText;
 }
 
 async function loadAndRenderComments(postId, container, parentId = 'root') {
@@ -360,35 +464,34 @@ function renderComment(postId, commentId, data, container) {
         el.querySelector('.edit-comment-btn').addEventListener('click', () => openEditCommentModal(postId, commentId, data.commentText));
     }
 
-    el.querySelector('.like-comment-btn').addEventListener('click', () => toggleCommentLike(postId, commentId));
+    el.querySelector('.like-comment-btn').addEventListener('click', () => toggleCommentLike(postId, commentId, data.userId));
     el.querySelector('.reply-btn').addEventListener('click', () => el.querySelector('.reply-form-container').style.display = 'block');
     el.querySelector('.comment-form').addEventListener('submit', e => {
         e.preventDefault();
         const input = e.target.querySelector('input');
-        if (input.value.trim()) { addComment(postId, input.value.trim(), e.target.dataset.parentId); input.value = ''; el.querySelector('.reply-form-container').style.display = 'none'; }
+        if (input.value.trim()) { addComment(postId, input.value.trim(), e.target.dataset.parentId, data.userId); input.value = ''; el.querySelector('.reply-form-container').style.display = 'none'; }
     });
 
     loadAndRenderComments(postId, el.querySelector('.replies-container'), commentId);
 }
 
-async function addComment(postId, text, parentId) {
-    const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-    const userData = userDoc.data();
-    const batch = writeBatch(db);
-    const newCommentRef = doc(collection(db, 'posts', postId, 'comments'));
-    batch.set(newCommentRef, { userId: currentUser.uid, username: userData.username, userProfileImage: userData.fotoURL, commentText: text, parentId: parentId, timestamp: serverTimestamp(), likes: [] });
-    const postRef = doc(db, 'posts', postId);
-    const postDoc = await getDoc(postRef);
-    batch.update(postRef, { commentCount: (postDoc.data().commentCount || 0) + 1 });
-    await batch.commit();
-}
-
-async function toggleCommentLike(postId, commentId) {
+async function toggleCommentLike(postId, commentId, commentOwnerId) {
     const ref = doc(db, 'posts', postId, 'comments', commentId);
     const docSnap = await getDoc(ref);
     if (docSnap.exists()) {
         const isLiked = docSnap.data().likes.includes(currentUser.uid);
         await updateDoc(ref, { likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
+
+        if(!isLiked){
+            const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
+            const currentUsername = currentUserDoc.data().username || 'Alguém';
+            await createNotification(
+                commentOwnerId,
+                'like',
+                `@${currentUsername} curtiu seu comentário.`,
+                `/feed.html#post-${postId}`
+            );
+        }
     }
 }
 
@@ -415,15 +518,10 @@ function openEditCommentModal(postId, commentId, currentText) {
             await updateDoc(doc(db, 'posts', postId, 'comments', commentId), { commentText: newText });
         }
         modal.style.display = 'none';
+        // Reset modal to default
+        okBtn.textContent = "Confirmar";
+        modal.querySelector('.modal-body').innerHTML = '<p id="confirm-modal-text">Você tem certeza?</p>';
     };
-}
-
-async function toggleLike(postId) {
-    const ref = doc(db, 'posts', postId);
-    const docSnap = await getDoc(ref);
-    if (docSnap.exists()) {
-        await updateDoc(ref, { likes: docSnap.data().likes.includes(currentUser.uid) ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
-    }
 }
 
 async function sharePost(postId, postText) {
@@ -445,14 +543,6 @@ async function deletePost(postId, imageUrl) {
         await deleteDoc(doc(db, 'posts', postId));
         if (imageUrl) await deleteObject(ref(storage, imageUrl));
     } catch (e) { console.error("Erro ao apagar publicação:", e); }
-}
-
-// FUNÇÃO ATUALIZADA PARA INCLUIR AS CLASSES CSS
-function linkifyContent(text) {
-    if (!text) return '';
-    let linkedText = text.replace(/#(\w+)/g, '<a href="hashtag.html?tag=$1" class="hashtag-link">#$1</a>');
-    linkedText = linkedText.replace(/@(\w+)/g, '<a href="#" class="usertag-link" data-username="$1">@$1</a>');
-    return linkedText;
 }
 
 document.addEventListener('click', (e) => {

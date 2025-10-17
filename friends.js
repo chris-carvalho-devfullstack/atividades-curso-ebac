@@ -34,7 +34,7 @@ function showInfoModal(title, message) {
 }
 
 /**
- * NOVO: Exibe um modal de confirmação para ações críticas.
+ * Exibe um modal de confirmação para ações críticas.
  * @param {string} title - O título do modal.
  * @param {string} message - A mensagem de confirmação.
  * @param {function} onConfirm - A função a ser executada se o usuário confirmar.
@@ -68,8 +68,7 @@ function showConfirmModal(title, message, onConfirm) {
     };
 }
 
-// friends.js (Versão Final com Remoção de Amigo e Modais)
-
+// friends.js
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import {
@@ -87,6 +86,25 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // ===========================
+// FUNÇÃO DE NOTIFICAÇÃO
+// ===========================
+async function createNotification(userId, type, message, url) {
+    try {
+        const notificationsRef = collection(db, 'users', userId, 'notifications');
+        await addDoc(notificationsRef, {
+            type,
+            message,
+            url,
+            read: false,
+            timestamp: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Erro ao criar notificação:", error);
+    }
+}
+
+
+// ===========================
 // FUNÇÕES GLOBAIS
 // ===========================
 window.acceptFriendRequest = acceptFriendRequest;
@@ -94,11 +112,7 @@ window.rejectFriendRequest = rejectFriendRequest;
 window.acceptTaskImport = acceptTaskImport;
 window.rejectTaskImport = rejectTaskImport;
 
-/**
- * NOVO: Remove a amizade entre dois usuários de forma mútua.
- * @param {string} currentUserUid - O UID do usuário logado.
- * @param {string} friendUid - O UID do amigo a ser removido.
- */
+
 async function removeFriend(currentUserUid, friendUid) {
     const batch = writeBatch(db);
 
@@ -111,14 +125,13 @@ async function removeFriend(currentUserUid, friendUid) {
     try {
         await batch.commit();
         showInfoModal("Amizade Desfeita", "A amizade foi desfeita com sucesso.");
-        loadFriends(currentUserUid); // Recarrega a lista para refletir a remoção
+        loadFriends(currentUserUid); 
     } catch (error) {
         console.error("Erro ao remover amigo:", error);
         showInfoModal("Erro", "Não foi possível desfazer a amizade. Tente novamente.");
     }
 }
 
-// NOVO: Função intermediária para ser chamada pelo HTML, garantindo a confirmação
 window.confirmRemoveFriend = function(friendUid, friendUsername) {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
@@ -138,34 +151,41 @@ window.confirmRemoveFriend = function(friendUid, friendUsername) {
 // ===========================
 onAuthStateChanged(auth, user => {
     if (user) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        
         loadFriendRequests(user.uid);
         loadTaskImportRequests(user.uid);
         loadFriends(user.uid);
         setupSearchListeners(user.uid);
-        setupTabListeners();
+        setupTabListeners(tab);
     } else {
         window.location.href = 'login.html';
     }
 });
 
-function setupTabListeners() {
+function setupTabListeners(initialTab) {
     const tabs = document.querySelectorAll('.tab-link');
+    const contents = document.querySelectorAll('.tab-content');
+
+    const activateTab = (tabId) => {
+        tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.tab === tabId));
+        contents.forEach(content => content.classList.toggle('active', content.id === tabId));
+    };
+
+    if (initialTab) {
+        activateTab(initialTab);
+    }
+
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            document.querySelector('.tab-link.active')?.classList.remove('active');
-            document.querySelector('.tab-content.active')?.classList.remove('active');
-            tab.classList.add('active');
-            const targetContent = document.getElementById(tab.dataset.tab);
-            if (targetContent) {
-                targetContent.classList.add('active');
-            }
+            activateTab(tab.dataset.tab);
+            // Limpa o parâmetro da URL para não ficar fixo
+            window.history.replaceState({}, '', window.location.pathname);
         });
     });
 }
 
-/**
- * Carrega e exibe a lista de amigos do usuário (LÓGICA ATUALIZADA).
- */
 async function loadFriends(uid) {
     const friendsList = document.getElementById('friends-list');
     if (!friendsList) return;
@@ -211,7 +231,6 @@ async function loadFriends(uid) {
     }
 }
 
-// ... (O restante das funções: loadFriendRequests, acceptFriendRequest, rejectFriendRequest, searchUserByUsername, etc., continuam iguais)
 async function loadFriendRequests(uid) {
     const requestsList = document.getElementById('requests-list');
     if (!requestsList) return;
@@ -263,7 +282,6 @@ async function loadFriendRequests(uid) {
     }
 }
 
-// ... (Restante do código de friends.js)
 async function loadTaskImportRequests(uid) {
     const requestsList = document.getElementById('task-requests-list');
     if (!requestsList) return;
@@ -285,51 +303,60 @@ async function loadTaskImportRequests(uid) {
     }
 
     let requestsHTML = '';
-    querySnapshot.forEach(doc => {
-        const request = doc.data();
+    for (const docSnapshot of querySnapshot.docs) {
+        const request = docSnapshot.data();
+        
+        // Obter a tarefa original para exibir mais detalhes
+        const taskRef = doc(db, "users", uid, "tasks", request.taskId);
+        const taskDoc = await getDoc(taskRef);
+        const taskText = taskDoc.exists() ? taskDoc.data().text : "Tarefa não encontrada";
+
         requestsHTML += `
             <li>
                 <div class="user-info">
                     <span class="username">@${request.fromUsername}</span>
-                    <span>solicitou a importação da tarefa: "${request.taskText}"</span>
+                    <span>solicitou a importação da tarefa: "${taskText}"</span>
                 </div>
                 <div class="user-actions">
-                    <button class="btn-accept" onclick="acceptTaskImport('${doc.id}', '${request.fromUid}', '${request.taskId}')">Aceitar</button>
-                    <button class="btn-reject" onclick="rejectTaskImport('${doc.id}')">Rejeitar</button>
+                    <button class="btn-accept" onclick="acceptTaskImport('${docSnapshot.id}', '${request.fromUid}', '${request.taskId}')">Aceitar</button>
+                    <button class="btn-reject" onclick="rejectTaskImport('${docSnapshot.id}')">Rejeitar</button>
                 </div>
             </li>
         `;
-    });
+    }
     requestsList.innerHTML = requestsHTML;
 }
 
 async function acceptTaskImport(requestId, fromUid, taskId) {
     const ownerUid = auth.currentUser.uid;
+    const ownerDoc = await getDoc(doc(db, "users", ownerUid));
+    const ownerUsername = ownerDoc.data().username || "Um usuário";
     
     try {
-        // 1. Pega a tarefa original
         const originalTaskRef = doc(db, "users", ownerUid, "tasks", taskId);
         const taskDoc = await getDoc(originalTaskRef);
 
-        if (!taskDoc.exists()) {
-            throw new Error("Tarefa original não encontrada.");
-        }
+        if (!taskDoc.exists()) throw new Error("Tarefa original não encontrada.");
         
         const taskData = taskDoc.data();
-        delete taskData.id; // Remove o ID para que o Firestore gere um novo
-        taskData.privacy = 'private'; // A tarefa importada se torna privada
-        taskData.importedFrom = {
-            uid: ownerUid,
-            username: auth.currentUser.displayName
-        };
+        const taskText = taskData.text;
+        delete taskData.id;
+        taskData.privacy = 'private';
+        taskData.importedFrom = { uid: ownerUid, username: ownerUsername };
         
-        // 2. Adiciona a tarefa copiada ao usuário que solicitou
         const requesterTasksRef = collection(db, "users", fromUid, "tasks");
         await addDoc(requesterTasksRef, taskData);
 
-        // 3. Deleta a solicitação
         const requestRef = doc(db, "users", ownerUid, "taskImportRequests", requestId);
         await deleteDoc(requestRef);
+
+        // *** CRIAR NOTIFICAÇÃO PARA O SOLICITANTE ***
+        await createNotification(
+            fromUid,
+            'task_import_request',
+            `@${ownerUsername} aceitou seu pedido para importar a tarefa "${taskText}".`,
+            '/index.html'
+        );
 
         showInfoModal("Sucesso!", "Importação de tarefa aprovada.");
         loadTaskImportRequests(ownerUid);
@@ -353,18 +380,31 @@ async function rejectTaskImport(requestId) {
     }
 }
 
-
 async function acceptFriendRequest(senderUid, receiverUid) {
     const batch = writeBatch(db);
+    
     const receiverFriendsRef = doc(db, "users", receiverUid, "friends", senderUid);
-    batch.set(receiverFriendsRef, { addedAt: new Date() });
+    batch.set(receiverFriendsRef, { addedAt: serverTimestamp() });
+
     const senderFriendsRef = doc(db, "users", senderUid, "friends", receiverUid);
-    batch.set(senderFriendsRef, { addedAt: new Date() });
+    batch.set(senderFriendsRef, { addedAt: serverTimestamp() });
+    
     const requestRef = doc(db, "users", receiverUid, "friendRequests", senderUid);
     batch.delete(requestRef);
 
     try {
         await batch.commit();
+
+        // *** CRIAR NOTIFICAÇÃO PARA O SOLICITANTE ***
+        const receiverDoc = await getDoc(doc(db, "users", receiverUid));
+        const receiverUsername = receiverDoc.data().username || "Alguém";
+        await createNotification(
+            senderUid,
+            'friend_request',
+            `@${receiverUsername} aceitou seu pedido de amizade!`,
+            `/public-profile.html?uid=${receiverUid}`
+        );
+
         showInfoModal("Sucesso!", "Amigo adicionado com sucesso!");
         loadFriendRequests(receiverUid);
         loadFriends(receiverUid);
@@ -373,6 +413,7 @@ async function acceptFriendRequest(senderUid, receiverUid) {
         showInfoModal("Erro", "Não foi possível aceitar o pedido. Tente novamente.");
     }
 }
+
 
 async function rejectFriendRequest(senderUid, receiverUid) {
     const requestRef = doc(db, "users", receiverUid, "friendRequests", senderUid);
