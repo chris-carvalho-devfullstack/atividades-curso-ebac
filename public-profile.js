@@ -12,15 +12,7 @@ import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/fir
 // FUNÇÃO DE NOTIFICAÇÃO
 // =================================================================
 
-/**
- * Cria uma notificação no Firestore para um usuário específico.
- * @param {string} userId - O UID do usuário que receberá a notificação.
- * @param {string} type - O tipo de notificação (ex: 'friend_request', 'like', 'comment').
- * @param {string} message - A mensagem da notificação.
- * @param {string} url - O URL para onde o usuário será redirecionado ao clicar.
- */
 async function createNotification(userId, type, message, url) {
-    // Evita que usuários notifiquem a si mesmos
     if (auth.currentUser && userId === auth.currentUser.uid) {
         return;
     }
@@ -37,7 +29,6 @@ async function createNotification(userId, type, message, url) {
         console.error("Erro ao criar notificação:", error);
     }
 }
-
 
 // =================================================================
 // FUNÇÕES DE MODAL
@@ -58,18 +49,14 @@ function showInfoModal(title, message) {
 function showConfirmModal(title, message, onConfirm) {
     const modal = document.getElementById('confirmModal');
     if (!modal) { if (confirm(`${title}\n\n${message}`)) onConfirm(); return; }
-
     const modalTitle = modal.querySelector('#confirm-modal-title');
     const modalBody = modal.querySelector('.modal-body');
     const okBtn = modal.querySelector('#confirm-modal-ok-btn');
     const cancelBtn = modal.querySelector('#confirm-modal-cancel-btn');
-
     okBtn.textContent = "Confirmar";
     modalBody.innerHTML = `<p id="confirm-modal-text">${message}</p>`;
     if (modalTitle) modalTitle.textContent = title;
-
     modal.style.display = 'flex';
-
     okBtn.onclick = () => { onConfirm(); modal.style.display = 'none'; };
     cancelBtn.onclick = () => { modal.style.display = 'none'; };
 }
@@ -83,10 +70,16 @@ const profileImage = document.getElementById('public-profile-image');
 const coverPreview = document.getElementById('cover-photo-preview');
 const fullname = document.getElementById('public-fullname');
 const bio = document.getElementById('public-bio');
-const addFriendBtn = document.getElementById('add-friend-btn');
-const sendMessageBtn = document.getElementById('send-message-btn'); // Adicionado
+const sendMessageBtn = document.getElementById('send-message-btn');
 let currentUser;
 let profileUid;
+
+// INÍCIO DA MUDANÇA: Novos elementos para o botão de amizade
+const friendStatusContainer = document.getElementById('friend-status-container');
+const addFriendBtn = document.getElementById('add-friend-btn');
+const friendOptionsMenu = document.getElementById('friend-options-menu');
+const unfriendBtn = document.getElementById('unfriend-btn');
+// FIM DA MUDANÇA
 
 // =================================================================
 // LÓGICA PRINCIPAL DA PÁGINA
@@ -103,9 +96,11 @@ onAuthStateChanged(auth, (user) => {
 });
 
 async function loadPublicProfile(profileUid) {
-    if (!profileUid) { fullname.textContent = "Usuário não encontrado."; return; }
-    addFriendBtn.style.display = 'none';
-
+    if (!profileUid) { 
+        fullname.textContent = "Usuário não encontrado."; 
+        return; 
+    }
+    
     try {
         const docRef = doc(db, "users", profileUid);
         const docSnap = await getDoc(docRef);
@@ -118,7 +113,6 @@ async function loadPublicProfile(profileUid) {
             coverPreview.src = data.coverURL || "https://via.placeholder.com/800x250/e0e0e0/ffffff?text=+";
             fullname.textContent = data.fullname || "Nome não informado";
             bio.textContent = data.bio || "Este usuário ainda não escreveu uma bio.";
-
             document.getElementById('public-birthdate').textContent = data.birthdate || "Data não informada";
             document.getElementById('public-phone').textContent = data.phone || "Contato não informado";
             document.getElementById('public-instagram').textContent = data.instagram || "Instagram não informado";
@@ -131,10 +125,8 @@ async function loadPublicProfile(profileUid) {
                 linkedin.textContent = "LinkedIn não informado";
                 linkedin.removeAttribute('href');
             }
-
-            if (currentUser.uid !== profileUid) {
-                updateFriendButtonStatus(profileUid);
-            }
+            // A lógica do botão agora é centralizada aqui
+            updateFriendButtonStatus(profileUid);
         } else {
             fullname.textContent = "Perfil não encontrado.";
         }
@@ -143,9 +135,19 @@ async function loadPublicProfile(profileUid) {
     }
 }
 
+// INÍCIO DA MUDANÇA: Função de status de amizade atualizada
 async function updateFriendButtonStatus(profileUid) {
-    addFriendBtn.style.display = 'block';
-    sendMessageBtn.style.display = 'none'; // Esconde o botão de mensagem por padrão
+    sendMessageBtn.style.display = 'none';
+    if (friendOptionsMenu) friendOptionsMenu.classList.remove('active');
+
+    // Mostra o container do botão apenas se não for o perfil do próprio usuário
+    if (currentUser.uid !== profileUid) {
+        if(friendStatusContainer) friendStatusContainer.style.display = 'inline-block';
+    } else {
+        if(friendStatusContainer) friendStatusContainer.style.display = 'none';
+        return; // Sai da função se for o perfil do próprio usuário
+    }
+
     addFriendBtn.disabled = true;
 
     const friendDoc = await getDoc(doc(db, "users", currentUser.uid, "friends", profileUid));
@@ -154,38 +156,43 @@ async function updateFriendButtonStatus(profileUid) {
 
     addFriendBtn.disabled = false;
     addFriendBtn.onclick = null;
+    if(unfriendBtn) unfriendBtn.onclick = null;
 
     if (friendDoc.exists()) {
-        addFriendBtn.textContent = "Amigos";
+        addFriendBtn.innerHTML = '<i class="fa-solid fa-check"></i> Amigos <i class="fa-solid fa-caret-down"></i>';
         addFriendBtn.className = 'btn-primary btn-amigos';
-        addFriendBtn.onclick = () => showConfirmModal("Remover Amigo", `Tem certeza que deseja remover este usuário?`, () => removeFriend(currentUser.uid, profileUid));
-        
-        // Se são amigos, mostra o botão de enviar mensagem
-        sendMessageBtn.style.display = 'inline-block';
+        sendMessageBtn.style.display = 'inline-flex';
         sendMessageBtn.onclick = () => window.openChatWith(profileUid);
 
+        // Ação de clicar no botão "Amigos" abre o menu
+        addFriendBtn.onclick = (e) => {
+            e.stopPropagation(); // Impede que o clique feche o menu imediatamente
+            friendOptionsMenu.classList.toggle('active');
+        };
+        // Ação do botão "Desfazer amizade" dentro do menu
+        unfriendBtn.onclick = () => showConfirmModal("Desfazer Amizade", `Tem certeza que deseja remover este usuário?`, () => removeFriend(currentUser.uid, profileUid));
+
     } else if (requestSentDoc.exists()) {
-        addFriendBtn.textContent = "Pedido Enviado";
+        addFriendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Pedido Enviado';
         addFriendBtn.disabled = true;
         addFriendBtn.className = 'btn-neutral';
     } else if (requestReceivedDoc.exists()){
-        addFriendBtn.textContent = "Aceitar Pedido";
+        addFriendBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Aceitar Pedido';
         addFriendBtn.className = 'btn-primary';
         addFriendBtn.onclick = () => window.location.href = 'friends.html?tab=requests';
     } else {
-        addFriendBtn.textContent = "Adicionar Amigo";
+        addFriendBtn.innerHTML = '<i class="fa fa-user-plus"></i> Adicionar aos amigos';
         addFriendBtn.className = 'btn-primary';
         addFriendBtn.onclick = () => sendFriendRequest(profileUid);
     }
 }
+// FIM DA MUDANÇA
 
 async function sendFriendRequest(profileUid) {
     addFriendBtn.disabled = true;
-    addFriendBtn.textContent = "Enviando...";
+    addFriendBtn.innerHTML = "Enviando...";
     try {
         await setDoc(doc(db, "users", profileUid, "friendRequests", currentUser.uid), { from: currentUser.uid, timestamp: serverTimestamp() });
-
-        // *** CRIAR NOTIFICAÇÃO PARA O DESTINATÁRIO ***
         const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
         const currentUsername = currentUserDoc.data().username || 'Alguém';
         await createNotification(
@@ -194,12 +201,11 @@ async function sendFriendRequest(profileUid) {
             `@${currentUsername} enviou um pedido de amizade.`,
             '/friends.html?tab=requests'
         );
-
         showInfoModal("Sucesso!", "Seu pedido de amizade foi enviado.");
         updateFriendButtonStatus(profileUid);
     } catch (error) {
         console.error("Erro ao enviar pedido:", error);
-        showInfoModal("Erro", "Não foi possível enviar o pedido. Verifique suas permissões de banco de dados.");
+        showInfoModal("Erro", "Não foi possível enviar o pedido.");
         updateFriendButtonStatus(profileUid);
     }
 }
@@ -217,8 +223,22 @@ async function removeFriend(currentUserUid, friendUid) {
     }
 }
 
+// INÍCIO DA MUDANÇA: Listener para fechar o menu dropdown
+document.addEventListener('click', (e) => {
+    // Se o menu de opções de amizade estiver ativo
+    if (friendOptionsMenu && friendOptionsMenu.classList.contains('active')) {
+        // E o clique NÃO foi dentro do container do botão de amizade
+        if (friendStatusContainer && !friendStatusContainer.contains(e.target)) {
+            // Remove a classe 'active' para esconder o menu
+            friendOptionsMenu.classList.remove('active');
+        }
+    }
+});
+// FIM DA MUDANÇA
+
+
 // =================================================================
-// LÓGICA DE TAREFAS PÚBLICAS
+// LÓGICA DE TAREFAS PÚBLICAS (sem alterações)
 // =================================================================
 
 async function loadPublicTasks(uid) {
@@ -277,7 +297,6 @@ async function requestTaskImport(ownerUid, taskId, buttonElement) {
             timestamp: serverTimestamp()
         });
 
-        // *** CRIAR NOTIFICAÇÃO PARA O DONO DA TAREFA ***
         const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
         const currentUsername = currentUserDoc.data().username || 'Alguém';
         await createNotification(
@@ -298,7 +317,7 @@ async function requestTaskImport(ownerUid, taskId, buttonElement) {
 }
 
 // =================================================================
-// LÓGICA DE POSTS E COMENTÁRIOS
+// LÓGICA DE POSTS E COMENTÁRIOS (sem alterações)
 // =================================================================
 
 function loadUserPosts(uid) {
@@ -376,12 +395,11 @@ async function addComment(postId, text, parentId, postOwnerId) {
     batch.update(postRef, { commentCount: (postDoc.data().commentCount || 0) + 1 });
     await batch.commit();
 
-    // *** CRIAR NOTIFICAÇÃO PARA O DONO DO POST ***
     await createNotification(
         postOwnerId,
         'comment',
         `@${userData.username} comentou na sua publicação.`,
-        `/feed.html#post-${postId}` // Idealmente, o feed.html deve conseguir rolar para o post
+        `/feed.html#post-${postId}`
     );
 }
 
@@ -394,7 +412,6 @@ async function toggleLike(postId, postOwnerId) {
 
         await updateDoc(ref, { likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
 
-        // *** CRIAR NOTIFICAÇÃO DE LIKE (APENAS QUANDO CURTE, NÃO QUANDO DESCURTE) ***
         if (!isLiked) {
             const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
             const currentUsername = currentUserDoc.data().username || 'Alguém';
@@ -408,9 +425,6 @@ async function toggleLike(postId, postOwnerId) {
     }
 }
 
-
-// (O resto das funções de comentário, share, delete, etc. não precisam criar notificações e permanecem iguais)
-// ...
 function linkifyContent(text) {
     if (!text) return '';
     let linkedText = text.replace(/#(\w+)/g, '<a href="hashtag.html?tag=$1" class="hashtag-link">#$1</a>');
@@ -488,7 +502,6 @@ async function toggleCommentLike(postId, commentId, commentOwnerId) {
     if (docSnap.exists()) {
         const isLiked = docSnap.data().likes.includes(currentUser.uid);
         await updateDoc(ref, { likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
-
         if(!isLiked){
             const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
             const currentUsername = currentUserDoc.data().username || 'Alguém';
@@ -525,7 +538,6 @@ function openEditCommentModal(postId, commentId, currentText) {
             await updateDoc(doc(db, 'posts', postId, 'comments', commentId), { commentText: newText });
         }
         modal.style.display = 'none';
-        // Reset modal to default
         okBtn.textContent = "Confirmar";
         modal.querySelector('.modal-body').innerHTML = '<p id="confirm-modal-text">Você tem certeza?</p>';
     };

@@ -1,6 +1,6 @@
 /* ======================= ESTRUTURA GERAL DO PERFIL ======================= */
 .profile-container {
-    max-width: 800px;
+    max-width: 900px; /* Aumentado de 800px para 900px */
     margin: 40px auto;
     padding: 20px;
 }
@@ -82,8 +82,6 @@
     text-align: center;
 }
 
-/* --- INÍCIO DA CORREÇÃO --- */
-/* Aponte para a classe correta: .profile-card-info-only */
 .profile-card-info-only .input-group {
     margin-bottom: 20px;
     text-align: left;
@@ -115,14 +113,11 @@
     font-size: 0.8rem;
     color: #888;
 }
-/* --- FIM DA CORREÇÃO --- */
 
-/* Esconde o estilo antigo para não criar conflito */
 .profile-card {
     display: none;
 }
 
-/* ... (O restante do seu CSS para botões, mensagens, e a seção de perfil público continua igual) ... */
 .btn-primary, .btn-neutral {
     padding: 10px 20px;
     border-radius: 8px;
@@ -130,6 +125,10 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .btn-primary { background: #4CAF50; color: white; }
@@ -152,34 +151,28 @@
 .info-item i { color: #4CAF50; font-size: 1.2rem; width: 20px; text-align: center; }
 .info-item a { color: #4CAF50; text-decoration: none; font-weight: 600; }
 .info-item a:hover { text-decoration: underline; }
-/* Adicione no final de profile.css */
 
-/* Estilo para o botão de amigo quando está no estado 'Amigos' */
 .btn-amigos {
-    background-color: #4CAF50; /* Verde */
+    background-color: #4CAF50;
     color: white;
     border: 1px solid #4CAF50;
 }
 
-/* Estilo para o botão de remover amigo (e para o hover do btn-amigos) */
 .btn-remover-amigo {
-    background-color: #dc3545; /* Vermelho */
+    background-color: #dc3545;
     color: white;
     border: 1px solid #dc3545;
 }
 
-/* Garante que o cursor seja uma 'mãozinha' (pointer) */
 .btn-amigos, .btn-remover-amigo {
     cursor: pointer;
 }
 
-/* Estilo para o botão desabilitado para corrigir o cursor */
 #add-friend-btn:disabled {
     cursor: default;
     opacity: 0.7;
 }
 
-/* Estilos para a seção de posts no perfil */
 .user-posts-container, .user-tasks-container {
     background: #f9f9f9;
     padding: 20px;
@@ -197,12 +190,10 @@
     text-align: center;
 }
 
-/* Ajusta a margem do post-card dentro do perfil */
 .user-posts-container .post-card {
     margin-bottom: 15px;
 }
 
-/* Estilos para a lista de tarefas públicas */
 .public-tasks-list {
     list-style: none;
     padding: 0;
@@ -233,4 +224,69 @@
 .btn-import-task:disabled {
     background-color: #a5d6a7;
     cursor: not-allowed;
+}
+
+.profile-header .profile-actions {
+    position: absolute;
+    right: 20px;
+    top: 250px;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.friend-status-container {
+    position: relative;
+    display: inline-block;
+}
+
+.friend-status-container .options-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 10;
+    border: 1px solid #eee;
+    width: 200px;
+    padding: 5px 0;
+}
+
+.friend-status-container .options-menu.active {
+    display: block;
+}
+
+.friend-status-container .options-menu button {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    padding: 10px 15px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.friend-status-container .options-menu button:hover {
+    background-color: #f5f5f5;
+}
+
+.friend-status-container .options-menu #unfriend-btn {
+    color: #e74c3c;
+}
+
+.friend-status-container .options-menu #unfriend-btn:hover {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.friend-status-container .options-menu button:disabled {
+    color: #aaa;
+    cursor: not-allowed;
+    background-color: transparent;
 }

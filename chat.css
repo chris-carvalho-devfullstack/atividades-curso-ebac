@@ -77,6 +77,7 @@
     border-radius: 18px;
     max-width: 75%;
     word-wrap: break-word;
+    position: relative;
 }
 
 .message.sent {
@@ -92,6 +93,28 @@
     align-self: flex-start;
     border-bottom-left-radius: 4px;
 }
+
+.delete-message-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.message.sent:hover .delete-message-btn {
+    opacity: 1;
+}
+
 
 .chat-footer {
     padding: 10px;

@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="profile.css">
     <link rel="stylesheet" href="feed.css">
-    <link rel="stylesheet" href="chat.css"> </head>
+    <link rel="stylesheet" href="chat.css"> 
+</head>
 <body>
     <nav>
         <div class="nav-mobile-header-bar">
@@ -70,6 +71,16 @@
             <div class="profile-picture-section public-view">
                 <img id="public-profile-image" src="https://via.placeholder.com/150" alt="Foto de Perfil">
             </div>
+            <div class="profile-actions">
+                <div id="friend-status-container" class="friend-status-container" style="display: none;">
+                    <button id="add-friend-btn" class="btn-primary"></button>
+                    <div id="friend-options-menu" class="options-menu">
+                        <button id="unfriend-btn"><i class="fa-solid fa-user-minus"></i> Desfazer amizade</button>
+                        <button id="block-user-btn" disabled><i class="fa-solid fa-ban"></i> Bloquear (em breve)</button>
+                    </div>
+                </div>
+                <button id="send-message-btn" class="btn-neutral" style="display: none;"><i class="fa fa-comment"></i> Enviar Mensagem</button>
+            </div>
         </div>
 
         <div class="profile-card-info-only">
@@ -101,10 +112,6 @@
             </div>
         </div>
 
-        <div class="profile-actions" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-            <button id="add-friend-btn" class="btn-primary"><i class="fa fa-user-plus"></i> Adicionar Amigo</button>
-            <button id="send-message-btn" class="btn-neutral" style="display: none;"><i class="fa fa-comment"></i> Enviar Mensagem</button>
-        </div>
         <div class="user-posts-container">
             <h2>Publicações</h2>
             <div id="user-posts-list">
