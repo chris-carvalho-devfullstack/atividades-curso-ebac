@@ -84,8 +84,15 @@ function initializeGuestSession() {
 
 // Funções para localStorage
 function getLocalTasks() {
-    return JSON.parse(localStorage.getItem('tasks')) || [];
+    try {
+        const localData = localStorage.getItem('tasks');
+        return localData ? JSON.parse(localData) : [];
+    } catch (e) {
+        console.error("Erro ao ler tarefas locais:", e);
+        return [];
+    }
 }
+
 
 function saveLocalTasks(tasksArray) {
     localStorage.setItem('tasks', JSON.stringify(tasksArray));
@@ -151,15 +158,18 @@ const checkCompletionStatusRecursively = (subtasks) => {
 
 function getNewTaskOrderIndex() {
     if (tasks.length === 0) return 1.0;
-    const firstTaskOrder = tasks[0].orderIndex || 0;
-    return firstTaskOrder - 1.0;
+    // Pega a ordem da primeira tarefa na lista (que é a mais alta) e adiciona 1
+    const highestOrder = tasks.reduce((max, t) => t.orderIndex > max ? t.orderIndex : max, 0);
+    return highestOrder + 1.0;
 }
+
 
 async function addTaskToFirestore(task) {
     if (!CURRENT_USER_UID) return;
     try {
         const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
-        const newOrderIndex = getNewTaskOrderIndex();
+        // CORREÇÃO: Usando a nova lógica para garantir que a ordem seja sempre crescente
+        const newOrderIndex = tasks.length > 0 ? Math.max(...tasks.map(t => t.orderIndex || 0)) + 1 : 1;
 
         await addDoc(tasksRef, {
             ...task,
@@ -232,42 +242,45 @@ function loadTasksRealTime() {
 
 
 // ===============================================
-// 6. FUNÇÃO DE MIGRAÇÃO
+// 6. FUNÇÃO DE MIGRAÇÃO (CORRIGIDA)
 // ===============================================
 
-function migrateLocalTasksToFirestore() {
-    const data = localStorage.getItem('tasks');
-    if (!data) return;
+async function migrateLocalTasksToFirestore() {
+    const localTasks = getLocalTasks();
+    if (localTasks.length === 0) {
+        return; // Nada para migrar
+    }
+
+    console.log(`Encontradas ${localTasks.length} tarefas locais. Iniciando migração...`);
+
+    const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
+    let currentOrderIndex = tasks.length > 0 ? Math.max(...tasks.map(t => t.orderIndex || 0)) + 1 : 1;
+
+    // Mapeia cada tarefa local para uma promessa de adição no Firestore
+    const migrationPromises = localTasks.map(task => {
+        const { id, ...taskData } = task; // Remove o ID local antigo
+        return addDoc(tasksRef, {
+            ...taskData,
+            createdAt: serverTimestamp(),
+            orderIndex: currentOrderIndex++
+        });
+    });
 
     try {
-        const localTasks = JSON.parse(data);
-        if (localTasks.length === 0) return;
+        // Espera todas as promessas de escrita serem concluídas
+        await Promise.all(migrationPromises);
 
-        console.log(`Encontradas ${localTasks.length} tarefas antigas no LocalStorage. Iniciando migração...`);
-
-        const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
-
-        let orderIndex = 0;
-
-        localTasks.forEach(async (task) => {
-             const { id, ...taskData } = task; // Remove o ID local antigo
-
-             await addDoc(tasksRef, {
-                ...taskData,
-                createdAt: serverTimestamp(),
-                orderIndex: orderIndex++
-            });
-        });
-
-        localStorage.removeItem('tasks');
-        console.log("Migração concluída e LocalStorage limpo.");
-        alert("🎉 Tarefas locais foram salvas na sua conta! A página será recarregada.");
-        location.reload();
+        console.log("Migração concluída com sucesso!");
+        localStorage.removeItem('tasks'); // Limpa o localStorage APÓS o sucesso
+        alert("🎉 Suas tarefas locais foram salvas na nuvem!");
+        // O onSnapshot vai recarregar a lista automaticamente, não precisa de reload.
 
     } catch (e) {
         console.error('Erro durante a migração do LocalStorage:', e);
+        alert("Ocorreu um erro ao salvar suas tarefas na nuvem. Por favor, tente novamente.");
     }
 }
+
 
 // ===============================================
 // 7. FUNÇÕES DE RENDERIZAÇÃO E UTILIDADE
@@ -278,9 +291,7 @@ function renderAllTasks(tasksArray) {
     tasksArray.forEach(task => addTaskHTML(task));
 }
 
-/* ---------- ADD TAREFA HTML (CORRIGIDO) ---------- */
 function addTaskHTML(task) {
-    // Valores padrão para garantir que a função não quebre
     const taskPriority = task.priority || 'medium';
     const taskCategory = task.category || 'geral';
 
@@ -350,7 +361,6 @@ function addTaskHTML(task) {
     updateTaskDueVisual(li, task);
 }
 
-// ... (restante das suas funções de renderização: addSubtaskHTML, toggleSubtaskMenu, etc., permanecem as mesmas)
 function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     let li = $('<li></li>')
         .attr('data-id', subtask.id)
@@ -500,7 +510,6 @@ function deleteSubtaskViaModal(taskId, subId) {
     });
 }
 
-// ... (todas as outras funções de UI como openSubtaskModalForCreate, applyFilter, updateProgress, etc., permanecem as mesmas)
 function openSubtaskModalForCreate(taskId, parentId) {
     currentSubtaskData = {
         taskId, subtaskId: null, isEdit: false, parentId,
@@ -1086,7 +1095,7 @@ function setupCommonEventListeners() {
         $('#view-task-date').text(dateText + timeText);
 
         let $subtasks = $('#view-task-subtasks').empty();
-        if(task.subtasks.length){
+        if(task.subtasks && task.subtasks.length > 0){
             renderNestedSubtasks(task.subtasks, $subtasks);
         } else $subtasks.append('<li>Nenhuma subtarefa</li>');
 
