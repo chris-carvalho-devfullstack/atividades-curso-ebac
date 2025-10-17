@@ -1,17 +1,17 @@
 // ===============================================
-// 1. IMPORTAÇÕES DO FIREBASE 
+// 1. IMPORTAÇÕES DO FIREBASE
 // ===============================================
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
-import { 
-    collection, 
-    query, 
-    orderBy, 
-    onSnapshot, 
-    doc, 
-    addDoc, 
-    updateDoc, 
-    deleteDoc, 
+import {
+    collection,
+    query,
+    orderBy,
+    onSnapshot,
+    doc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
     serverTimestamp,
     writeBatch
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
@@ -20,12 +20,12 @@ import {
 // 2. VARIÁVEIS GLOBAIS
 // ===============================================
 let CURRENT_USER_UID = null;
-let tasks = []; 
+let tasks = [];
 let currentTaskLi = null;
-let currentSubtaskData = { 
+let currentSubtaskData = {
     taskId: null, subtaskId: null, isEdit: false, parentId: null,
-    priority: 'medium', category: 'geral', dueDate: '', dueTime: '' 
-}; 
+    priority: 'medium', category: 'geral', dueDate: '', dueTime: ''
+};
 let calendar = null;
 let calendarInitialized = false;
 
@@ -34,7 +34,7 @@ function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
 
 
 // ===============================================
-// 3. FUNÇÕES RECURSIVAS DE MANIPULAÇÃO DE DADOS 
+// 3. FUNÇÕES RECURSIVAS DE MANIPULAÇÃO DE DADOS
 // ===============================================
 
 /**
@@ -42,12 +42,12 @@ function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
  */
 function updateNestedSubtasks(subtasks, targetId, callbackFn) {
     if (!subtasks) return [];
-    
+
     return subtasks.map(subtask => {
         if (subtask.id === targetId) {
             return callbackFn(subtask);
         }
-        
+
         if (subtask.subtasks && subtask.subtasks.length > 0) {
             subtask.subtasks = updateNestedSubtasks(subtask.subtasks, targetId, callbackFn);
         }
@@ -60,7 +60,7 @@ function updateNestedSubtasks(subtasks, targetId, callbackFn) {
  */
 function findNestedSubtask(subtasks, targetId) {
     if (!subtasks) return null;
-    
+
     for (const subtask of subtasks) {
         if (subtask.id === targetId) {
             return subtask;
@@ -87,7 +87,7 @@ const checkCompletionStatusRecursively = (subtasks) => {
 // ===============================================
 
 function getNewTaskOrderIndex() {
-    if (tasks.length === 0) return 1.0; 
+    if (tasks.length === 0) return 1.0;
     const firstTaskOrder = tasks[0].orderIndex || 0;
     return firstTaskOrder - 1.0;
 }
@@ -97,12 +97,12 @@ async function addTaskToFirestore(task) {
     try {
         const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
         const newOrderIndex = getNewTaskOrderIndex();
-        
-        await addDoc(tasksRef, { 
-            ...task, 
+
+        await addDoc(tasksRef, {
+            ...task,
             createdAt: serverTimestamp(),
             orderIndex: newOrderIndex,
-            subtasks: task.subtasks || [] 
+            subtasks: task.subtasks || []
         });
         console.log("✅ Tarefa adicionada com sucesso ao Firestore!");
     } catch (error) {
@@ -141,28 +141,28 @@ async function saveSubtasksToFirestore(taskId, subtasks) {
 // ===============================================
 function loadTasksRealTime() {
     if (!CURRENT_USER_UID) return;
-    
+
     const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
-    const q = query(tasksRef, orderBy("orderIndex", "asc")); 
+    const q = query(tasksRef, orderBy("orderIndex", "asc"));
 
     onSnapshot(q, (snapshot) => {
-        $('#task-list').empty(); 
-        tasks = []; 
-        
+        $('#task-list').empty();
+        tasks = [];
+
         snapshot.forEach((doc) => {
             const task = doc.data();
-            task.id = doc.id; 
-            if (!task.category) task.category = 'geral'; 
-            if (!task.subtasks) task.subtasks = []; 
-            tasks.push(task); 
-            addTaskHTML(task); 
+            task.id = doc.id;
+            if (!task.category) task.category = 'geral';
+            if (!task.subtasks) task.subtasks = [];
+            tasks.push(task);
+            addTaskHTML(task);
         });
 
-        updateProgress(); 
-        checkAllDueDates(); 
+        updateProgress();
+        checkAllDueDates();
         applyFilter();
-        syncAllToCalendar(); 
-        
+        syncAllToCalendar();
+
     }, (error) => {
         console.error("Erro ao escutar tarefas em tempo real:", error);
     });
@@ -175,7 +175,7 @@ function loadTasksRealTime() {
 
 function migrateLocalTasksToFirestore() {
     const data = localStorage.getItem('tasks');
-    if (!data) return; 
+    if (!data) return;
 
     try {
         const localTasks = JSON.parse(data);
@@ -184,11 +184,11 @@ function migrateLocalTasksToFirestore() {
         console.log(`Encontradas ${localTasks.length} tarefas antigas no LocalStorage. Iniciando migração...`);
 
         const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
-        
-        let orderIndex = 0; 
+
+        let orderIndex = 0;
 
         localTasks.forEach(async (task) => {
-             const { id, ...taskData } = task; 
+             const { id, ...taskData } = task;
 
              await addDoc(tasksRef, {
                 ...taskData,
@@ -201,21 +201,25 @@ function migrateLocalTasksToFirestore() {
         console.log("Migração concluída e LocalStorage limpo.");
         alert("🎉 Tarefas antigas do LocalStorage foram migradas para o Firebase! Recarregue a página se elas ainda não aparecerão.");
 
-    } catch (e) { 
+    } catch (e) {
         console.error('Erro durante a migração do LocalStorage:', e);
     }
 }
 
 // ===============================================
-// 7. FUNÇÕES DE RENDERIZAÇÃO E UTILIDADE 
+// 7. FUNÇÕES DE RENDERIZAÇÃO E UTILIDADE
 // ===============================================
 
-/* ---------- ADD TAREFA HTML ---------- */
+/* ---------- ADD TAREFA HTML (CORRIGIDO) ---------- */
 function addTaskHTML(task) {
+    // Valores padrão para garantir que a função não quebre
+    const taskPriority = task.priority || 'medium';
+    const taskCategory = task.category || 'geral';
+
     let li = $('<li></li>')
         .attr('data-id', task.id)
-        .attr('data-category', task.category)
-        .addClass('priority-' + task.priority);
+        .attr('data-category', taskCategory)
+        .addClass('priority-' + taskPriority);
 
     let taskDiv = $('<div class="task-main"></div>');
     let textDiv = $('<div class="task-text"></div>');
@@ -227,13 +231,13 @@ function addTaskHTML(task) {
 
     let prioCatDiv = $('<div class="task-priority-category"></div>');
     let priorityLabel = $('<span class="priority-label"></span>')
-        .addClass('priority-' + task.priority)
-        .text(task.priority.charAt(0).toUpperCase() + task.priority.slice(1));
+        .addClass('priority-' + taskPriority)
+        .text(taskPriority.charAt(0).toUpperCase() + taskPriority.slice(1));
     prioCatDiv.append(priorityLabel);
 
     let categorySpan = $('<span class="task-category"></span>')
-        .text(task.category.charAt(0).toUpperCase() + task.category.slice(1))
-        .attr('data-tooltip', 'Categoria: ' + task.category.charAt(0).toUpperCase() + task.category.slice(1));
+        .text(taskCategory.charAt(0).toUpperCase() + taskCategory.slice(1))
+        .attr('data-tooltip', 'Categoria: ' + taskCategory.charAt(0).toUpperCase() + taskCategory.slice(1));
     prioCatDiv.append(categorySpan);
     textDiv.append(prioCatDiv);
 
@@ -246,7 +250,7 @@ function addTaskHTML(task) {
     }
 
     let btnGroup = $('<div class="button-group"></div>');
-    if (task.subtasks.length > 0) btnGroup.append($('<button type="button" class="toggle-subtasks-btn">▼</button>'));
+    if (task.subtasks && task.subtasks.length > 0) btnGroup.append($('<button type="button" class="toggle-subtasks-btn">▼</button>'));
 
     if (task.dueDate) {
         let googleBtn = $('<button class="google-calendar-btn" type="button" data-tooltip="Agendar no Google Agenda"></button>');
@@ -258,17 +262,19 @@ function addTaskHTML(task) {
 
     let editBtn = $('<button class="edit-btn" type="button">✎</button>');
     let removeBtn = $('<button class="remove-btn" type="button">🗑️</button>');
-    
+
     let addSubBtn = $('<button class="add-subtask-btn" type="button">➕ Sub</button>')
-        .attr('data-task-id', task.id); 
-    
+        .attr('data-task-id', task.id);
+
     btnGroup.append(editBtn, removeBtn, addSubBtn);
 
     taskDiv.append(textDiv, btnGroup);
     li.append(taskDiv);
 
     let subtaskList = $('<ul class="subtask-list"></ul>');
-    task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st, task.id)); 
+    if (task.subtasks) {
+        task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st, task.id));
+    }
     li.append(subtaskList);
     initSubtaskSortable(subtaskList);
 
@@ -276,17 +282,18 @@ function addTaskHTML(task) {
     updateTaskDueVisual(li, task);
 }
 
+
 function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     let li = $('<li></li>')
         .attr('data-id', subtask.id)
         .attr('data-parent-id', parentId || taskId)
         .addClass('priority-' + (subtask.priority || 'medium'));
-    
-    li.css('position', 'relative'); 
+
+    li.css('position', 'relative');
 
     let textDiv = $('<div class="task-text"></div>');
     let checkbox = $('<input type="checkbox" class="subtask-checkbox">').prop('checked', subtask.completed);
-    
+
     let label = $('<label class="subtask-label"></label>').text(subtask.text)
         .attr('data-task-id', taskId)
         .attr('data-subtask-id', subtask.id)
@@ -296,9 +303,9 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
         });
 
     if (subtask.completed) label.addClass('completed');
-    
+
     textDiv.append(checkbox, label);
-    
+
     if (subtask.dueDate) {
         let dateText = new Date(subtask.dueDate + 'T00:00:00').toLocaleDateString();
         let timeText = subtask.dueTime ? ` ${subtask.dueTime}` : '';
@@ -306,14 +313,14 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
         let dateLabel = $('<span class="task-datetime"></span>').text(dateTimeText);
         textDiv.append(dateLabel);
     }
-    
-    let btnGroup = $('<div class="button-group subtask-btn-group"></div>'); 
+
+    let btnGroup = $('<div class="button-group subtask-btn-group"></div>');
 
     let optionsBtn = $('<button class="subtask-options-btn" type="button">⋮</button>')
         .attr('data-task-id', taskId)
         .attr('data-subtask-id', subtask.id)
         .attr('data-parent-id', parentId || taskId)
-        .on('click', function(e) { 
+        .on('click', function(e) {
             e.stopPropagation();
             toggleSubtaskMenu($(this), taskId, subtask.id, parentId || taskId);
         });
@@ -330,7 +337,7 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     `);
 
     btnGroup.append(optionsBtn, contextMenu);
-    
+
     li.append(textDiv, btnGroup);
 
     if (subtask.subtasks && subtask.subtasks.length > 0) {
@@ -338,14 +345,14 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
         subtask.subtasks.forEach(st => addSubtaskHTML(nestedSubtaskList, st, taskId, subtask.id));
         li.append(nestedSubtaskList);
     }
-    
+
     list.append(li);
     updateTaskDueVisual(li, subtask);
 }
 
 function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
     $('.subtask-options-menu').removeClass('active');
-    
+
     const $menu = $button.siblings('.subtask-options-menu').first();
     $menu.toggleClass('active');
 
@@ -357,22 +364,22 @@ function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
 
     $menu.find('.menu-add-below').off('click').on('click', (e) => {
         e.stopPropagation();
-        openSubtaskModalForCreate(taskId, parentId); 
+        openSubtaskModalForCreate(taskId, parentId);
         $menu.removeClass('active');
     });
 
     $menu.find('.menu-add-child').off('click').on('click', (e) => {
         e.stopPropagation();
-        openSubtaskModalForCreate(taskId, subtaskId); 
+        openSubtaskModalForCreate(taskId, subtaskId);
         $menu.removeClass('active');
     });
 
     $menu.find('.menu-remove').off('click').on('click', async (e) => {
         e.stopPropagation();
         $menu.removeClass('active');
-        deleteSubtaskViaModal(taskId, subtaskId); 
+        deleteSubtaskViaModal(taskId, subtaskId);
     });
-    
+
     setTimeout(() => {
         $(document).one('click', (e) => {
             if (!$(e.target).closest('.subtask-options-menu').length && !$(e.target).is('.subtask-options-btn')) {
@@ -391,12 +398,12 @@ function deleteSubtaskViaModal(taskId, subId) {
 
     $('#confirm-title').text('Apagar Subtarefa');
     $('#confirm-text').html(`Deseja realmente apagar a subtarefa <strong>"${subtask.text}"</strong> e todos os seus itens aninhados? Esta ação não pode ser desfeita.`);
-    
+
     showModal('#confirmModal');
 
     $('#confirm-ok-btn').off('click').on('click', async function() {
         $('#confirm-ok-btn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Excluindo...');
-        
+
         const recursiveRemove = (subtasks) => {
             return subtasks.filter(sub => sub.id !== subId).map(sub => {
                 if (sub.subtasks && sub.subtasks.length > 0) {
@@ -408,7 +415,7 @@ function deleteSubtaskViaModal(taskId, subId) {
 
         const updatedSubtasks = recursiveRemove(task.subtasks);
         await saveSubtasksToFirestore(taskId, updatedSubtasks);
-        
+
         hideModal('#confirmModal');
         $('#confirm-ok-btn').prop('disabled', false).html('Confirmar');
     });
@@ -420,15 +427,15 @@ function deleteSubtaskViaModal(taskId, subId) {
 }
 
 function openSubtaskModalForCreate(taskId, parentId) {
-    currentSubtaskData = { 
+    currentSubtaskData = {
         taskId, subtaskId: null, isEdit: false, parentId,
-        priority: 'medium', category: 'geral', dueDate: '', dueTime: '' 
-    }; 
-    
-    let parentText = parentId === taskId 
-        ? tasks.find(t => t.id === taskId)?.text 
+        priority: 'medium', category: 'geral', dueDate: '', dueTime: ''
+    };
+
+    let parentText = parentId === taskId
+        ? tasks.find(t => t.id === taskId)?.text
         : findNestedSubtask(tasks.find(t => t.id === taskId)?.subtasks, parentId)?.text || "Subtarefa";
-    
+
     $('#subtask-modal-title').text(`Adicionar Subtarefa a "${parentText}"`);
     $('#subtask-input').val('');
     $('#subtask-priority').val('medium');
@@ -445,15 +452,15 @@ function openSubtaskModalForEdit(taskId, subtaskId) {
 
     const subtask = findNestedSubtask(task.subtasks, subtaskId);
     if (!subtask) return;
-    
-    currentSubtaskData = { 
+
+    currentSubtaskData = {
         taskId, subtaskId, isEdit: true, parentId: null,
-        priority: subtask.priority || 'medium', 
-        category: subtask.category || 'geral', 
-        dueDate: subtask.dueDate || '', 
-        dueTime: subtask.dueTime || '' 
+        priority: subtask.priority || 'medium',
+        category: subtask.category || 'geral',
+        dueDate: subtask.dueDate || '',
+        dueTime: subtask.dueTime || ''
     };
-    
+
     $('#subtask-modal-title').text(`Editar Subtarefa: "${subtask.text}"`);
     $('#subtask-input').val(subtask.text);
     $('#subtask-priority').val(currentSubtaskData.priority);
@@ -493,7 +500,7 @@ function applyFilter() {
 
 function updateProgress() {
     let total = tasks.length;
-    let completed = tasks.filter(t => t.completed).length; 
+    let completed = tasks.filter(t => t.completed).length;
     let percent = total ? Math.round((completed / total) * 100) : 0;
     $('.progress-bar').text(percent ? percent + '%' : '');
 
@@ -515,7 +522,7 @@ function updateTaskDueVisual(li, task) {
     li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
 
     if (!task || !task.dueDate || task.completed) return;
-    
+
     const dueDateTimeString = task.dueDate + (task.dueTime ? 'T' + task.dueTime : 'T00:00:00');
     const due = new Date(dueDateTimeString);
     const now = new Date();
@@ -542,13 +549,13 @@ function checkAllDueDates() {
 
 function exportTaskToGoogleLink(task) {
     if (!task.dueDate) { alert("A tarefa precisa ter uma data para exportar!"); return; }
-    
+
     let startDateTime = task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T09:00:00');
     let startDate = new Date(startDateTime);
-    let endDate = new Date(startDate.getTime() + 60 * 60 * 1000); 
+    let endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
 
     let formatForGoogle = (date) => date.toISOString().replace(/-|:|\.\d+/g, '');
-    
+
     let url = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
                 `&text=${encodeURIComponent(task.text)}` +
                 `&dates=${formatForGoogle(startDate)}/${formatForGoogle(endDate)}` +
@@ -567,7 +574,7 @@ function initCalendar() {
             events: [],
             eventClick: function (info) {
                 const { taskId, subtaskId } = info.event.extendedProps;
-                
+
                 hideModal('.modal.show');
 
                 if (subtaskId) {
@@ -627,7 +634,7 @@ function showModal(selector, options = {}) {
     const $modal = (typeof selector === 'string') ? $(selector) : selector;
     if (!$modal || $modal.length === 0) return;
 
-    $('body').css('overflow', 'hidden'); 
+    $('body').css('overflow', 'hidden');
     $modal.addClass('show').attr('aria-hidden', 'false').show();
 
     const $focusableElements = $modal.find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
@@ -667,10 +674,10 @@ function hideModal(selector) {
     const $modal = (typeof selector === 'string') ? $(selector) : selector;
     if (!$modal || $modal.length === 0) return;
 
-    $('body').css('overflow', ''); 
+    $('body').css('overflow', '');
     $modal.removeClass('show').attr('aria-hidden', 'true').hide();
     $modal.off('click.modalOverlay');
-    $modal.off('keydown.focusTrap'); 
+    $modal.off('keydown.focusTrap');
 }
 
 
@@ -681,14 +688,14 @@ function hideModal(selector) {
 onAuthStateChanged(auth, (user) => {
     if (user) {
         CURRENT_USER_UID = user.uid;
-        
-        $(document).ready(function () {
-            
-            initCalendar();
-            migrateLocalTasksToFirestore(); 
-            loadTasksRealTime(); 
 
-            setInterval(checkAllDueDates, 60 * 1000); 
+        $(document).ready(function () {
+
+            initCalendar();
+            migrateLocalTasksToFirestore();
+            loadTasksRealTime();
+
+            setInterval(checkAllDueDates, 60 * 1000);
 
             const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
             const mainNavList = document.getElementById("main-nav-list");
@@ -700,30 +707,30 @@ onAuthStateChanged(auth, (user) => {
             }
 
             $('#toggle-form-btn').off('click').on('click', function() {
-                showModal('#addTaskModal'); 
-                setTimeout(() => { $('#task-text').focus(); }, 150); 
+                showModal('#addTaskModal');
+                setTimeout(() => { $('#task-text').focus(); }, 150);
             });
 
             $('#toggle-filter-btn').off('click').on('click', function() {
                 showModal('#filterModal');
                 setTimeout(() => { $('#search-input').focus(); }, 150);
             });
-            
-            $('#add-task-cancel-btn').on('click', function() { 
-                hideModal('#addTaskModal'); 
+
+            $('#add-task-cancel-btn').on('click', function() {
+                hideModal('#addTaskModal');
             });
-            
+
             $('#filter-apply-btn').on('click', function() {
                 applyFilter();
                 hideModal('#filterModal');
             });
-            
+
             $('#filter-cancel-btn').on('click', function() {
                 hideModal('#filterModal');
             });
 
-            $('.modal .close, .modal .close-top-right').on('click', function() { 
-                hideModal($(this).closest('.modal')); 
+            $('.modal .close, .modal .close-top-right').on('click', function() {
+                hideModal($(this).closest('.modal'));
             });
             $('#edit-cancel-btn').on('click', () => hideModal('#editTaskModal'));
             $('#subtask-cancel-btn').on('click', () => hideModal('#subtask-modal'));
@@ -742,7 +749,7 @@ onAuthStateChanged(auth, (user) => {
                 if (!text) return;
 
                 let task = { text, completed: false, priority, dueDate, dueTime, category, subtasks: [] };
-                
+
                 addTaskToFirestore(task);
 
                 $('#task-text').val('');
@@ -750,7 +757,7 @@ onAuthStateChanged(auth, (user) => {
                 $('#task-date').val('');
                 $('#task-time').val('');
                 $('#task-category').val('geral');
-                
+
                 hideModal('#addTaskModal');
             });
 
@@ -758,10 +765,10 @@ onAuthStateChanged(auth, (user) => {
                 let li = $(this).closest('li');
                 let taskId = li.attr('data-id');
                 let isCompleted = $(this).prop('checked');
-                
+
                 let task = tasks.find(t => t.id === taskId);
                 if (!task) return;
-                
+
                 const recursiveCheck = (subtasks) => {
                     return subtasks.map(st => ({
                         ...st,
@@ -771,10 +778,10 @@ onAuthStateChanged(auth, (user) => {
                 };
 
                 const subtasks = recursiveCheck(task.subtasks);
-                
-                await updateTaskInFirestore(taskId, { 
+
+                await updateTaskInFirestore(taskId, {
                     completed: isCompleted,
-                    subtasks: subtasks 
+                    subtasks: subtasks
                 });
             });
 
@@ -787,7 +794,7 @@ onAuthStateChanged(auth, (user) => {
                 if (!task) return;
 
                 const isCompleted = $(this).prop('checked');
-                
+
                 const updateTargetAndChildren = (subtasks) => {
                     return subtasks.map(st => {
                         if (st.id === subId) {
@@ -799,14 +806,14 @@ onAuthStateChanged(auth, (user) => {
                         return st;
                     });
                 };
-                
+
                 let updatedSubtasks = updateTargetAndChildren(task.subtasks);
 
                 const isMainTaskCompleted = checkCompletionStatusRecursively(updatedSubtasks);
 
-                await updateTaskInFirestore(taskId, { 
+                await updateTaskInFirestore(taskId, {
                     subtasks: updatedSubtasks,
-                    completed: isMainTaskCompleted 
+                    completed: isMainTaskCompleted
                 });
             });
 
@@ -815,13 +822,13 @@ onAuthStateChanged(auth, (user) => {
                 let taskId = li.attr('data-id');
                 let task = tasks.find(t => t.id === taskId);
                 if (!task) return;
-                
+
                 $('#confirm-title').text('Apagar Tarefa');
                 $('#confirm-text').text(`Deseja realmente apagar a tarefa "${task.text}"? Esta ação não pode ser desfeita.`);
                 showModal('#confirmModal');
 
                 $('#confirm-ok-btn').off('click').on('click', function() {
-                    deleteTaskFromFirestore(taskId); 
+                    deleteTaskFromFirestore(taskId);
                     hideModal('#confirmModal');
                 });
 
@@ -829,7 +836,7 @@ onAuthStateChanged(auth, (user) => {
                     hideModal('#confirmModal');
                 });
             });
-            
+
             $(document).on('click', '.add-nested-subtask-btn', function() {
                 const taskId = $(this).data('task-id');
                 const parentId = $(this).data('parent-id');
@@ -839,13 +846,13 @@ onAuthStateChanged(auth, (user) => {
             $(document).on('click', '.add-subtask-btn', function () {
                 const taskId = $(this).data('task-id') || $(this).closest('li').data('id');
                 if (!taskId) return;
-                openSubtaskModalForCreate(taskId, taskId); 
+                openSubtaskModalForCreate(taskId, taskId);
             });
 
-            $('#subtask-add-btn').off('click').on('click', async function () { 
+            $('#subtask-add-btn').off('click').on('click', async function () {
                 const { taskId, subtaskId, isEdit, parentId } = currentSubtaskData;
                 const subtaskText = $('#subtask-input').val().trim();
-                
+
                 const newSubtaskData = {
                     text: subtaskText,
                     priority: $('#subtask-priority').val(),
@@ -855,7 +862,7 @@ onAuthStateChanged(auth, (user) => {
                 };
 
                 if (!newSubtaskData.text || !taskId) return;
-                
+
                 const task = tasks.find(t => t.id === taskId);
                 if (!task) return;
 
@@ -865,7 +872,7 @@ onAuthStateChanged(auth, (user) => {
                     updatedSubtasks = updateNestedSubtasks(task.subtasks, subtaskId, (sub) => {
                         return { ...sub, ...newSubtaskData };
                     });
-                    
+
                 } else {
                     const newSubtask = { id: generateId(), completed: false, subtasks: [], ...newSubtaskData };
 
@@ -879,7 +886,7 @@ onAuthStateChanged(auth, (user) => {
                         });
                     }
                 }
-                
+
                 await saveSubtasksToFirestore(taskId, updatedSubtasks);
 
                 hideModal('#subtask-modal');
@@ -897,13 +904,13 @@ onAuthStateChanged(auth, (user) => {
                 showModal('#editTaskModal');
             });
 
-            $('#edit-save-btn').off('click').on('click', async function(){ 
+            $('#edit-save-btn').off('click').on('click', async function(){
                 if(!currentTaskLi) return;
                 let taskId = currentTaskLi.attr('data-id');
-                
-                let task = tasks.find(t => t.id === taskId); 
+
+                let task = tasks.find(t => t.id === taskId);
                 if(!task) return;
-                
+
                 const updatedData = {
                     text: $('#edit-task-name').val().trim() || 'Tarefa',
                     priority: $('#edit-task-priority').val(),
@@ -911,13 +918,13 @@ onAuthStateChanged(auth, (user) => {
                     dueDate: $('#edit-task-date').val(),
                     dueTime: $('#edit-task-time').val(),
                 };
-                
+
                 await updateTaskInFirestore(taskId, updatedData);
 
-                hideModal('#editTaskModal'); 
+                hideModal('#editTaskModal');
                 currentTaskLi=null;
             });
-            
+
             $('#search-input').on('input', applyFilter);
             $('#filter-priority').on('change', applyFilter);
             $('#filter-category').on('change', applyFilter);
@@ -925,14 +932,14 @@ onAuthStateChanged(auth, (user) => {
             $('#task-list').sortable({
                 update: async function (event, ui) {
                     if (!CURRENT_USER_UID) return;
-                    
+
                     const orderedIds = $('#task-list>li').map(function() {
                         return $(this).attr('data-id');
                     }).get();
 
                     const batch = writeBatch(db);
                     const tasksRef = collection(db, "users", CURRENT_USER_UID, "tasks");
-                    
+
                     orderedIds.forEach((taskId, newIndex) => {
                         const taskRef = doc(tasksRef, taskId);
                         batch.update(taskRef, { orderIndex: newIndex });
@@ -958,7 +965,7 @@ onAuthStateChanged(auth, (user) => {
                 let li = $(this).closest('li');
                 let task = tasks.find(t => t.id === li.attr('data-id'));
                 if(!task) return;
-                
+
                 const renderNestedSubtasks = (subtasks, $list) => {
                     if (!subtasks || subtasks.length === 0) return;
                     subtasks.forEach(st => {
@@ -973,7 +980,7 @@ onAuthStateChanged(auth, (user) => {
                 $('#view-task-name').text(task.text);
                 $('#view-task-priority').text(task.priority.charAt(0).toUpperCase()+task.priority.slice(1));
                 $('#view-task-category').text(task.category.charAt(0).toUpperCase()+task.category.slice(1));
-                
+
                 let dateText = task.dueDate ? new Date(task.dueDate + 'T00:00:00').toLocaleDateString() : 'Sem data';
                 let timeText = task.dueTime ? ` às ${task.dueTime}` : '';
                 $('#view-task-date').text(dateText + timeText);
@@ -1012,7 +1019,7 @@ onAuthStateChanged(auth, (user) => {
             });
 
         });
-        
+
     } else {
         const currentPage = window.location.pathname.split('/').pop();
         if (currentPage !== 'login.html' && currentPage !== 'signup.html') {
