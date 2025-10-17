@@ -1,4 +1,4 @@
-// public-profile.js (VERSÃO COMPLETA E ATUALIZADA)
+// public-profile.js (VERSÃO CORRIGIDA E COMPLETA)
 
 import { auth, db, storage } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
@@ -53,6 +53,10 @@ const coverPreview = document.getElementById('cover-photo-preview');
 const fullname = document.getElementById('public-fullname');
 const bio = document.getElementById('public-bio');
 const addFriendBtn = document.getElementById('add-friend-btn');
+const birthdate = document.getElementById('public-birthdate');
+const phone = document.getElementById('public-phone');
+const instagram = document.getElementById('public-instagram');
+const linkedin = document.getElementById('public-linkedin');
 let currentUser;
 
 // =================================================================
@@ -85,6 +89,18 @@ async function loadPublicProfile(profileUid) {
             fullname.textContent = data.fullname || "Nome não informado";
             bio.textContent = data.bio || "Este usuário ainda não escreveu uma bio.";
             
+            birthdate.textContent = data.birthdate || "Data não informada";
+            phone.textContent = data.phone || "Contato não informado";
+            instagram.textContent = data.instagram || "Instagram não informado";
+
+            if (data.linkedin) {
+                linkedin.href = data.linkedin;
+                linkedin.textContent = data.linkedin;
+            } else {
+                linkedin.textContent = "LinkedIn não informado";
+                linkedin.removeAttribute('href');
+            }
+
             if (currentUser.uid !== profileUid) {
                 updateFriendButtonStatus(profileUid);
             }
@@ -154,7 +170,7 @@ async function removeFriend(currentUserUid, friendUid) {
 }
 
 // =================================================================
-// LÓGICA DE POSTS E COMENTÁRIOS (IDÊNTICA AO feed.js)
+// LÓGICA DE POSTS E COMENTÁRIOS (ATUALIZADA PARA CONSISTÊNCIA)
 // =================================================================
 
 function loadUserPosts(uid) {
@@ -175,19 +191,20 @@ function renderPostOnProfile(post, postId) {
 
     const isLiked = currentUser && post.likes.includes(currentUser.uid);
     const isOwner = currentUser && currentUser.uid === post.userId;
+    const linkedContent = linkifyContent(post.content); // Usa a função corrigida
 
     postCard.innerHTML = `
         <div class="post-header">
             <div class="post-author-details">
-                <a href="public-profile.html?uid=${post.userId}"><img src="${post.userProfileImage}" alt="Foto"></a>
+                <a href="public-profile.html?uid=${post.userId}" class="post-author-link"><img src="${post.userProfileImage}" alt="Foto"></a>
                 <div class="post-author-info">
-                    <a href="public-profile.html?uid=${post.userId}"><span class="username">${post.username}</span></a>
+                    <a href="public-profile.html?uid=${post.userId}" class="post-author-link"><span class="username">${post.username}</span></a>
                     <span class="timestamp">${post.timestamp ? post.timestamp.toDate().toLocaleString('pt-BR') : 'Agora'}</span>
                 </div>
             </div>
             ${isOwner ? `<div class="post-options"><button class="post-options-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button><div class="options-menu"><button class="delete-btn"><i class="fa-solid fa-trash"></i> Apagar</button></div></div>` : ''}
         </div>
-        <div class="post-content"><p>${linkifyContent(post.content)}</p></div>
+        <div class="post-content"><p>${linkedContent}</p></div>
         ${post.imageUrl ? `<div class="post-media"><img src="${post.imageUrl}" alt="Mídia"></div>` : ''}
         <div class="post-footer">
             <button class="action-btn like-btn ${isLiked ? 'liked' : ''}"><i class="fa fa-heart"></i> ${post.likes.length}</button>
@@ -251,7 +268,7 @@ function renderComment(postId, commentId, data, container) {
         <div class="comment-body">
             <div class="comment-content-wrapper">
                 <div class="comment-content">
-                    <a href="public-profile.html?uid=${data.userId}"><strong>${data.username}</strong></a>
+                    <a href="public-profile.html?uid=${data.userId}" class="comment-author-link"><strong>${data.username}</strong></a>
                     <span class="comment-text">${linkifyContent(data.commentText)}</span>
                 </div>
                 ${isOwner ? `<div class="post-options comment-options"><button class="post-options-btn comment-options-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button><div class="options-menu"><button class="edit-comment-btn"><i class="fa-solid fa-pencil"></i> Editar</button><button class="delete-comment-btn"><i class="fa-solid fa-trash"></i> Apagar</button></div></div>` : ''}
@@ -359,9 +376,12 @@ async function deletePost(postId, imageUrl) {
     } catch (e) { console.error("Erro ao apagar publicação:", e); }
 }
 
+// FUNÇÃO ATUALIZADA PARA INCLUIR AS CLASSES CSS
 function linkifyContent(text) {
     if (!text) return '';
-    return text.replace(/#(\w+)/g, '<a href="hashtag.html?tag=$1">#$1</a>').replace(/@(\w+)/g, '<a href="#" data-username="$1">@$1</a>');
+    let linkedText = text.replace(/#(\w+)/g, '<a href="hashtag.html?tag=$1" class="hashtag-link">#$1</a>');
+    linkedText = linkedText.replace(/@(\w+)/g, '<a href="#" class="usertag-link" data-username="$1">@$1</a>');
+    return linkedText;
 }
 
 document.addEventListener('click', (e) => {
