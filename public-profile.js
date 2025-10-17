@@ -74,12 +74,10 @@ const sendMessageBtn = document.getElementById('send-message-btn');
 let currentUser;
 let profileUid;
 
-// INÍCIO DA MUDANÇA: Novos elementos para o botão de amizade
 const friendStatusContainer = document.getElementById('friend-status-container');
 const addFriendBtn = document.getElementById('add-friend-btn');
 const friendOptionsMenu = document.getElementById('friend-options-menu');
 const unfriendBtn = document.getElementById('unfriend-btn');
-// FIM DA MUDANÇA
 
 // =================================================================
 // LÓGICA PRINCIPAL DA PÁGINA
@@ -114,18 +112,51 @@ async function loadPublicProfile(profileUid) {
             fullname.textContent = data.fullname || "Nome não informado";
             bio.textContent = data.bio || "Este usuário ainda não escreveu uma bio.";
             document.getElementById('public-birthdate').textContent = data.birthdate || "Data não informada";
-            document.getElementById('public-phone').textContent = data.phone || "Contato não informado";
-            document.getElementById('public-instagram').textContent = data.instagram || "Instagram não informado";
+
+            // **INÍCIO DA ALTERAÇÃO - TELEFONE E INSTAGRAM**
+            const phoneDisplay = document.getElementById('public-phone');
+            if (data.phone) {
+                const phoneDigits = data.phone.replace(/\D/g, '');
+                phoneDisplay.innerHTML = `<a href="https://wa.me/55${phoneDigits}" target="_blank">${data.phone}</a>`;
+            } else {
+                phoneDisplay.textContent = "Contato não informado";
+            }
+
+            const instagramDisplay = document.getElementById('public-instagram');
+            if (data.instagram) {
+                const instagramUsername = data.instagram.startsWith('@') ? data.instagram.substring(1) : data.instagram;
+                instagramDisplay.innerHTML = `<a href="https://www.instagram.com/${instagramUsername}" target="_blank">${data.instagram}</a>`;
+            } else {
+                instagramDisplay.textContent = "Instagram não informado";
+            }
+            // **FIM DA ALTERAÇÃO**
+
+            const genderDisplay = document.getElementById('public-gender');
+            if (data.gender) {
+                switch (data.gender) {
+                    case 'male':
+                        genderDisplay.textContent = 'Masculino';
+                        break;
+                    case 'female':
+                        genderDisplay.textContent = 'Feminino';
+                        break;
+                    default:
+                        genderDisplay.textContent = 'Não informado';
+                        break;
+                }
+            } else {
+                genderDisplay.textContent = 'Não informado';
+            }
 
             const linkedin = document.getElementById('public-linkedin');
             if (data.linkedin) {
                 linkedin.href = data.linkedin;
-                linkedin.textContent = data.linkedin;
+                linkedin.textContent = "Acessar LinkedIn"; 
             } else {
                 linkedin.textContent = "LinkedIn não informado";
                 linkedin.removeAttribute('href');
             }
-            // A lógica do botão agora é centralizada aqui
+            
             updateFriendButtonStatus(profileUid);
         } else {
             fullname.textContent = "Perfil não encontrado.";
@@ -135,17 +166,15 @@ async function loadPublicProfile(profileUid) {
     }
 }
 
-// INÍCIO DA MUDANÇA: Função de status de amizade atualizada
 async function updateFriendButtonStatus(profileUid) {
     sendMessageBtn.style.display = 'none';
     if (friendOptionsMenu) friendOptionsMenu.classList.remove('active');
 
-    // Mostra o container do botão apenas se não for o perfil do próprio usuário
     if (currentUser.uid !== profileUid) {
         if(friendStatusContainer) friendStatusContainer.style.display = 'inline-block';
     } else {
         if(friendStatusContainer) friendStatusContainer.style.display = 'none';
-        return; // Sai da função se for o perfil do próprio usuário
+        return;
     }
 
     addFriendBtn.disabled = true;
@@ -164,12 +193,10 @@ async function updateFriendButtonStatus(profileUid) {
         sendMessageBtn.style.display = 'inline-flex';
         sendMessageBtn.onclick = () => window.openChatWith(profileUid);
 
-        // Ação de clicar no botão "Amigos" abre o menu
         addFriendBtn.onclick = (e) => {
-            e.stopPropagation(); // Impede que o clique feche o menu imediatamente
+            e.stopPropagation();
             friendOptionsMenu.classList.toggle('active');
         };
-        // Ação do botão "Desfazer amizade" dentro do menu
         unfriendBtn.onclick = () => showConfirmModal("Desfazer Amizade", `Tem certeza que deseja remover este usuário?`, () => removeFriend(currentUser.uid, profileUid));
 
     } else if (requestSentDoc.exists()) {
@@ -186,7 +213,6 @@ async function updateFriendButtonStatus(profileUid) {
         addFriendBtn.onclick = () => sendFriendRequest(profileUid);
     }
 }
-// FIM DA MUDANÇA
 
 async function sendFriendRequest(profileUid) {
     addFriendBtn.disabled = true;
@@ -223,22 +249,17 @@ async function removeFriend(currentUserUid, friendUid) {
     }
 }
 
-// INÍCIO DA MUDANÇA: Listener para fechar o menu dropdown
 document.addEventListener('click', (e) => {
-    // Se o menu de opções de amizade estiver ativo
     if (friendOptionsMenu && friendOptionsMenu.classList.contains('active')) {
-        // E o clique NÃO foi dentro do container do botão de amizade
         if (friendStatusContainer && !friendStatusContainer.contains(e.target)) {
-            // Remove a classe 'active' para esconder o menu
             friendOptionsMenu.classList.remove('active');
         }
     }
 });
-// FIM DA MUDANÇA
 
 
 // =================================================================
-// LÓGICA DE TAREFAS PÚBLICAS (sem alterações)
+// LÓGICA DE TAREFAS PÚBLICAS
 // =================================================================
 
 async function loadPublicTasks(uid) {
@@ -317,7 +338,7 @@ async function requestTaskImport(ownerUid, taskId, buttonElement) {
 }
 
 // =================================================================
-// LÓGICA DE POSTS E COMENTÁRIOS (sem alterações)
+// LÓGICA DE POSTS E COMENTÁRIOS
 // =================================================================
 
 function loadUserPosts(uid) {
