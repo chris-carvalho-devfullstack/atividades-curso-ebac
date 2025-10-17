@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="notifications.css">
 </head>
 <body>
     <nav>
@@ -41,13 +42,31 @@
             <li><a href="./index.html" class="active"><i class="fa-solid fa-house"></i> Início</a></li>
             <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
             <li><a href="feed.html"><i class="fa-solid fa-chart-line"></i> Feed</a></li>
-            <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
+            <li><a href="notifications.html"><i class="fa-solid fa-bell"></i> Notificações</a></li>
             <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li>
+            <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
 
             <li id="nav-login-btn" class="nav-auth-item" style="display: none;">
                 <a href="login.html" class="btn-login-nav">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </a>
+            </li>
+            
+            <li class="notification-bell-container nav-auth-item" id="desktop-notification-container" style="display: none;">
+                <button id="notification-bell-btn">
+                    <i class="fa-solid fa-bell"></i>
+                    <span id="notification-badge"></span>
+                </button>
+                <div class="notifications-submenu" id="desktop-notifications-submenu">
+                    <div class="notifications-submenu-header">
+                        <h3>Notificações</h3>
+                    </div>
+                    <ul class="notifications-submenu-list" id="desktop-notifications-list">
+                        </ul>
+                    <div class="notifications-submenu-footer">
+                        <a href="notifications.html">Ver todas as notificações</a>
+                    </div>
+                </div>
             </li>
 
             <li class="profile-menu-container nav-auth-item" id="desktop-profile-container" style="display: none;">
@@ -95,7 +114,7 @@
         <div id="calendar-container">
             <div id="calendar"></div>
         </div>
-
+        
         <div id="addTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" aria-hidden="true">
           <div class="modal-content" style="max-width: 450px;">
             <button class="close close-top-right" aria-label="Fechar" data-dismiss-modal>&times;</button>
@@ -363,15 +382,15 @@
                 </div>
             </div>
         </div>
-        </main>
+    </main>
 
     <footer>
         <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
         <p>Desenvolvedor: Christian de Carvalho</p>
         <p>GitHub: <a href="https://github.com/chris-carvalho-devfullstack" target="_blank">chris-carvalho-devfullstack</a></p>
-        <copyright>&copy;2025</copyright>
+        <p>&copy;2025</p>
         <a href="pomodoro.html" class="pomodoro-link"><i class="fa fa-clock"></i> Ir para Pomodoro Timer</a>
-        <a href="admin.html"  class="admin-link"><i class="fa fa-user-shield"></i> Ir para Admin Dashboard</a>
+        <a href="admin.html" class="admin-link"><i class="fa fa-user-shield"></i> Ir para Admin Dashboard</a>
     </footer>
 
     <script type="module" src="firebase-config.js"></script>

@@ -656,3 +656,72 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     color: #6c757d;
     font-size: 0.9em;
 }
+
+/* === ESTILOS DE NOTIFICAÇÃO NA NAV === */
+.notification-bell-container {
+    position: relative;
+}
+
+#notification-bell-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+    position: relative;
+    padding: 5px;
+}
+
+#notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #dc3545;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 5px;
+    border-radius: 50%;
+    font-weight: bold;
+    display: none; /* Começa escondido */
+}
+
+.notifications-submenu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 120%;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1200;
+}
+
+.notifications-submenu.active {
+    display: block;
+}
+
+.notifications-submenu-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    font-weight: bold;
+}
+
+.notifications-submenu-list .notification-item {
+    font-size: 0.9rem;
+}
+
+.notifications-submenu-footer {
+    padding: 10px;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
+.notifications-submenu-footer a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+}
