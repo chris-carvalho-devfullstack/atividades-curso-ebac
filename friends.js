@@ -81,7 +81,9 @@ import {
     deleteDoc,
     writeBatch,
     query,
-    where
+    where,
+    addDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // ===========================
@@ -89,6 +91,8 @@ import {
 // ===========================
 window.acceptFriendRequest = acceptFriendRequest;
 window.rejectFriendRequest = rejectFriendRequest;
+window.acceptTaskImport = acceptTaskImport;
+window.rejectTaskImport = rejectTaskImport;
 
 /**
  * NOVO: Remove a amizade entre dois usuários de forma mútua.
@@ -135,6 +139,7 @@ window.confirmRemoveFriend = function(friendUid, friendUsername) {
 onAuthStateChanged(auth, user => {
     if (user) {
         loadFriendRequests(user.uid);
+        loadTaskImportRequests(user.uid);
         loadFriends(user.uid);
         setupSearchListeners(user.uid);
         setupTabListeners();
@@ -192,7 +197,6 @@ async function loadFriends(uid) {
                         </div>
                         <div class="user-actions">
                             <button onclick="window.location.href='public-profile.html?uid=${friendData.id}'">Ver Perfil</button>
-                            <!-- BOTÃO DE REMOVER ADICIONADO -->
                             <button class="btn-reject" onclick="confirmRemoveFriend('${friendData.id}', '${username}')">Remover</button>
                         </div>
                     </li>
@@ -217,7 +221,7 @@ async function loadFriendRequests(uid) {
         const requestsRef = collection(db, "users", uid, "friendRequests");
         const querySnapshot = await getDocs(requestsRef);
 
-        const badge = document.querySelector('[data-tab="requests"] .badge');
+        const badge = document.getElementById('friend-requests-badge');
         if (badge) {
             badge.textContent = querySnapshot.size > 0 ? querySnapshot.size : '';
             badge.style.display = querySnapshot.size > 0 ? 'inline-block' : 'none';
@@ -258,6 +262,97 @@ async function loadFriendRequests(uid) {
         requestsList.innerHTML = '<li style="justify-content:center; color: #f44336;">Ocorreu um erro ao carregar os pedidos.</li>';
     }
 }
+
+// ... (Restante do código de friends.js)
+async function loadTaskImportRequests(uid) {
+    const requestsList = document.getElementById('task-requests-list');
+    if (!requestsList) return;
+    requestsList.innerHTML = '<li style="justify-content:center;">Carregando...</li>';
+
+    const requestsRef = collection(db, "users", uid, "taskImportRequests");
+    const q = query(requestsRef, where("status", "==", "pending"));
+    const querySnapshot = await getDocs(q);
+
+    const badge = document.getElementById('task-requests-badge');
+    if (badge) {
+        badge.textContent = querySnapshot.size > 0 ? querySnapshot.size : '';
+        badge.style.display = querySnapshot.size > 0 ? 'inline-block' : 'none';
+    }
+
+    if (querySnapshot.empty) {
+        requestsList.innerHTML = '<li style="justify-content:center;">Nenhuma solicitação de importação de tarefa.</li>';
+        return;
+    }
+
+    let requestsHTML = '';
+    querySnapshot.forEach(doc => {
+        const request = doc.data();
+        requestsHTML += `
+            <li>
+                <div class="user-info">
+                    <span class="username">@${request.fromUsername}</span>
+                    <span>solicitou a importação da tarefa: "${request.taskText}"</span>
+                </div>
+                <div class="user-actions">
+                    <button class="btn-accept" onclick="acceptTaskImport('${doc.id}', '${request.fromUid}', '${request.taskId}')">Aceitar</button>
+                    <button class="btn-reject" onclick="rejectTaskImport('${doc.id}')">Rejeitar</button>
+                </div>
+            </li>
+        `;
+    });
+    requestsList.innerHTML = requestsHTML;
+}
+
+async function acceptTaskImport(requestId, fromUid, taskId) {
+    const ownerUid = auth.currentUser.uid;
+    
+    try {
+        // 1. Pega a tarefa original
+        const originalTaskRef = doc(db, "users", ownerUid, "tasks", taskId);
+        const taskDoc = await getDoc(originalTaskRef);
+
+        if (!taskDoc.exists()) {
+            throw new Error("Tarefa original não encontrada.");
+        }
+        
+        const taskData = taskDoc.data();
+        delete taskData.id; // Remove o ID para que o Firestore gere um novo
+        taskData.privacy = 'private'; // A tarefa importada se torna privada
+        taskData.importedFrom = {
+            uid: ownerUid,
+            username: auth.currentUser.displayName
+        };
+        
+        // 2. Adiciona a tarefa copiada ao usuário que solicitou
+        const requesterTasksRef = collection(db, "users", fromUid, "tasks");
+        await addDoc(requesterTasksRef, taskData);
+
+        // 3. Deleta a solicitação
+        const requestRef = doc(db, "users", ownerUid, "taskImportRequests", requestId);
+        await deleteDoc(requestRef);
+
+        showInfoModal("Sucesso!", "Importação de tarefa aprovada.");
+        loadTaskImportRequests(ownerUid);
+
+    } catch (error) {
+        console.error("Erro ao aceitar importação:", error);
+        showInfoModal("Erro", "Não foi possível aprovar a importação.");
+    }
+}
+
+async function rejectTaskImport(requestId) {
+    const ownerUid = auth.currentUser.uid;
+    try {
+        const requestRef = doc(db, "users", ownerUid, "taskImportRequests", requestId);
+        await deleteDoc(requestRef);
+        showInfoModal("Aviso", "Solicitação de importação rejeitada.");
+        loadTaskImportRequests(ownerUid);
+    } catch (error) {
+        console.error("Erro ao rejeitar importação:", error);
+        showInfoModal("Erro", "Não foi possível rejeitar a solicitação.");
+    }
+}
+
 
 async function acceptFriendRequest(senderUid, receiverUid) {
     const batch = writeBatch(db);
@@ -364,4 +459,3 @@ function setupSearchListeners(uid) {
         }
     });
 }
-

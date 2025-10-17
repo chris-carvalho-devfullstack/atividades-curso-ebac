@@ -1,10 +1,10 @@
-// public-profile.js (VERSÃO CORRIGIDA E COMPLETA)
+// public-profile.js
 
 import { auth, db, storage } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import {
     doc, getDoc, setDoc, deleteDoc, serverTimestamp, writeBatch,
-    collection, query, where, orderBy, onSnapshot, updateDoc, arrayUnion, arrayRemove
+    collection, query, where, orderBy, onSnapshot, updateDoc, arrayUnion, arrayRemove, addDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
@@ -58,6 +58,7 @@ const phone = document.getElementById('public-phone');
 const instagram = document.getElementById('public-instagram');
 const linkedin = document.getElementById('public-linkedin');
 let currentUser;
+let profileUid;
 
 // =================================================================
 // LÓGICA PRINCIPAL DA PÁGINA
@@ -67,9 +68,10 @@ onAuthStateChanged(auth, (user) => {
     if (!user) { window.location.href = 'login.html'; return; }
     currentUser = user;
     const urlParams = new URLSearchParams(window.location.search);
-    const profileUid = urlParams.get('uid') || user.uid;
+    profileUid = urlParams.get('uid') || user.uid;
     loadPublicProfile(profileUid);
     loadUserPosts(profileUid);
+    loadPublicTasks(profileUid);
 });
 
 async function loadPublicProfile(profileUid) {
@@ -166,6 +168,75 @@ async function removeFriend(currentUserUid, friendUid) {
         updateFriendButtonStatus(friendUid);
     } catch (error) {
         console.error("Erro ao remover amigo:", error);
+    }
+}
+
+// =================================================================
+// LÓGICA DE TAREFAS PÚBLICAS (NOVO)
+// =================================================================
+
+async function loadPublicTasks(uid) {
+    const tasksList = document.getElementById('public-tasks-list');
+    if (!tasksList) return;
+    tasksList.innerHTML = '<li>Carregando tarefas...</li>';
+
+    const tasksRef = collection(db, 'users', uid, 'tasks');
+    const q = query(tasksRef, where('privacy', '==', 'public'), orderBy('createdAt', 'desc'));
+
+    try {
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            tasksList.innerHTML = '<li>Este usuário não tem tarefas públicas.</li>';
+            return;
+        }
+
+        tasksList.innerHTML = '';
+        querySnapshot.forEach(doc => {
+            renderPublicTask(doc.id, doc.data());
+        });
+    } catch (error) {
+        console.error("Erro ao carregar tarefas públicas:", error);
+        tasksList.innerHTML = '<li>Ocorreu um erro ao carregar as tarefas.</li>';
+    }
+}
+
+function renderPublicTask(taskId, taskData) {
+    const tasksList = document.getElementById('public-tasks-list');
+    const li = document.createElement('li');
+    li.className = 'public-task-item';
+    li.innerHTML = `
+        <span class="task-text">${taskData.text}</span>
+        <button class="btn-import-task" data-task-id="${taskId}">
+            <i class="fa fa-download"></i> Importar
+        </button>
+    `;
+    tasksList.appendChild(li);
+
+    li.querySelector('.btn-import-task').addEventListener('click', function() {
+        this.disabled = true;
+        this.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Solicitando...';
+        requestTaskImport(profileUid, taskId, this);
+    });
+}
+
+async function requestTaskImport(ownerUid, taskId, buttonElement) {
+    try {
+        const requestsRef = collection(db, "users", ownerUid, "taskImportRequests");
+        await addDoc(requestsRef, {
+            fromUid: currentUser.uid,
+            fromUsername: auth.currentUser.displayName || 'Usuário',
+            taskId: taskId,
+            taskText: buttonElement.parentElement.querySelector('.task-text').textContent,
+            status: 'pending',
+            timestamp: serverTimestamp()
+        });
+        showInfoModal('Sucesso!', 'Sua solicitação para importar a tarefa foi enviada.');
+        buttonElement.innerHTML = '<i class="fa fa-check"></i> Solicitado';
+    } catch (error) {
+        console.error("Erro ao solicitar importação de tarefa:", error);
+        showInfoModal('Erro', 'Não foi possível enviar a solicitação.');
+        buttonElement.disabled = false;
+        buttonElement.innerHTML = '<i class="fa fa-download"></i> Importar';
     }
 }
 
@@ -271,7 +342,7 @@ function renderComment(postId, commentId, data, container) {
                     <a href="public-profile.html?uid=${data.userId}" class="comment-author-link"><strong>${data.username}</strong></a>
                     <span class="comment-text">${linkifyContent(data.commentText)}</span>
                 </div>
-                ${isOwner ? `<div class="post-options comment-options"><button class="post-options-btn comment-options-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button><div class="options-menu"><button class="edit-comment-btn"><i class="fa-solid fa-pencil"></i> Editar</button><button class="delete-comment-btn"><i class="fa-solid fa-trash"></i> Apagar</button></div></div>` : ''}
+                ${isOwner ? `<div class="post-options comment-options"><button class="post-options-btn comment-options-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button><div class="options-menu"><button class="edit-comment-btn"><i class="fa fa-pencil"></i> Editar</button><button class="delete-comment-btn"><i class="fa fa-trash"></i> Apagar</button></div></div>` : ''}
             </div>
             <div class="comment-actions">
                 <button class="comment-action-btn like-comment-btn ${isLiked ? 'liked' : ''}"><i class="fa fa-heart"></i> ${data.likes.length}</button>

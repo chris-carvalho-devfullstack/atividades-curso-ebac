@@ -180,7 +180,7 @@
 }
 
 /* Estilos para a seção de posts no perfil */
-.user-posts-container {
+.user-posts-container, .user-tasks-container {
     background: #f9f9f9;
     padding: 20px;
     margin-top: 20px;
@@ -189,7 +189,7 @@
     text-align: left;
 }
 
-.user-posts-container h2 {
+.user-posts-container h2, .user-tasks-container h2 {
     margin-top: 0;
     margin-bottom: 20px;
     padding-bottom: 10px;
@@ -200,4 +200,37 @@
 /* Ajusta a margem do post-card dentro do perfil */
 .user-posts-container .post-card {
     margin-bottom: 15px;
+}
+
+/* Estilos para a lista de tarefas públicas */
+.public-tasks-list {
+    list-style: none;
+    padding: 0;
+}
+
+.public-task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.public-task-item .task-text {
+    font-weight: 500;
+}
+
+.btn-import-task {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.btn-import-task:disabled {
+    background-color: #a5d6a7;
+    cursor: not-allowed;
 }

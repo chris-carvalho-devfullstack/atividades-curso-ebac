@@ -11,19 +11,16 @@
 <body>
     <nav>
         <div class="nav-mobile-header-bar">
-            <!-- Menu hamburguer à esquerda -->
             <button id="mobile-menu-toggle" class="mobile-toggle-btn">
                 <i class="fa-solid fa-bars"></i>
             </button>
 
-            <!-- Botão login (mobile) -->
             <li id="mobile-nav-login-btn" class="nav-auth-item" style="display: none;">
                 <a href="login.html" class="btn-login-nav">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </a>
             </li>
 
-            <!-- Avatar do perfil (mobile) -->
             <li class="profile-menu-container nav-auth-item" id="mobile-profile-container" style="display: none;">
                 <div class="profile-menu-toggle" id="mobile-profile-toggle">
                     <img id="mobile-nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
@@ -43,14 +40,12 @@
             <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
             <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li>
 
-            <!-- Login desktop -->
             <li id="nav-login-btn" class="nav-auth-item" style="display: none;">
                 <a href="login.html" class="btn-login-nav">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </a>
             </li>
 
-            <!-- Perfil desktop -->
             <li class="profile-menu-container nav-auth-item" id="desktop-profile-container" style="display: none;">
                 <div class="profile-menu-toggle" id="desktop-profile-toggle">
                     <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
@@ -76,7 +71,10 @@
         <div class="tabs">
             <button class="tab-link active" data-tab="friends">Meus Amigos</button>
             <button class="tab-link" data-tab="requests">
-                Pedidos Recebidos <span class="badge" style="display:none;"></span>
+                Pedidos de Amizade <span class="badge" id="friend-requests-badge" style="display:none;"></span>
+            </button>
+            <button class="tab-link" data-tab="task-requests">
+                Importações de Tarefas <span class="badge" id="task-requests-badge" style="display:none;"></span>
             </button>
             <button class="tab-link" data-tab="search">
                 <i class="fa fa-search"></i> Buscar Usuários
@@ -95,6 +93,12 @@
             </ul>
         </div>
         
+        <div id="task-requests" class="tab-content">
+            <ul class="user-list" id="task-requests-list">
+                <li style="justify-content:center;">Carregando solicitações de importação de tarefas...</li>
+            </ul>
+        </div>
+        
         <div id="search" class="tab-content">
             <div class="search-input-container" style="margin-bottom: 20px;">
                 <input type="text" id="search-input" placeholder="Buscar por nome de usuário (ex: @joaosilva)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc;">
@@ -110,9 +114,6 @@
         <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
     </footer>
 
-    <!-- ============================================= -->
-    <!--  NOVO MODAL DE INFORMAÇÃO ADICIONADO AQUI -->
-    <!-- ============================================= -->
     <div id="infoModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 420px;">
             <div class="modal-header">
@@ -127,7 +128,6 @@
             </div>
         </div>
     </div>
-    <!-- FIM DO NOVO MODAL -->
     <div id="confirmModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 420px;">
             <div class="modal-header">

@@ -650,3 +650,9 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     padding: 10px;
     border-bottom: 1px solid #eee;
 }
+
+.privacy-icon {
+    margin-right: 8px;
+    color: #6c757d;
+    font-size: 0.9em;
+}

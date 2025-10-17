@@ -391,7 +391,18 @@ function addTaskHTML(task) {
     let checkbox = $('<input type="checkbox" class="task-checkbox">').prop('checked', task.completed);
     let label = $('<label></label>').text(task.text);
     if (task.completed) label.addClass('completed');
-    textDiv.append(checkbox, label);
+    
+    // Ícone de privacidade
+    let privacyIcon = $('<i class="privacy-icon"></i>');
+    if (task.privacy === 'public') {
+        privacyIcon.addClass('fa fa-globe').attr('title', 'Pública');
+    } else if (task.privacy === 'shared') {
+        privacyIcon.addClass('fa fa-users').attr('title', 'Compartilhada');
+    } else {
+        privacyIcon.addClass('fa fa-lock').attr('title', 'Privada');
+    }
+    
+    textDiv.append(privacyIcon, checkbox, label);
 
     let prioCatDiv = $('<div class="task-priority-category"></div>');
     let priorityLabel = $('<span class="priority-label"></span>')
@@ -909,9 +920,10 @@ function setupCommonEventListeners() {
         let dueDate = $('#task-date').val();
         let dueTime = $('#task-time').val();
         let category = $('#task-category').val() || 'geral';
+        let privacy = $('#task-privacy').val() || 'private';
         if (!text) return;
 
-        let task = { text, completed: false, priority, dueDate, dueTime, category, subtasks: [] };
+        let task = { text, completed: false, priority, dueDate, dueTime, category, privacy, subtasks: [] };
         
         if (CURRENT_USER_UID) {
             addTaskToFirestore(task);
@@ -926,6 +938,7 @@ function setupCommonEventListeners() {
         $('#task-date').val('');
         $('#task-time').val('');
         $('#task-category').val('geral');
+        $('#task-privacy').val('private');
 
         hideModal('#addTaskModal');
     });
@@ -1091,6 +1104,7 @@ function setupCommonEventListeners() {
         $('#edit-task-category').val(task.category);
         $('#edit-task-date').val(task.dueDate);
         $('#edit-task-time').val(task.dueTime);
+        $('#edit-task-privacy').val(task.privacy || 'private');
         showModal('#editTaskModal');
     });
 
@@ -1107,6 +1121,7 @@ function setupCommonEventListeners() {
             category: $('#edit-task-category').val(),
             dueDate: $('#edit-task-date').val(),
             dueTime: $('#edit-task-time').val(),
+            privacy: $('#edit-task-privacy').val(),
         };
         
         if (CURRENT_USER_UID) {

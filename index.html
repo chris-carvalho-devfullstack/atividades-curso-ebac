@@ -148,6 +148,18 @@
                             <input type="time" id="task-time" title="Hora de Vencimento" style="flex: 1;">
                         </div>
                     </div>
+                    
+                    <div class="input-group-modal">
+                        <label for="task-privacy">Visibilidade</label>
+                        <div class="select-with-icon">
+                            <i class="fa fa-lock"></i>
+                            <select id="task-privacy">
+                                <option value="private" selected>Privada</option>
+                                <option value="public">Pública</option>
+                                <option value="shared">Compartilhada</option>
+                            </select>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -266,6 +278,13 @@
                 <input id="edit-task-date" type="date" style="flex: 1;">
                 <input id="edit-task-time" type="time" style="flex: 1;">
               </div>
+                
+              <label for="edit-task-privacy">Visibilidade</label>
+                <select id="edit-task-privacy">
+                    <option value="private">Privada</option>
+                    <option value="public">Pública</option>
+                    <option value="shared">Compartilhada</option>
+                </select>
             </div>
             <div class="modal-footer">
               <button id="edit-save-btn" class="btn-primary">Salvar</button>

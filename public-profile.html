@@ -7,24 +7,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="profile.css">
-    <link rel="stylesheet" href="feed.css"> <!-- Link para o CSS do feed adicionado -->
-</head>
+    <link rel="stylesheet" href="feed.css"> </head>
 <body>
     <nav>
         <div class="nav-mobile-header-bar">
-            <!-- Menu hamburguer à esquerda -->
             <button id="mobile-menu-toggle" class="mobile-toggle-btn">
                 <i class="fa-solid fa-bars"></i>
             </button>
 
-            <!-- Botão login (mobile) -->
             <li id="mobile-nav-login-btn" class="nav-auth-item" style="display: none;">
                 <a href="login.html" class="btn-login-nav">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </a>
             </li>
 
-            <!-- Avatar do perfil (mobile) -->
             <li class="profile-menu-container nav-auth-item" id="mobile-profile-container" style="display: none;">
                 <div class="profile-menu-toggle" id="mobile-profile-toggle">
                     <img id="mobile-nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
@@ -45,14 +41,12 @@
             <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
             <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li>
 
-            <!-- Login desktop -->
             <li id="nav-login-btn" class="nav-auth-item" style="display: none;">
                 <a href="login.html" class="btn-login-nav">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </a>
             </li>
 
-            <!-- Perfil desktop -->
             <li class="profile-menu-container nav-auth-item" id="desktop-profile-container" style="display: none;">
                 <div class="profile-menu-toggle" id="desktop-profile-toggle">
                     <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
@@ -115,12 +109,16 @@
             <button id="add-friend-btn" class="btn-primary"><i class="fa fa-user-plus"></i> Adicionar Amigo</button>
         </div>
 
-        <!-- Bloco de Publicações do Usuário Adicionado -->
         <div class="user-posts-container">
             <h2>Publicações</h2>
             <div id="user-posts-list">
-                <!-- As publicações do usuário serão carregadas aqui via JavaScript -->
-            </div>
+                </div>
+        </div>
+        
+        <div class="user-tasks-container">
+            <h2>Tarefas Públicas</h2>
+            <ul class="public-tasks-list" id="public-tasks-list">
+                </ul>
         </div>
 
     </main>
