@@ -7,20 +7,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="profile.css">
-    <link rel="stylesheet" href="feed.css"> </head>
+    <link rel="stylesheet" href="feed.css">
+    <link rel="stylesheet" href="chat.css"> </head>
 <body>
     <nav>
         <div class="nav-mobile-header-bar">
             <button id="mobile-menu-toggle" class="mobile-toggle-btn">
                 <i class="fa-solid fa-bars"></i>
             </button>
-
             <li id="mobile-nav-login-btn" class="nav-auth-item" style="display: none;">
                 <a href="login.html" class="btn-login-nav">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </a>
             </li>
-
             <li class="profile-menu-container nav-auth-item" id="mobile-profile-container" style="display: none;">
                 <div class="profile-menu-toggle" id="mobile-profile-toggle">
                     <img id="mobile-nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
@@ -32,7 +31,6 @@
                 </ul>
             </li>
         </div>
-
         <ul id="main-nav-list" class="nav-links">
             <li><a href="./index.html"><i class="fa-solid fa-house"></i> Início</a></li>
             <li><a href="pomodoro.html"><i class="fa-solid fa-clock"></i> Pomodoro</a></li>
@@ -40,13 +38,11 @@
             <li><a href="#"><i class="fa-solid fa-chart-line"></i> Progresso</a></li>
             <li><a href="#"><i class="fa-solid fa-circle-info"></i> Sobre</a></li>
             <li><a href="friends.html"><i class="fa-solid fa-users"></i> Amigos</a></li>
-
             <li id="nav-login-btn" class="nav-auth-item" style="display: none;">
                 <a href="login.html" class="btn-login-nav">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </a>
             </li>
-
             <li class="profile-menu-container nav-auth-item" id="desktop-profile-container" style="display: none;">
                 <div class="profile-menu-toggle" id="desktop-profile-toggle">
                     <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
@@ -105,26 +101,25 @@
             </div>
         </div>
 
-        <div class="profile-actions" style="margin-top: 20px;">
+        <div class="profile-actions" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
             <button id="add-friend-btn" class="btn-primary"><i class="fa fa-user-plus"></i> Adicionar Amigo</button>
             <button id="send-message-btn" class="btn-neutral" style="display: none;"><i class="fa fa-comment"></i> Enviar Mensagem</button>
         </div>
-
         <div class="user-posts-container">
             <h2>Publicações</h2>
             <div id="user-posts-list">
-                </div>
+            </div>
         </div>
         
         <div class="user-tasks-container">
             <h2>Tarefas Públicas</h2>
             <ul class="public-tasks-list" id="public-tasks-list">
-                </ul>
+            </ul>
         </div>
 
     </main>
 
-    <footer>
+    <div class="chat-container"></div> <footer>
         <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
     </footer>
 
