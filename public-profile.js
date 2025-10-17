@@ -84,6 +84,7 @@ const coverPreview = document.getElementById('cover-photo-preview');
 const fullname = document.getElementById('public-fullname');
 const bio = document.getElementById('public-bio');
 const addFriendBtn = document.getElementById('add-friend-btn');
+const sendMessageBtn = document.getElementById('send-message-btn'); // Adicionado
 let currentUser;
 let profileUid;
 
@@ -121,7 +122,7 @@ async function loadPublicProfile(profileUid) {
             document.getElementById('public-birthdate').textContent = data.birthdate || "Data não informada";
             document.getElementById('public-phone').textContent = data.phone || "Contato não informado";
             document.getElementById('public-instagram').textContent = data.instagram || "Instagram não informado";
-            
+
             const linkedin = document.getElementById('public-linkedin');
             if (data.linkedin) {
                 linkedin.href = data.linkedin;
@@ -144,6 +145,7 @@ async function loadPublicProfile(profileUid) {
 
 async function updateFriendButtonStatus(profileUid) {
     addFriendBtn.style.display = 'block';
+    sendMessageBtn.style.display = 'none'; // Esconde o botão de mensagem por padrão
     addFriendBtn.disabled = true;
 
     const friendDoc = await getDoc(doc(db, "users", currentUser.uid, "friends", profileUid));
@@ -157,6 +159,11 @@ async function updateFriendButtonStatus(profileUid) {
         addFriendBtn.textContent = "Amigos";
         addFriendBtn.className = 'btn-primary btn-amigos';
         addFriendBtn.onclick = () => showConfirmModal("Remover Amigo", `Tem certeza que deseja remover este usuário?`, () => removeFriend(currentUser.uid, profileUid));
+        
+        // Se são amigos, mostra o botão de enviar mensagem
+        sendMessageBtn.style.display = 'inline-block';
+        sendMessageBtn.onclick = () => window.openChatWith(profileUid);
+
     } else if (requestSentDoc.exists()) {
         addFriendBtn.textContent = "Pedido Enviado";
         addFriendBtn.disabled = true;
@@ -177,7 +184,7 @@ async function sendFriendRequest(profileUid) {
     addFriendBtn.textContent = "Enviando...";
     try {
         await setDoc(doc(db, "users", profileUid, "friendRequests", currentUser.uid), { from: currentUser.uid, timestamp: serverTimestamp() });
-        
+
         // *** CRIAR NOTIFICAÇÃO PARA O DESTINATÁRIO ***
         const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
         const currentUsername = currentUserDoc.data().username || 'Alguém';
@@ -269,7 +276,7 @@ async function requestTaskImport(ownerUid, taskId, buttonElement) {
             status: 'pending',
             timestamp: serverTimestamp()
         });
-        
+
         // *** CRIAR NOTIFICAÇÃO PARA O DONO DA TAREFA ***
         const currentUserDoc = await getDoc(doc(db, "users", currentUser.uid));
         const currentUsername = currentUserDoc.data().username || 'Alguém';
@@ -363,7 +370,7 @@ async function addComment(postId, text, parentId, postOwnerId) {
     const batch = writeBatch(db);
     const newCommentRef = doc(collection(db, 'posts', postId, 'comments'));
     batch.set(newCommentRef, { userId: currentUser.uid, username: userData.username, userProfileImage: userData.fotoURL, commentText: text, parentId: parentId, timestamp: serverTimestamp(), likes: [] });
-    
+
     const postRef = doc(db, 'posts', postId);
     const postDoc = await getDoc(postRef);
     batch.update(postRef, { commentCount: (postDoc.data().commentCount || 0) + 1 });
@@ -384,7 +391,7 @@ async function toggleLike(postId, postOwnerId) {
     if (docSnap.exists()) {
         const postData = docSnap.data();
         const isLiked = postData.likes.includes(currentUser.uid);
-        
+
         await updateDoc(ref, { likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
 
         // *** CRIAR NOTIFICAÇÃO DE LIKE (APENAS QUANDO CURTE, NÃO QUANDO DESCURTE) ***

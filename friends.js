@@ -19,7 +19,7 @@ function showInfoModal(title, message) {
     modalTitle.textContent = title;
     modalText.textContent = message;
     modal.style.display = 'flex';
-    
+
     const closeModal = () => {
         modal.style.display = 'none';
     };
@@ -53,7 +53,7 @@ function showConfirmModal(title, message, onConfirm) {
         }
         return;
     }
-    
+
     modalTitle.textContent = title;
     modalText.textContent = message;
     modal.style.display = 'flex';
@@ -125,7 +125,7 @@ async function removeFriend(currentUserUid, friendUid) {
     try {
         await batch.commit();
         showInfoModal("Amizade Desfeita", "A amizade foi desfeita com sucesso.");
-        loadFriends(currentUserUid); 
+        loadFriends(currentUserUid);
     } catch (error) {
         console.error("Erro ao remover amigo:", error);
         showInfoModal("Erro", "Não foi possível desfazer a amizade. Tente novamente.");
@@ -153,7 +153,7 @@ onAuthStateChanged(auth, user => {
     if (user) {
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
-        
+
         loadFriendRequests(user.uid);
         loadTaskImportRequests(user.uid);
         loadFriends(user.uid);
@@ -217,6 +217,7 @@ async function loadFriends(uid) {
                         </div>
                         <div class="user-actions">
                             <button onclick="window.location.href='public-profile.html?uid=${friendData.id}'">Ver Perfil</button>
+                            <button class="btn-accept" onclick="window.openChatWith('${friendData.id}')">Mensagem</button>
                             <button class="btn-reject" onclick="confirmRemoveFriend('${friendData.id}', '${username}')">Remover</button>
                         </div>
                     </li>
@@ -305,7 +306,7 @@ async function loadTaskImportRequests(uid) {
     let requestsHTML = '';
     for (const docSnapshot of querySnapshot.docs) {
         const request = docSnapshot.data();
-        
+
         // Obter a tarefa original para exibir mais detalhes
         const taskRef = doc(db, "users", uid, "tasks", request.taskId);
         const taskDoc = await getDoc(taskRef);
@@ -331,19 +332,19 @@ async function acceptTaskImport(requestId, fromUid, taskId) {
     const ownerUid = auth.currentUser.uid;
     const ownerDoc = await getDoc(doc(db, "users", ownerUid));
     const ownerUsername = ownerDoc.data().username || "Um usuário";
-    
+
     try {
         const originalTaskRef = doc(db, "users", ownerUid, "tasks", taskId);
         const taskDoc = await getDoc(originalTaskRef);
 
         if (!taskDoc.exists()) throw new Error("Tarefa original não encontrada.");
-        
+
         const taskData = taskDoc.data();
         const taskText = taskData.text;
         delete taskData.id;
         taskData.privacy = 'private';
         taskData.importedFrom = { uid: ownerUid, username: ownerUsername };
-        
+
         const requesterTasksRef = collection(db, "users", fromUid, "tasks");
         await addDoc(requesterTasksRef, taskData);
 
@@ -382,13 +383,13 @@ async function rejectTaskImport(requestId) {
 
 async function acceptFriendRequest(senderUid, receiverUid) {
     const batch = writeBatch(db);
-    
+
     const receiverFriendsRef = doc(db, "users", receiverUid, "friends", senderUid);
     batch.set(receiverFriendsRef, { addedAt: serverTimestamp() });
 
     const senderFriendsRef = doc(db, "users", senderUid, "friends", receiverUid);
     batch.set(senderFriendsRef, { addedAt: serverTimestamp() });
-    
+
     const requestRef = doc(db, "users", receiverUid, "friendRequests", senderUid);
     batch.delete(requestRef);
 
@@ -495,7 +496,7 @@ function setupSearchListeners(uid) {
 
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
-            e.preventDefault(); 
+            e.preventDefault();
             searchUserByUsername(uid, searchInput.value);
         }
     });
