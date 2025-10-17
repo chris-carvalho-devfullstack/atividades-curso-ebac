@@ -7,19 +7,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="feed.css">
 </head>
 <body>
     <nav>
         <ul id="main-nav-list" class="nav-links">
             <li><a href="./index.html"><i class="fa-solid fa-house"></i> Início</a></li>
-            <li><a href="admin.html" class="active"><i class="fa-solid fa-user-shield"></i> Usuários Admin</a></li>
-            <li><a href="moderacao-posts.html"><i class="fa-solid fa-comment-slash"></i> Moderação Posts</a></li>
+            <li><a href="admin.html" class="active"><i class="fa-solid fa-user-shield"></i> Painel Admin</a></li>
         </ul>
     </nav>
 
     <header class="task-form-header">
         <h1>Painel de Super Administrador</h1>
-        <p>Gerencie usuários e visualize as estatísticas do site.</p>
+        <p>Gerencie usuários, modere conteúdo e visualize as estatísticas do site.</p>
     </header>
 
     <main class="admin-container">
@@ -41,6 +41,11 @@
                     <h3>Total de Tarefas</h3>
                     <p id="total-tasks-stat">0</p>
                 </div>
+                 <div class="stat-card">
+                    <i class="fa fa-comments"></i>
+                    <h3>Total de Comentários</h3>
+                    <p id="total-comments-stat">0</p>
+                </div>
             </div>
         </section>
 
@@ -59,10 +64,17 @@
                     </tr>
                 </thead>
                 <tbody id="users-table-body">
-                    </tbody>
+                </tbody>
             </table>
         </section>
-        </main>
+
+        <section class="admin-section post-management-section">
+            <h2>Moderação de Publicações</h2>
+            <div id="admin-posts-feed">
+                <p>Carregando posts...</p>
+            </div>
+        </section>
+    </main>
 
     <div id="editUserModal" class="modal" style="display: none;">
         <div class="modal-content">
@@ -150,6 +162,21 @@
                 <button id="view-modal-close-btn" class="btn-neutral">Fechar</button>
             </div>
         </div>
+    </div>
+
+    <div id="confirmModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+          <h2 id="confirm-modal-title">Confirmar Ação</h2>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-modal-text">Você tem certeza?</p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirm-modal-ok-btn" class="btn-danger">Confirmar</button>
+          <button id="confirm-modal-cancel-btn" class="btn-neutral">Cancelar</button>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="firebase-config.js"></script>
