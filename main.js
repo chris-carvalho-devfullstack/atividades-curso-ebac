@@ -13,7 +13,9 @@ import {
     updateDoc,
     deleteDoc,
     serverTimestamp,
-    writeBatch
+    writeBatch,
+    setDoc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // ===============================================
@@ -21,6 +23,7 @@ import {
 // ===============================================
 let CURRENT_USER_UID = null;
 let tasks = [];
+let trash = [];
 let currentTaskLi = null;
 let currentSubtaskData = {
     taskId: null, subtaskId: null, isEdit: false, parentId: null,
@@ -69,6 +72,7 @@ function initializeAuthenticatedSession() {
     initCalendar();
     migrateLocalTasksToFirestore(); 
     loadTasksRealTime();
+    loadTrash();
     setupCommonEventListeners();
 }
 
@@ -194,13 +198,46 @@ async function updateTaskInFirestore(taskId, data) {
     }
 }
 
-async function deleteTaskFromFirestore(taskId) {
+async function moveTaskToTrash(taskId) {
     if (!CURRENT_USER_UID) return;
     try {
         const taskRef = doc(db, "users", CURRENT_USER_UID, "tasks", taskId);
-        await deleteDoc(taskRef);
+        const taskDoc = await getDoc(taskRef);
+        if (taskDoc.exists()) {
+            const taskData = taskDoc.data();
+            const trashRef = doc(db, "users", CURRENT_USER_UID, "trash", taskId);
+            await setDoc(trashRef, { ...taskData, deletedAt: serverTimestamp() });
+            await deleteDoc(taskRef);
+        }
     } catch (error) {
-        console.error("Erro ao deletar tarefa:", error);
+        console.error("Erro ao mover tarefa para a lixeira:", error);
+    }
+}
+
+async function restoreTaskFromTrash(taskId) {
+    if (!CURRENT_USER_UID) return;
+    try {
+        const trashRef = doc(db, "users", CURRENT_USER_UID, "trash", taskId);
+        const taskDoc = await getDoc(trashRef);
+        if (taskDoc.exists()) {
+            const taskData = taskDoc.data();
+            delete taskData.deletedAt;
+            const taskRef = doc(db, "users", CURRENT_USER_UID, "tasks", taskId);
+            await setDoc(taskRef, taskData);
+            await deleteDoc(trashRef);
+        }
+    } catch (error) {
+        console.error("Erro ao restaurar tarefa:", error);
+    }
+}
+
+async function permanentlyDeleteTask(taskId) {
+    if (!CURRENT_USER_UID) return;
+    try {
+        const trashRef = doc(db, "users", CURRENT_USER_UID, "trash", taskId);
+        await deleteDoc(trashRef);
+    } catch (error) {
+        console.error("Erro ao deletar tarefa permanentemente:", error);
     }
 }
 
@@ -237,6 +274,31 @@ function loadTasksRealTime() {
 
     }, (error) => {
         console.error("Erro ao escutar tarefas em tempo real:", error);
+    });
+}
+
+function loadTrash() {
+    if (!CURRENT_USER_UID) return;
+
+    const trashRef = collection(db, "users", CURRENT_USER_UID, "trash");
+    const q = query(trashRef, orderBy("deletedAt", "desc"));
+
+    onSnapshot(q, (snapshot) => {
+        trash = [];
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        snapshot.forEach((doc) => {
+            const task = doc.data();
+            task.id = doc.id;
+
+            if (task.deletedAt.toDate() < thirtyDaysAgo) {
+                permanentlyDeleteTask(task.id);
+            } else {
+                trash.push(task);
+            }
+        });
+        renderTrash(trash);
     });
 }
 
@@ -290,6 +352,29 @@ function renderAllTasks(tasksArray) {
     $('#task-list').empty();
     tasksArray.forEach(task => addTaskHTML(task));
 }
+
+function renderTrash(trashArray) {
+    const trashList = $('#trash-list');
+    trashList.empty();
+    if (trashArray.length === 0) {
+        trashList.append('<li>Lixeira vazia.</li>');
+    } else {
+        trashArray.forEach(task => {
+            const deletedAt = task.deletedAt ? task.deletedAt.toDate().toLocaleDateString() : 'N/A';
+            const li = $(`
+                <li>
+                    <span>${task.text} (Excluído em: ${deletedAt})</span>
+                    <div>
+                        <button class="btn-restore" data-id="${task.id}">Restaurar</button>
+                        <button class="btn-delete-permanently" data-id="${task.id}">Excluir Permanentemente</button>
+                    </div>
+                </li>
+            `);
+            trashList.append(li);
+        });
+    }
+}
+
 
 function addTaskHTML(task) {
     const taskPriority = task.priority || 'medium';
@@ -790,6 +875,10 @@ function setupCommonEventListeners() {
         setTimeout(() => { $('#search-input').focus(); }, 150);
     });
 
+    $('#toggle-trash-btn').on('click', function() {
+        showModal('#trashModal');
+    });
+
     $('#add-task-cancel-btn').on('click', function() {
         hideModal('#addTaskModal');
     });
@@ -914,13 +1003,13 @@ function setupCommonEventListeners() {
         let task = tasks.find(t => t.id === taskId);
         if (!task) return;
 
-        $('#confirm-title').text('Apagar Tarefa');
-        $('#confirm-text').text(`Deseja realmente apagar a tarefa "${task.text}"? Esta ação não pode ser desfeita.`);
+        $('#confirm-title').text('Mover para a Lixeira');
+        $('#confirm-text').text(`Deseja realmente mover a tarefa "${task.text}" para a lixeira?`);
         showModal('#confirmModal');
 
         $('#confirm-ok-btn').off('click').on('click', function() {
             if (CURRENT_USER_UID) {
-                deleteTaskFromFirestore(taskId);
+                moveTaskToTrash(taskId);
             } else {
                 tasks = tasks.filter(t => t.id !== taskId);
                 saveLocalTasks(tasks);
@@ -1125,5 +1214,15 @@ function setupCommonEventListeners() {
                 setTimeout(() => calendar.render(), 10);
             }
         });
+    });
+
+    $(document).on('click', '.btn-restore', function() {
+        const taskId = $(this).data('id');
+        restoreTaskFromTrash(taskId);
+    });
+
+    $(document).on('click', '.btn-delete-permanently', function() {
+        const taskId = $(this).data('id');
+        permanentlyDeleteTask(taskId);
     });
 }

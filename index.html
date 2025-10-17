@@ -79,6 +79,7 @@
         <div class="main-actions">
             <button id="toggle-form-btn" class="btn-action-primary"><i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa</button>
             <button id="toggle-filter-btn" class="btn-action-secondary"><i class="fa-solid fa-search"></i> Pesquisar e Filtrar</button>
+            <button id="toggle-trash-btn" class="btn-action-secondary"><i class="fa-solid fa-trash"></i> Lixeira</button>
         </div>
         
         <div id="login-prompt" style="display: none;">
@@ -326,6 +327,22 @@
               <button id="confirm-cancel-btn" class="btn-neutral">Cancelar</button>
             </div>
           </div>
+        </div>
+
+        <div id="trashModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="trash-modal-title" aria-hidden="true">
+            <div class="modal-content">
+                <button class="close close-top-right" aria-label="Fechar">&times;</button>
+                <div class="modal-header">
+                    <h2 id="trash-modal-title">Lixeira</h2>
+                </div>
+                <div class="modal-body">
+                    <ul id="trash-list"></ul>
+                </div>
+                <div class="modal-footer">
+                    <button id="empty-trash-btn" class="btn-danger">Esvaziar Lixeira</button>
+                    <button class="btn-neutral close">Fechar</button>
+                </div>
+            </div>
         </div>
         </main>
 
