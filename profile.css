@@ -1,6 +1,6 @@
 /* ======================= ESTRUTURA GERAL DO PERFIL ======================= */
 .profile-container {
-    max-width: 900px; /* Aumentado de 800px para 900px */
+    max-width: 900px;
     margin: 40px auto;
     padding: 20px;
 }
@@ -95,14 +95,18 @@
 }
 
 .profile-card-info-only input,
-.profile-card-info-only textarea {
+.profile-card-info-only textarea,
+.profile-card-info-only select { /* <-- CORREÇÃO APLICADA AQUI */
     width: 100%;
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 1rem;
     font-family: 'Arial', sans-serif;
+    -webkit-appearance: none; /* Remove a aparência padrão do navegador */
+    appearance: none; /* Remove a aparência padrão do navegador */
 }
+
 
 .profile-card-info-only input:disabled {
     background-color: #f5f5f5;

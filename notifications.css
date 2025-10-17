@@ -76,3 +76,21 @@
     background-color: #007bff;
     border-radius: 50%;
 }
+
+/* Adicione este código ao final de notifications.css */
+
+.notifications-header .btn-neutral {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    background: #eee;
+    color: #333;
+    transition: transform .12s, background-color .12s;
+}
+
+.notifications-header .btn-neutral:hover {
+    background: #e0e0e0;
+    transform: translateY(-1px);
+}
