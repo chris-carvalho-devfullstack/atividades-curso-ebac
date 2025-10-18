@@ -9,13 +9,40 @@ import {
 import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
 // =================================================================
-// FUNÇÃO DE NOTIFICAÇÃO
+// FUNÇÃO DE NOTIFICAÇÃO (MODIFICADA COM FILTRO DE PREFERÊNCIAS)
 // =================================================================
 
 async function createNotification(userId, type, message, url) {
     if (auth.currentUser && userId === auth.currentUser.uid) {
         return;
     }
+    
+    // --- NOVO: Lógica de verificação das preferências do destinatário ---
+    try {
+        const userSettingsRef = doc(db, "users", userId);
+        const settingsSnap = await getDoc(userSettingsRef);
+        
+        const settings = settingsSnap.exists() ? settingsSnap.data().notificationSettings || {} : {};
+
+        // Mapeia o tipo de notificação para a flag de configuração
+        const settingMap = {
+            'like': settings.likes,
+            'comment': settings.comments,
+            'friend_request': settings.friendRequests, 
+            'task_import_request': settings.taskImports
+        };
+        
+        // Se a flag para este tipo for explicitamente FALSE, cancela a notificação.
+        if (settingMap[type] === false) {
+             console.log(`Notificação de ${type} para ${userId} bloqueada por preferência.`);
+             return;
+        }
+
+    } catch (error) {
+        console.error("Erro ao verificar configurações, enviando notificação como fallback:", error);
+    }
+    // --- FIM DA LÓGICA DE VERIFICAÇÃO ---
+    
     try {
         const notificationsRef = collection(db, 'users', userId, 'notifications');
         await addDoc(notificationsRef, {
@@ -31,7 +58,7 @@ async function createNotification(userId, type, message, url) {
 }
 
 // =================================================================
-// FUNÇÕES DE MODAL
+// FUNÇÕES DE MODAL (INALTERADAS)
 // =================================================================
 
 function showInfoModal(title, message) {
@@ -62,9 +89,9 @@ function showConfirmModal(title, message, onConfirm) {
 }
 
 // =================================================================
-// ELEMENTOS DO DOM E VARIÁVEIS GLOBAIS
+// ELEMENTOS DO DOM E VARIÁVEIS GLOBAIS (INALTERADAS)
+// ... (restante do código até onAuthStateChanged) ...
 // =================================================================
-
 const usernameHeader = document.getElementById('public-username-header');
 const profileImage = document.getElementById('public-profile-image');
 const coverPreview = document.getElementById('cover-photo-preview');
@@ -80,7 +107,7 @@ const friendOptionsMenu = document.getElementById('friend-options-menu');
 const unfriendBtn = document.getElementById('unfriend-btn');
 
 // =================================================================
-// LÓGICA PRINCIPAL DA PÁGINA
+// LÓGICA PRINCIPAL DA PÁGINA (INALTERADA)
 // =================================================================
 
 onAuthStateChanged(auth, (user) => {
@@ -259,7 +286,7 @@ document.addEventListener('click', (e) => {
 
 
 // =================================================================
-// LÓGICA DE TAREFAS PÚBLICAS
+// LÓGICA DE TAREFAS PÚBLICAS (INALTERADA)
 // =================================================================
 
 async function loadPublicTasks(uid) {
@@ -338,7 +365,7 @@ async function requestTaskImport(ownerUid, taskId, buttonElement) {
 }
 
 // =================================================================
-// LÓGICA DE POSTS E COMENTÁRIOS
+// LÓGICA DE POSTS E COMENTÁRIOS (INALTERADA)
 // =================================================================
 
 function loadUserPosts(uid) {

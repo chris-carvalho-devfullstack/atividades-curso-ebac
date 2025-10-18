@@ -1,4 +1,4 @@
-// feed.js (VERSÃO COMPLETA E ATUALIZADA COM NOTIFICAÇÕES)
+// feed.js (VERSÃO COM FILTRO DE NOTIFICAÇÕES IMPLEMENTADO)
 
 import { auth, db, storage } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
@@ -9,10 +9,10 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
 // =================================================================
-// FUNÇÃO DE NOTIFICAÇÃO
+// FUNÇÃO DE NOTIFICAÇÃO (MODIFICADA COM FILTRO DE PREFERÊNCIAS)
 // =================================================================
 /**
- * Cria uma notificação no Firestore para um usuário específico.
+ * Cria uma notificação no Firestore para um usuário específico, aplicando filtros de preferência.
  * @param {string} userId - O UID do usuário que receberá a notificação.
  * @param {string} type - O tipo de notificação (ex: 'like', 'comment').
  * @param {string} message - A mensagem da notificação.
@@ -23,6 +23,37 @@ async function createNotification(userId, type, message, url) {
     if (auth.currentUser && userId === auth.currentUser.uid) {
         return;
     }
+
+    // --- NOVO: Lógica de verificação das preferências do destinatário ---
+    try {
+        const userSettingsRef = doc(db, "users", userId);
+        const settingsSnap = await getDoc(userSettingsRef);
+        
+        // Obtém o objeto notificationSettings ou um objeto vazio se não existir
+        const settings = settingsSnap.exists() ? settingsSnap.data().notificationSettings || {} : {};
+
+        // Mapeia o tipo de notificação para a flag de configuração
+        const settingMap = {
+            'like': settings.likes,
+            'comment': settings.comments,
+            // Outros tipos usados no site (apenas para referência)
+            'friend_request': settings.friendRequests,
+            'task_import_request': settings.taskImports
+        };
+        
+        // Se a flag para este tipo for explicitamente FALSE, cancela a notificação.
+        // Se a flag não existir (undefined), assume-se TRUE (padrão).
+        if (settingMap[type] === false) {
+             console.log(`Notificação de ${type} para ${userId} bloqueada por preferência.`);
+             return;
+        }
+
+    } catch (error) {
+        console.error("Erro ao verificar configurações, enviando notificação como fallback:", error);
+        // Em caso de erro, prossegue com a notificação para garantir que alertas críticos sejam entregues.
+    }
+    // --- FIM DA LÓGICA DE VERIFICAÇÃO ---
+
     try {
         const notificationsRef = collection(db, 'users', userId, 'notifications');
         await addDoc(notificationsRef, {
@@ -39,7 +70,7 @@ async function createNotification(userId, type, message, url) {
 
 
 // =================================================================
-// FUNÇÕES AUXILIARES E LÓGICA DO FEED
+// FUNÇÕES AUXILIARES E LÓGICA DO FEED (CÓDIGO RESTANTE INALTERADO)
 // =================================================================
 
 function saveCursorPosition(element) {
@@ -57,7 +88,7 @@ function saveCursorPosition(element) {
     }
     return null;
 }
-
+// ... (restante do código até loadPosts) ...
 function restoreCursorPosition(element, savedPosition) {
     if (!savedPosition) return;
     const selection = window.getSelection();

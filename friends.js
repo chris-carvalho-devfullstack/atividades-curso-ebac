@@ -86,9 +86,41 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 // ===========================
-// FUNÇÃO DE NOTIFICAÇÃO
+// FUNÇÃO DE NOTIFICAÇÃO (UTILITY LOCAL PARA ESTE ARQUIVO)
 // ===========================
+
+/**
+ * Cria uma notificação verificando as preferências do destinatário.
+ * @param {string} userId - O UID do usuário que receberá a notificação.
+ * @param {string} type - O tipo de notificação ('friend_request', 'task_import_request').
+ * @param {string} message - A mensagem.
+ * @param {string} url - O URL.
+ */
 async function createNotification(userId, type, message, url) {
+    if (auth.currentUser && userId === auth.currentUser.uid) {
+        return;
+    }
+
+    try {
+        const userSettingsRef = doc(db, "users", userId);
+        const settingsSnap = await getDoc(userSettingsRef);
+        const settings = settingsSnap.exists() ? settingsSnap.data().notificationSettings || {} : {};
+
+        const settingMap = {
+            'friend_request': settings.friendRequests,
+            'task_import_request': settings.taskImports
+        };
+
+        // Filtra se a flag estiver explicitamente FALSE
+        if (settingMap[type] === false) {
+             console.log(`Notificação de ${type} para ${userId} bloqueada por preferência.`);
+             return;
+        }
+
+    } catch (error) {
+        console.error("Erro ao verificar configurações, enviando notificação como fallback:", error);
+    }
+    
     try {
         const notificationsRef = collection(db, 'users', userId, 'notifications');
         await addDoc(notificationsRef, {
@@ -147,7 +179,7 @@ window.confirmRemoveFriend = function(friendUid, friendUsername) {
 
 
 // ===========================
-// LÓGICA PRINCIPAL
+// LÓGICA PRINCIPAL (INALTERADA)
 // ===========================
 onAuthStateChanged(auth, user => {
     if (user) {
@@ -163,7 +195,7 @@ onAuthStateChanged(auth, user => {
         window.location.href = 'login.html';
     }
 });
-
+// ... (restante do código até acceptTaskImport) ...
 function setupTabListeners(initialTab) {
     const tabs = document.querySelectorAll('.tab-link');
     const contents = document.querySelectorAll('.tab-content');
@@ -351,7 +383,7 @@ async function acceptTaskImport(requestId, fromUid, taskId) {
         const requestRef = doc(db, "users", ownerUid, "taskImportRequests", requestId);
         await deleteDoc(requestRef);
 
-        // *** CRIAR NOTIFICAÇÃO PARA O SOLICITANTE ***
+        // *** CRIAR NOTIFICAÇÃO PARA O SOLICITANTE (fromUid) ***
         await createNotification(
             fromUid,
             'task_import_request',
@@ -396,7 +428,7 @@ async function acceptFriendRequest(senderUid, receiverUid) {
     try {
         await batch.commit();
 
-        // *** CRIAR NOTIFICAÇÃO PARA O SOLICITANTE ***
+        // *** CRIAR NOTIFICAÇÃO PARA O SOLICITANTE (senderUid) ***
         const receiverDoc = await getDoc(doc(db, "users", receiverUid));
         const receiverUsername = receiverDoc.data().username || "Alguém";
         await createNotification(
