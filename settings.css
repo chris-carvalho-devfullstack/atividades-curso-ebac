@@ -90,3 +90,32 @@ input[type="color"]::-moz-color-swatch {
     display: flex;
     gap: 10px;
 }
+
+.shutterstock-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#shutterstock-query {
+    flex-grow: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+#shutterstock-results .theme-btn {
+    width: 100px;
+    height: 75px;
+    background-size: cover;
+    background-position: center;
+    padding: 0;
+}
+
+.theme-btn.image-btn {
+    width: 100px;
+    height: 75px;
+    background-size: cover;
+    background-position: center;
+    padding: 0;
+}

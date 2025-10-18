@@ -21,6 +21,10 @@ const saveThemeBtn = document.getElementById('save-theme-btn');
 const resetThemeBtn = document.getElementById('reset-theme-btn');
 const themeButtons = document.querySelectorAll('.theme-btn');
 const messageEl = document.getElementById('settings-message');
+const shutterstockQuery = document.getElementById('shutterstock-query');
+const shutterstockSearchBtn = document.getElementById('shutterstock-search-btn');
+const shutterstockResults = document.getElementById('shutterstock-results');
+
 
 /**
  * Aplica o tema na UI do site e atualiza a variável de estado 'currentTheme'.
@@ -79,6 +83,51 @@ async function saveUserTheme(uid) {
     }
 }
 
+// --- Shutterstock API ---
+async function searchShutterstock(query) {
+    shutterstockResults.innerHTML = 'Buscando...';
+    
+    // CORREÇÃO FINAL: Usando o Token de Acesso gerado
+    const accessToken = 'v2/a0VSWGs5REpuUll1WXpPYzB1Q2N2NXJoUFFUSEJmQmEvNDIwNDI4ODAzL2N1c3RvbWVyLzQvTXI1VjgxVG1aVkgzekFQWEYzWXlMM0phTEZtb2FxOXZvM3pTR2xMUjdiY05aRFJDTmNXSFhyaUtKRnZyRXFvMGVTSjVNblRGMUFZSnB0Y0FFZzdxeThEUFVWTDlIa012Ymw3RGsxYzdNSUlfdllLZlIxYW4wMzJBbGNieUJiLVNVemI2UVRialdudVhxQi1EbEREZ2ZXaW9sY0k0cko3SmRMT3VEQ2t6dDdGaS1STE91Vm1tU05JTjVfZFJSS1N5SlBWSFJ0ZUhRS3JxMHpIa3hZM3NxUS9oTDRsU2xGWjc0Mi0zQzg2bl9ETVNR';
+
+    const url = `https://api.shutterstock.com/v2/images/search?query=${encodeURIComponent(query)}&per_page=10`;
+
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Erro na API: ${errorData.message || response.statusText}`);
+        }
+
+        const data = await response.json();
+        displayShutterstockImages(data.data);
+
+    } catch (error) {
+        console.error('Erro ao buscar imagens no Shutterstock:', error);
+        shutterstockResults.innerHTML = `Erro ao buscar imagens: ${error.message}`;
+    }
+}
+
+function displayShutterstockImages(images) {
+    shutterstockResults.innerHTML = '';
+    images.forEach(image => {
+        const imageUrl = image.assets.preview.url;
+        const button = document.createElement('button');
+        button.className = 'theme-btn image-btn';
+        button.style.backgroundImage = `url(${imageUrl})`;
+        button.addEventListener('click', () => {
+            applyTheme(primaryColorPicker.value, secondaryColorPicker.value, imageUrl);
+        });
+        shutterstockResults.appendChild(button);
+    });
+}
+
+
 // --- Listeners de Eventos ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -125,5 +174,18 @@ resetThemeBtn.addEventListener('click', () => {
     applyTheme(defaultPrimary, defaultSecondary, 'none');
     if (currentUser) {
         saveUserTheme(currentUser.uid);
+    }
+});
+
+shutterstockSearchBtn.addEventListener('click', () => {
+    const query = shutterstockQuery.value.trim();
+    if (query) {
+        searchShutterstock(query);
+    }
+});
+
+shutterstockQuery.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        shutterstockSearchBtn.click();
     }
 });

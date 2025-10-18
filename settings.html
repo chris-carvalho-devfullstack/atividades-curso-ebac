@@ -58,6 +58,24 @@
                     <button class="theme-btn" data-primary="#c2185b" data-background-image="https://i.imgur.com/yF9Qx4S.png">Textura Granulada (Rosa)</button>
                 </div>
             </div>
+            <div class="settings-option">
+                <h3>Imagens de Fundo (Locais)</h3>
+                <div class="theme-buttons local-images">
+                    <button class="theme-btn" data-primary="#4CAF50" data-background-image="media/images/background/Gemini_Generated_Image_pq0vawpq0vawpq0v.png">Imagem Gerada</button>
+                    </div>
+            </div>
+
+            <div class="settings-option">
+                <h3>Buscar Imagem de Fundo (Shutterstock API)</h3>
+                <div class="shutterstock-search">
+                    <input type="text" id="shutterstock-query" placeholder="Buscar por imagens (ex: nature, office)">
+                    <button id="shutterstock-search-btn" class="btn-primary">Buscar</button>
+                </div>
+                <div id="shutterstock-results" class="theme-buttons">
+                </div>
+                <p class="setting-description">Para usar esta funcionalidade, você precisará de uma chave de API do Shutterstock.</p>
+            </div>
+
             <div class="settings-actions">
                 <button id="save-theme-btn" class="btn-primary">Salvar Tema</button>
                 <button id="reset-theme-btn" class="btn-neutral">Restaurar Padrão</button>
