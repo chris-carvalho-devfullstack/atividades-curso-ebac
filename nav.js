@@ -52,7 +52,8 @@ function loadNavAndProfile() {
                         </div>
                     </li>
                     <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
-                    <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
+                    <li><a href="profile.html"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a></li>
+                    <li><a href="settings.html"><i class="fa-solid fa-cog"></i> Configurações</a></li>
                     <li><a href="#" id="mobile-logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
                 </ul>
             </li>
@@ -94,7 +95,8 @@ function loadNavAndProfile() {
                         </div>
                     </li>
                     <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
-                    <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
+                    <li><a href="profile.html"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a></li>
+                    <li><a href="settings.html"><i class="fa-solid fa-cog"></i> Configurações</a></li>
                     <li><a href="#" id="logout-btn-submenu"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
                 </ul>
             </li>
