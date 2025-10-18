@@ -1,4 +1,8 @@
 /* settings.css */
+
+/* ============================================= */
+/* 1. LAYOUT GERAL E SEÇÃO                       */
+/* ============================================= */
 .settings-container {
     max-width: 800px;
     margin: 30px auto;
@@ -9,9 +13,24 @@
 }
 
 .settings-section {
-    margin-bottom: 25px;
+    margin-bottom: 30px;
+    padding-bottom: 5px;
 }
 
+.settings-option {
+    margin-bottom: 20px;
+    padding-top: 5px;
+}
+
+.setting-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* ============================================= */
+/* 2. TÍTULOS E COMPONENTES DE CABEÇALHO         */
+/* ============================================= */
 .settings-section h2 {
     display: flex;
     align-items: center;
@@ -24,16 +43,52 @@
     color: var(--primary-color, #4CAF50);
 }
 
-.settings-option {
-    margin-bottom: 25px;
+.settings-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: #444;
 }
+
+.beta-tag {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #f57c00;
+    padding: 2px 8px;
+    border-radius: 10px;
+    vertical-align: middle;
+}
+
+/* ============================================= */
+/* 3. INPUTS E CONTROLES DE FORMULÁRIO           */
+/* ============================================= */
 
 .settings-option label {
     display: block;
     font-weight: 600;
     margin-bottom: 8px;
+    color: #333;
 }
 
+/* Estilo para Selects e Text Inputs genéricos */
+.settings-option select,
+.settings-option input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.settings-option select:focus,
+.settings-option input[type="text"]:focus {
+    border-color: var(--primary-color, #4CAF50);
+    outline: none;
+}
+
+/* --- Color Picker --- */
 .color-picker-wrapper {
     display: flex;
     align-items: center;
@@ -51,24 +106,29 @@ input[type="color"] {
     background-color: transparent;
     padding: 0;
 }
-input[type="color"]::-webkit-color-swatch-wrapper {
-    padding: 0;
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 1px solid #ccc; border-radius: 8px; }
+input[type="color"]::-moz-color-swatch { border: 1px solid #ccc; border-radius: 8px; }
+
+/* --- Checkboxes (para Preferências de Evento) --- */
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 400; /* Mais leve que o label padrão */
+    margin-bottom: 0;
+    cursor: pointer;
 }
-input[type="color"]::-webkit-color-swatch {
-    border: 1px solid #ccc;
-    border-radius: 8px;
-}
-input[type="color"]::-moz-color-swatch {
-    border: 1px solid #ccc;
-    border-radius: 8px;
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color, #4CAF50);
 }
 
 
-.setting-description {
-    font-size: 0.9rem;
-    color: #666;
-    margin-top: 5px;
-}
+/* ============================================= */
+/* 4. CONTROLES DE TEMA E IMAGEM                 */
+/* ============================================= */
 
 .theme-buttons {
     display: flex;
@@ -84,8 +144,22 @@ input[type="color"]::-moz-color-swatch {
     cursor: pointer;
     border-radius: 8px;
     font-weight: 600;
+    transition: all 0.2s;
 }
 
+.theme-btn:hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-color: #aaa;
+}
+
+.theme-buttons .divider {
+    height: 25px;
+    width: 1px;
+    background-color: #ddd;
+    margin: 0 5px;
+}
+
+/* --- Image Buttons (Local & Shutterstock) --- */
 .shutterstock-search {
     display: flex;
     gap: 10px;
@@ -107,38 +181,25 @@ input[type="color"]::-moz-color-swatch {
     background-position: center;
     padding: 0;
     border: 2px solid transparent;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, transform 0.2s;
 }
 
 #shutterstock-results .theme-btn:hover,
 .local-images .theme-btn:hover {
     border-color: var(--primary-color, #4CAF50);
+    transform: scale(1.05);
 }
 
-.beta-tag {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #fff;
-    background-color: #f57c00;
-    padding: 2px 8px;
-    border-radius: 10px;
-    vertical-align: middle;
-}
 
-.theme-buttons .divider {
-    height: 25px;
-    width: 1px;
-    background-color: #ddd;
-    margin: 0 5px;
-}
-
-/* --- NOVOS ESTILOS PARA OS BOTÕES DE AÇÃO --- */
+/* ============================================= */
+/* 5. BOTÕES DE AÇÃO                             */
+/* ============================================= */
 .settings-actions {
     margin-top: 30px;
     padding-top: 20px;
     border-top: 1px solid #eee;
     display: flex;
-    justify-content: center;
+    justify-content: flex-end; /* Alinhamento à direita para botões de salvar */
     gap: 15px;
 }
 
@@ -171,4 +232,24 @@ input[type="color"]::-moz-color-swatch {
     background-color: #d32f2f;
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+/* --- Estilo para a mensagem de feedback (JS) --- */
+.message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    display: none;
+}
+.message.success { 
+    background-color: #d4edda; 
+    color: #155724; 
+    border: 1px solid #c3e6cb;
+}
+.message.error { 
+    background-color: #f8d7da; 
+    color: #721c24; 
+    border: 1px solid #f5c6cb;
 }

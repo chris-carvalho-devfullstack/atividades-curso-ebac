@@ -25,6 +25,14 @@ const shutterstockQuery = document.getElementById('shutterstock-query');
 const shutterstockSearchBtn = document.getElementById('shutterstock-search-btn');
 const shutterstockResults = document.getElementById('shutterstock-results');
 
+// --- NOVOS ELEMENTOS DE CONFIGURAÇÃO ---
+const notifyLikes = document.getElementById('notify-likes');
+const notifyComments = document.getElementById('notify-comments');
+const notifyFriendRequests = document.getElementById('notify-friend-requests');
+const notifyTaskImports = document.getElementById('notify-task-imports');
+const notificationChannel = document.getElementById('notification-channel');
+const taskAlertLeadTime = document.getElementById('task-alert-lead-time');
+
 
 /**
  * Aplica o tema na UI do site e atualiza a variável de estado 'currentTheme'.
@@ -54,24 +62,43 @@ function applyTheme(primary, secondary, backgroundImage = 'none') {
 }
 
 /**
- * Salva o objeto do tema atual no Firestore.
+ * Salva todas as configurações (Tema, Notificação e Tarefas) no Firestore.
  * @param {string} uid - O UID do usuário.
  */
-async function saveUserTheme(uid) {
+async function saveUserSettings(uid) {
     saveThemeBtn.disabled = true;
     saveThemeBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Salvando...';
+    messageEl.textContent = '';
+    messageEl.className = 'message';
+
+    // 1. Coleta das Novas Configurações
+    const notificationSettings = {
+        likes: notifyLikes ? notifyLikes.checked : true,
+        comments: notifyComments ? notifyComments.checked : true,
+        friendRequests: notifyFriendRequests ? notifyFriendRequests.checked : true,
+        taskImports: notifyTaskImports ? notifyTaskImports.checked : true,
+        channel: notificationChannel ? notificationChannel.value : 'in_app'
+    };
+    
+    const taskSettings = {
+        // Garantindo que o valor seja um número inteiro
+        alertLeadTimeMinutes: taskAlertLeadTime ? parseInt(taskAlertLeadTime.value) : 60
+    };
+
     try {
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, {
-            theme: currentTheme // Salva o objeto de estado inteiro
+            theme: currentTheme, // Tema existente
+            notificationSettings: notificationSettings, // Novas configurações
+            taskSettings: taskSettings // Novas configurações
         }, { merge: true });
 
-        messageEl.textContent = 'Tema salvo com sucesso!';
+        messageEl.textContent = 'Configurações salvas com sucesso!';
         messageEl.className = 'message success';
 
     } catch (error) {
-        console.error("Erro ao salvar tema: ", error);
-        messageEl.textContent = 'Erro ao salvar o tema.';
+        console.error("Erro ao salvar configurações: ", error);
+        messageEl.textContent = 'Erro ao salvar as configurações.';
         messageEl.className = 'message error';
     } finally {
         setTimeout(() => {
@@ -79,9 +106,10 @@ async function saveUserTheme(uid) {
             saveThemeBtn.textContent = 'Salvar Tema';
             messageEl.textContent = '';
             messageEl.className = 'message';
-        }, 2000);
+        }, 2500);
     }
 }
+
 
 // --- Shutterstock API ---
 async function searchShutterstock(query) {
@@ -137,23 +165,42 @@ onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         const userRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userRef);
+
+        // 1. Carrega as configurações de tema (Existente)
         if (docSnap.exists() && docSnap.data().theme) {
             const { primary, secondary, backgroundImage } = docSnap.data().theme;
             applyTheme(primary, secondary, backgroundImage || 'none');
         } else {
             applyTheme('#4CAF50', '#f0f2f5', 'none');
         }
+
+        // 2. Carrega as novas configurações de Notificação e Alerta
+        if (docSnap.exists() && docSnap.data().notificationSettings) {
+            const settings = docSnap.data().notificationSettings;
+            // Usa 'true' como fallback se o campo não existir, assumindo que as notificações estão ativadas por padrão
+            if (notifyLikes) notifyLikes.checked = settings.likes !== false;
+            if (notifyComments) notifyComments.checked = settings.comments !== false;
+            if (notifyFriendRequests) notifyFriendRequests.checked = settings.friendRequests !== false;
+            if (notifyTaskImports) notifyTaskImports.checked = settings.taskImports !== false;
+            if (notificationChannel) notificationChannel.value = settings.channel || 'in_app';
+        }
+        if (docSnap.exists() && docSnap.data().taskSettings) {
+            const settings = docSnap.data().taskSettings;
+            // Usa '60' (1 hora) como fallback se o campo não existir
+            if (taskAlertLeadTime) taskAlertLeadTime.value = settings.alertLeadTimeMinutes?.toString() || '60';
+        }
+
     } else {
         window.location.href = 'login.html';
     }
 });
 
 primaryColorPicker.addEventListener('input', (e) => {
-    applyTheme(e.target.value, secondaryColorPicker.value, 'none');
+    applyTheme(e.target.value, secondaryColorPicker.value, currentTheme.backgroundImage); // Mantém imagem de fundo
 });
 
 secondaryColorPicker.addEventListener('input', (e) => {
-    applyTheme(primaryColorPicker.value, e.target.value, 'none');
+    applyTheme(primaryColorPicker.value, e.target.value, 'none'); // Remove imagem de fundo ao mudar cor secundária
 });
 
 themeButtons.forEach(button => {
@@ -165,9 +212,10 @@ themeButtons.forEach(button => {
     });
 });
 
+// ATUALIZADO: Chama a nova função de salvar
 saveThemeBtn.addEventListener('click', () => {
     if (currentUser) {
-        saveUserTheme(currentUser.uid);
+        saveUserSettings(currentUser.uid);
     }
 });
 
@@ -175,8 +223,18 @@ resetThemeBtn.addEventListener('click', () => {
     const defaultPrimary = '#4CAF50';
     const defaultSecondary = '#f0f2f5';
     applyTheme(defaultPrimary, defaultSecondary, 'none');
+    
+    // ATUALIZADO: Salva os defaults, incluindo as configurações não-tema
     if (currentUser) {
-        saveUserTheme(currentUser.uid);
+        // Redefine as preferências de notificação para o padrão (todos checados, canal in_app, 1h)
+        if (notifyLikes) notifyLikes.checked = true;
+        if (notifyComments) notifyComments.checked = true;
+        if (notifyFriendRequests) notifyFriendRequests.checked = true;
+        if (notifyTaskImports) notifyTaskImports.checked = true;
+        if (notificationChannel) notificationChannel.value = 'in_app';
+        if (taskAlertLeadTime) taskAlertLeadTime.value = '60';
+
+        saveUserSettings(currentUser.uid);
     }
 });
 

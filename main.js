@@ -32,6 +32,15 @@ let currentSubtaskData = {
 let calendar = null;
 let calendarInitialized = false;
 
+// --- NOVA VARIÁVEL GLOBAL PARA AS CONFIGURAÇÕES DO USUÁRIO ---
+let USER_SETTINGS = {
+    taskSettings: {
+        alertLeadTimeMinutes: 60 // Padrão: 1 hora
+    }
+    // Adicionar outros defaults conforme necessário
+};
+// -----------------------------------------------------------
+
 // Função utilitária básica
 function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
 
@@ -69,6 +78,7 @@ onAuthStateChanged(auth, (user) => {
 
 function initializeAuthenticatedSession() {
     console.log("Sessão autenticada iniciada.");
+    loadUserSettings(); // NOVO: Carrega as configurações do usuário
     initCalendar();
     migrateLocalTasksToFirestore(); 
     loadTasksRealTime();
@@ -82,11 +92,29 @@ function initializeGuestSession() {
     setupCommonEventListeners();
 }
 
+// --- NOVA FUNÇÃO PARA CARREGAR AS CONFIGURAÇÕES ---
+async function loadUserSettings() {
+    if (!CURRENT_USER_UID) return;
+    try {
+        const docRef = doc(db, "users", CURRENT_USER_UID);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists() && docSnap.data().taskSettings) {
+            const settings = docSnap.data().taskSettings;
+            // Atualiza a variável global com o valor do Firestore (ou usa o default 60)
+            USER_SETTINGS.taskSettings.alertLeadTimeMinutes = settings.alertLeadTimeMinutes || 60;
+        }
+    } catch (error) {
+        console.error("Erro ao carregar configurações do usuário:", error);
+    }
+}
+// -----------------------------------------------------
+
 // ===============================================
 // 3. FUNÇÕES DE MANIPULAÇÃO DE DADOS (LOCAL & FIRESTORE)
+// ... (Funções auxiliares para subtasks) ...
 // ===============================================
 
-// Funções para localStorage
 function getLocalTasks() {
     try {
         const localData = localStorage.getItem('tasks');
@@ -697,6 +725,7 @@ function updateProgress() {
     $('.progress-bar').toggleClass('completed', percent === 100);
 }
 
+// --- FUNÇÃO MODIFICADA PARA USAR AS CONFIGURAÇÕES DO USUÁRIO ---
 function updateTaskDueVisual(li, task) {
     li.removeClass('due-soon overdue');
     li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
@@ -706,11 +735,17 @@ function updateTaskDueVisual(li, task) {
     const dueDateTimeString = task.dueDate + (task.dueTime ? 'T' + task.dueTime : 'T00:00:00');
     const due = new Date(dueDateTimeString);
     const now = new Date();
-    const diffHours = (due - now) / (1000 * 60 * 60);
+    
+    // Obtém o tempo limite em minutos da variável global USER_SETTINGS
+    const LEAD_TIME_MINUTES = USER_SETTINGS.taskSettings.alertLeadTimeMinutes || 60; 
+    
+    const diffMinutes = (due - now) / (1000 * 60);
 
-    if (diffHours < 0) li.addClass('overdue');
-    else if (diffHours <= 24) li.addClass('due-soon');
+    if (diffMinutes < 0) li.addClass('overdue');
+    // NOVO: Usa o valor de LEAD_TIME_MINUTES carregado nas configurações
+    else if (diffMinutes <= LEAD_TIME_MINUTES) li.addClass('due-soon');
 }
+// ----------------------------------------
 
 function checkAllDueDates() {
     $('#task-list>li').each(function () {

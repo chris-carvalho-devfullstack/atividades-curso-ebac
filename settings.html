@@ -54,7 +54,7 @@
                     <button class="theme-btn" data-primary="#673ab7" data-background-image="https://i.imgur.com/8Yy8YxL.png">Abstrato Geométrico</button>
                     <button class="theme-btn" data-primary="#1976D2" data-background-image="https://i.imgur.com/dK3f9pU.png">Linhas Dinâmicas</button>
                     <button class="theme-btn" data-primary="#f57c00" data-background-image="https://i.imgur.com/eB3M7zC.png">Ondas Suaves</button>
-                    <button class="theme-btn" data-primary="#c2185b" data-background-image="https://i.imgur.com/yF9Qx4S.png">Textura Granulada</button>
+                    <button class="theme-btn" data-primary="#c2185b" data-background-image="https://i.imgur.com/yF9Qx4P.png">Textura Granulada</button>
                 </div>
             </div>
 
@@ -77,13 +77,59 @@
                 </div>
                 <p class="setting-description">Esta funcionalidade requer uma chave de API válida e pode expirar.</p>
             </div>
-
-            <div class="settings-actions">
-                <button id="save-theme-btn" class="btn-save">Salvar Tema</button>
-                <button id="reset-theme-btn" class="btn-reset">Restaurar Padrão</button>
-            </div>
-            <p id="settings-message" class="message"></p>
         </section>
+
+        <section class="settings-section">
+            <h2><i class="fa-solid fa-bell"></i> Preferências de Notificação e Alertas</h2>
+
+            <div class="settings-option">
+                <h3>Preferências de Evento</h3>
+                <p class="setting-description">Escolha para quais eventos você deseja receber notificações no aplicativo:</p>
+                <div class="checkbox-group" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                    <label>
+                        <input type="checkbox" id="notify-likes" checked> Curtidas em Posts
+                    </label>
+                    <label>
+                        <input type="checkbox" id="notify-comments" checked> Comentários em Posts
+                    </label>
+                    <label>
+                        <input type="checkbox" id="notify-friend-requests" checked> Pedidos de Amizade
+                    </label>
+                    <label>
+                        <input type="checkbox" id="notify-task-imports" checked> Solicitações de Importação de Tarefas
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-option">
+                <h3>Canais de Notificação</h3>
+                <label for="notification-channel">Onde você deseja receber notificações prioritárias?</label>
+                <select id="notification-channel" style="padding: 10px; border-radius: 8px; border: 1px solid #ccc;">
+                    <option value="in_app">Apenas no Aplicativo (Padrão)</option>
+                    <option value="email">Aplicativo e E-mail (Requer configuração de servidor)</option>
+                    <option value="push" disabled>Notificações Push (Em Breve)</option>
+                </select>
+                <p class="setting-description">A opção E-mail e Push dependem de funcionalidades de servidor/backend.</p>
+            </div>
+
+            <div class="settings-option">
+                <h3>Configuração de Alerta de Tarefas</h3>
+                <label for="task-alert-lead-time">Tempo de aviso padrão para tarefas com vencimento:</label>
+                <select id="task-alert-lead-time" style="padding: 10px; border-radius: 8px; border: 1px solid #ccc;">
+                    <option value="15">15 minutos antes</option>
+                    <option value="30">30 minutos antes</option>
+                    <option value="60" selected>1 hora antes (Padrão)</option>
+                    <option value="120">2 horas antes</option>
+                    <option value="1440">1 dia antes</option>
+                </select>
+                <p class="setting-description">Este tempo define quando uma tarefa será destacada como "due soon" na sua lista (valor em minutos).</p>
+            </div>
+        </section>
+        <div class="settings-actions">
+            <button id="save-theme-btn" class="btn-save">Salvar Tema</button>
+            <button id="reset-theme-btn" class="btn-reset">Restaurar Padrão</button>
+        </div>
+        <p id="settings-message" class="message"></p>
     </main>
 
     <footer>
