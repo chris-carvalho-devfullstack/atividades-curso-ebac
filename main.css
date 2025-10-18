@@ -1,7 +1,12 @@
-/* === VARIÁVEIS DE COR PARA O TEMA === */
+/* === VARIÁVEIS DE COR E TEMA === */
 :root {
     --primary-color: #4CAF50; /* Cor principal padrão */
     --secondary-color: #f0f2f5; /* Cor de fundo padrão */
+    --background-image: none; /* Imagem de fundo padrão */
+    --background-size: auto;
+    --background-repeat: repeat;
+    --background-position: center center;
+    --background-attachment: scroll;
 }
 
 /* === RESET BÁSICO === */
@@ -18,8 +23,14 @@ html, body {
 body {
     font-family: 'Arial', sans-serif;
     background-color: var(--secondary-color);
+    background-image: var(--background-image);
+    background-size: var(--background-size);
+    background-repeat: var(--background-repeat);
+    background-position: var(--background-position);
+    background-attachment: var(--background-attachment);
     color: #333;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, background-image 0.3s ease;
 }
 
 /* === ESTILO MENU === */
@@ -129,7 +140,6 @@ nav {
     .nav-mobile-header-bar {
         display: flex;
     }
-
     #main-nav-list {
         display: none;
         flex-direction: column;
@@ -141,11 +151,9 @@ nav {
         padding: 1rem 0;
         border-top: 1px solid #ddd;
     }
-
     #main-nav-list.active {
         display: flex;
     }
-
     #main-nav-list #desktop-profile-container,
     #main-nav-list #nav-login-btn {
         display: none !important;
@@ -240,7 +248,7 @@ nav {
     color: white !important;
 }
 
-/* ======================= INPUTS E SELECTS COM ÍCONE (CORRIGIDO) ======================= */
+/* ======================= INPUTS E SELECTS COM ÍCONE ======================= */
 .input-with-icon,
 .select-with-icon {
     position: relative;
@@ -725,7 +733,7 @@ footer a:hover {
 }
 
 .modal .btn-primary:hover {
-    background: #43a047;
+    filter: brightness(0.9);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
 }
@@ -850,7 +858,7 @@ footer a:hover {
 }
 
 #toggle-calendar-btn:hover {
-    background-color: #45a049;
+    filter: brightness(0.9);
 }
 
 #calendar-container {
@@ -927,7 +935,7 @@ footer a:hover {
 }
 
 .btn-action-primary:hover {
-    background-color: #43a047;
+    filter: brightness(0.9);
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(0,0,0,0.2);
 }
@@ -984,7 +992,7 @@ footer a:hover {
 }
 
 #login-prompt button:hover {
-    background-color: #43a047;
+    filter: brightness(0.9);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
@@ -1072,7 +1080,7 @@ footer a:hover {
     font-weight: 600;
 }
 
-/* === ESTILOS PARA O NOVO CABEÇALHO DO SUBMENU DE PERFIL (VERSÃO FINAL 2.0) === */
+/* === ESTILOS PARA O NOVO CABEÇALHO DO SUBMENU DE PERFIL === */
 .profile-submenu {
     width: 320px;
 }
@@ -1090,9 +1098,10 @@ footer a:hover {
     align-items: center;
     gap: 15px;
     padding: 15px;
-    background-color: #c2185b;
+    background-color: var(--primary-color);
     color: #ffffff;
     border-bottom: 1px solid #eee;
+    transition: background-color 0.3s;
 }
 
 .submenu-profile-pic {

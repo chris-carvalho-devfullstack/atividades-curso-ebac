@@ -1,4 +1,4 @@
-// nav.js (Versão Atualizada e Unificada)
+// nav.js (Versão Atualizada e Unificada com Carregamento de Tema e Imagem de Fundo)
 
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
@@ -17,6 +17,45 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 /**
+ * Aplica as cores e imagem de fundo do tema ao site.
+ * @param {string} primaryColor - A cor principal.
+ * @param {string} secondaryColor - A cor de fundo.
+ * @param {string} backgroundImage - A URL da imagem de fundo ou 'none'.
+ */
+function applyTheme(primaryColor, secondaryColor, backgroundImage = 'none') {
+    document.documentElement.style.setProperty('--primary-color', primaryColor);
+    document.documentElement.style.setProperty('--secondary-color', secondaryColor);
+    document.documentElement.style.setProperty('--background-image', backgroundImage === 'none' ? 'none' : `url(${backgroundImage})`);
+    document.documentElement.style.setProperty('--background-size', backgroundImage === 'none' ? 'auto' : 'auto'); // Ajuste conforme a imagem
+    document.documentElement.style.setProperty('--background-repeat', backgroundImage === 'none' ? 'repeat' : 'repeat');
+    document.documentElement.style.setProperty('--background-position', backgroundImage === 'none' ? 'center center' : 'center top');
+    document.documentElement.style.setProperty('--background-attachment', backgroundImage === 'none' ? 'scroll' : 'scroll');
+}
+
+/**
+ * Carrega o tema salvo do Firestore para o usuário.
+ * @param {string} uid - O UID do usuário.
+ */
+async function loadUserTheme(uid) {
+    const userRef = doc(db, "users", uid);
+    try {
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists() && docSnap.data().theme) {
+            const { primary, secondary, backgroundImage } = docSnap.data().theme;
+            applyTheme(primary, secondary, backgroundImage || 'none');
+        } else {
+            // Aplica o tema padrão se não houver um salvo
+            applyTheme('#4CAF50', '#f0f2f5', 'none');
+        }
+    } catch (error) {
+        console.error("Erro ao carregar o tema do usuário:", error);
+        // Aplica o tema padrão em caso de erro
+        applyTheme('#4CAF50', '#f0f2f5', 'none');
+    }
+}
+
+
+/**
  * Função principal que cria o menu de navegação e inicializa suas funcionalidades.
  */
 function loadNavAndProfile() {
@@ -26,7 +65,6 @@ function loadNavAndProfile() {
         return;
     }
 
-    // O HTML do menu de navegação, agora com o novo cabeçalho de perfil no submenu.
     const navHTML = `
     <nav>
         <div class="nav-mobile-header-bar">
@@ -105,8 +143,6 @@ function loadNavAndProfile() {
     `;
 
     navPlaceholder.innerHTML = navHTML;
-
-    // --- A LÓGICA DO ANTIGO nav-profile.js COMEÇA AQUI ---
     
     // Elementos do DOM
     const navProfilePic = document.getElementById('nav-profile-pic');
@@ -127,6 +163,8 @@ function loadNavAndProfile() {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             // Usuário está LOGADO
+            loadUserTheme(user.uid); // <<-- ADICIONADO AQUI: Carrega o tema do usuário
+
             desktopProfileContainer.style.display = 'list-item';
             desktopNotificationContainer.style.display = 'list-item';
             desktopLoginBtn.style.display = 'none';
@@ -148,28 +186,24 @@ function loadNavAndProfile() {
                 username = data.username ? `@${data.username}` : "";
             }
             
-            // Popula as imagens do menu principal
             navProfilePic.src = photoURL;
             mobileNavProfilePic.src = photoURL;
             
-            // Popula o novo cabeçalho do submenu (Desktop)
             document.getElementById('submenu-profile-pic').src = photoURL;
             document.getElementById('submenu-fullname').textContent = fullname;
             document.getElementById('submenu-email').textContent = email;
             document.getElementById('submenu-username').textContent = username;
 
-            // Popula o novo cabeçalho do submenu (Mobile)
             document.getElementById('mobile-submenu-profile-pic').src = photoURL;
             document.getElementById('mobile-submenu-fullname').textContent = fullname;
             document.getElementById('mobile-submenu-email').textContent = email;
             document.getElementById('mobile-submenu-username').textContent = username;
 
-
-            // Lógica de Notificações
             setupNotificationListeners(user.uid, notificationBadge, notificationsList);
 
         } else {
             // Usuário está DESLOGADO
+            applyTheme('#4CAF50', '#f0f2f5', 'none'); // Garante o tema padrão (sem imagem de fundo)
             desktopProfileContainer.style.display = 'none';
             desktopNotificationContainer.style.display = 'none';
             desktopLoginBtn.style.display = 'list-item';
@@ -191,10 +225,7 @@ function loadNavAndProfile() {
     logoutBtnSubmenu.addEventListener('click', handleLogout);
     mobileLogoutBtn.addEventListener('click', handleLogout);
 
-    // Lógica de Controle dos Menus
     setupMenuControls();
-    
-    // Marca o link da página atual como ativo
     setActiveLink();
 }
 
