@@ -26,7 +26,7 @@ function applyTheme(primaryColor, secondaryColor, backgroundImage = 'none') {
     document.documentElement.style.setProperty('--primary-color', primaryColor);
     document.documentElement.style.setProperty('--secondary-color', secondaryColor);
     document.documentElement.style.setProperty('--background-image', backgroundImage === 'none' ? 'none' : `url(${backgroundImage})`);
-    document.documentElement.style.setProperty('--background-size', backgroundImage === 'none' ? 'auto' : 'auto'); // Ajuste conforme a imagem
+    document.documentElement.style.setProperty('--background-size', backgroundImage === 'none' ? 'auto' : 'auto');
     document.documentElement.style.setProperty('--background-repeat', backgroundImage === 'none' ? 'repeat' : 'repeat');
     document.documentElement.style.setProperty('--background-position', backgroundImage === 'none' ? 'center center' : 'center top');
     document.documentElement.style.setProperty('--background-attachment', backgroundImage === 'none' ? 'scroll' : 'scroll');
@@ -44,16 +44,13 @@ async function loadUserTheme(uid) {
             const { primary, secondary, backgroundImage } = docSnap.data().theme;
             applyTheme(primary, secondary, backgroundImage || 'none');
         } else {
-            // Aplica o tema padrão se não houver um salvo
             applyTheme('#4CAF50', '#f0f2f5', 'none');
         }
     } catch (error) {
         console.error("Erro ao carregar o tema do usuário:", error);
-        // Aplica o tema padrão em caso de erro
         applyTheme('#4CAF50', '#f0f2f5', 'none');
     }
 }
-
 
 /**
  * Função principal que cria o menu de navegação e inicializa suas funcionalidades.
@@ -144,6 +141,8 @@ function loadNavAndProfile() {
 
     navPlaceholder.innerHTML = navHTML;
     
+    // ... (O resto do seu nav.js continua aqui, sem alterações necessárias)
+
     // Elementos do DOM
     const navProfilePic = document.getElementById('nav-profile-pic');
     const mobileNavProfilePic = document.getElementById('mobile-nav-profile-pic');
@@ -163,7 +162,7 @@ function loadNavAndProfile() {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             // Usuário está LOGADO
-            loadUserTheme(user.uid); // <<-- ADICIONADO AQUI: Carrega o tema do usuário
+            loadUserTheme(user.uid);
 
             desktopProfileContainer.style.display = 'list-item';
             desktopNotificationContainer.style.display = 'list-item';
@@ -203,7 +202,7 @@ function loadNavAndProfile() {
 
         } else {
             // Usuário está DESLOGADO
-            applyTheme('#4CAF50', '#f0f2f5', 'none'); // Garante o tema padrão (sem imagem de fundo)
+            applyTheme('#4CAF50', '#f0f2f5', 'none');
             desktopProfileContainer.style.display = 'none';
             desktopNotificationContainer.style.display = 'none';
             desktopLoginBtn.style.display = 'list-item';

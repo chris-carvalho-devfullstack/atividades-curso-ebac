@@ -5,51 +5,61 @@ import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/f
 
 let currentUser;
 
-// Elementos da página
+// --- Variável de estado para o tema atual ---
+let currentTheme = {
+    primary: '#4CAF50',
+    secondary: '#f0f2f5',
+    backgroundImage: 'none'
+};
+
+// --- Elementos da página ---
 const primaryColorPicker = document.getElementById('primary-color-picker');
 const secondaryColorPicker = document.getElementById('secondary-color-picker');
 const primaryColorValue = document.getElementById('primary-color-value');
 const secondaryColorValue = document.getElementById('secondary-color-value');
 const saveThemeBtn = document.getElementById('save-theme-btn');
 const resetThemeBtn = document.getElementById('reset-theme-btn');
-const themeButtons = document.querySelectorAll('.theme-btn'); // Seleciona todos os botões de tema
+const themeButtons = document.querySelectorAll('.theme-btn');
 const messageEl = document.getElementById('settings-message');
 
-// Função para aplicar o tema na UI da página de configurações E no body
-function updateThemeUI(primaryColor, secondaryColor, backgroundImage = 'none') {
-    document.documentElement.style.setProperty('--primary-color', primaryColor);
-    document.documentElement.style.setProperty('--secondary-color', secondaryColor);
+/**
+ * Aplica o tema na UI do site e atualiza a variável de estado 'currentTheme'.
+ * @param {string} primary - A cor principal.
+ * @param {string} secondary - A cor de fundo sólida.
+ * @param {string} [backgroundImage='none'] - A URL da imagem de fundo.
+ */
+function applyTheme(primary, secondary, backgroundImage = 'none') {
+    // Atualiza a variável de estado
+    currentTheme = { primary, secondary, backgroundImage };
+
+    // Aplica os estilos no documento
+    document.documentElement.style.setProperty('--primary-color', primary);
+    document.documentElement.style.setProperty('--secondary-color', secondary);
     document.documentElement.style.setProperty('--background-image', backgroundImage === 'none' ? 'none' : `url(${backgroundImage})`);
-    document.documentElement.style.setProperty('--background-size', backgroundImage === 'none' ? 'auto' : 'auto'); // Ou 'cover' dependendo da imagem
-    document.documentElement.style.setProperty('--background-repeat', backgroundImage === 'none' ? 'repeat' : 'repeat'); // Ou 'no-repeat'
-    document.documentElement.style.setProperty('--background-position', backgroundImage === 'none' ? 'center center' : 'center top'); // Ajuste conforme necessário
-    document.documentElement.style.setProperty('--background-attachment', backgroundImage === 'none' ? 'scroll' : 'scroll');
+    
+    // Atualiza os controles na página de configurações
+    if (primaryColorPicker) primaryColorPicker.value = primary;
+    if (secondaryColorPicker) secondaryColorPicker.value = secondary;
+    if (primaryColorValue) primaryColorValue.textContent = primary;
 
-    if (primaryColorPicker) primaryColorPicker.value = primaryColor;
-    if (secondaryColorPicker) secondaryColorPicker.value = secondaryColor;
-    if (primaryColorValue) primaryColorValue.textContent = primaryColor;
-    if (secondaryColorValue) secondaryColorValue.textContent = secondaryColor;
-
-    // Se houver uma imagem de fundo, o picker de cor de fundo não reflete a imagem
-    if (backgroundImage !== 'none') {
-        secondaryColorValue.textContent = 'Imagem de Fundo';
+    if (backgroundImage && backgroundImage !== 'none') {
+        if (secondaryColorValue) secondaryColorValue.textContent = 'Imagem';
     } else {
-        secondaryColorValue.textContent = secondaryColor;
+        if (secondaryColorValue) secondaryColorValue.textContent = secondary;
     }
 }
 
-// Salva o tema no Firestore
-async function saveUserTheme(uid, primaryColor, secondaryColor, backgroundImage) {
+/**
+ * Salva o objeto do tema atual no Firestore.
+ * @param {string} uid - O UID do usuário.
+ */
+async function saveUserTheme(uid) {
     saveThemeBtn.disabled = true;
     saveThemeBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Salvando...';
     try {
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, {
-            theme: {
-                primary: primaryColor,
-                secondary: secondaryColor,
-                backgroundImage: backgroundImage // Salva a URL da imagem de fundo
-            }
+            theme: currentTheme // Salva o objeto de estado inteiro
         }, { merge: true });
 
         messageEl.textContent = 'Tema salvo com sucesso!';
@@ -69,63 +79,51 @@ async function saveUserTheme(uid, primaryColor, secondaryColor, backgroundImage)
     }
 }
 
-// Listeners de Eventos
+// --- Listeners de Eventos ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
-        // Carrega o tema do usuário no nav.js, mas a página de settings precisa
-        // refletir o tema atual na interface imediatamente.
         const userRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userRef);
         if (docSnap.exists() && docSnap.data().theme) {
             const { primary, secondary, backgroundImage } = docSnap.data().theme;
-            updateThemeUI(primary, secondary, backgroundImage || 'none'); // Aplica o tema carregado
+            applyTheme(primary, secondary, backgroundImage || 'none');
         } else {
-            // Aplica o tema padrão se não houver um salvo
-            updateThemeUI('#4CAF50', '#f0f2f5', 'none');
+            applyTheme('#4CAF50', '#f0f2f5', 'none');
         }
-
     } else {
         window.location.href = 'login.html';
     }
 });
 
 primaryColorPicker.addEventListener('input', (e) => {
-    // Quando a cor primária é alterada, remove a imagem de fundo se houver uma ativa
-    updateThemeUI(e.target.value, secondaryColorPicker.value, 'none');
+    applyTheme(e.target.value, secondaryColorPicker.value, 'none');
 });
 
 secondaryColorPicker.addEventListener('input', (e) => {
-    // Quando a cor secundária é alterada, remove a imagem de fundo se houver uma ativa
-    updateThemeUI(primaryColorPicker.value, e.target.value, 'none');
+    applyTheme(primaryColorPicker.value, e.target.value, 'none');
 });
 
 themeButtons.forEach(button => {
     button.addEventListener('click', () => {
         const primary = button.dataset.primary;
-        const secondary = button.dataset.secondary || '#f0f2f5'; // Valor padrão para secondary
-        const backgroundImage = button.dataset.backgroundImage || 'none'; // Pega a imagem de fundo
-
-        updateThemeUI(primary, secondary, backgroundImage);
+        const secondary = button.dataset.secondary || '#f0f2f5';
+        const backgroundImage = button.dataset.backgroundImage || 'none';
+        applyTheme(primary, secondary, backgroundImage);
     });
 });
 
 saveThemeBtn.addEventListener('click', () => {
     if (currentUser) {
-        const currentPrimary = primaryColorPicker.value;
-        const currentSecondary = secondaryColorPicker.value;
-        const currentBackgroundImage = document.documentElement.style.getPropertyValue('--background-image').replace(/url\(['"]?(.*?)['"]?\)/, '$1') || 'none';
-        
-        saveUserTheme(currentUser.uid, currentPrimary, currentSecondary, currentBackgroundImage);
+        saveUserTheme(currentUser.uid);
     }
 });
 
 resetThemeBtn.addEventListener('click', () => {
     const defaultPrimary = '#4CAF50';
     const defaultSecondary = '#f0f2f5';
-    const defaultBackgroundImage = 'none'; // Padrão sem imagem
-    updateThemeUI(defaultPrimary, defaultSecondary, defaultBackgroundImage);
+    applyTheme(defaultPrimary, defaultSecondary, 'none');
     if (currentUser) {
-        saveUserTheme(currentUser.uid, defaultPrimary, defaultSecondary, defaultBackgroundImage);
+        saveUserTheme(currentUser.uid);
     }
 });
