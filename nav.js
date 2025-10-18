@@ -23,14 +23,29 @@ import {
  * @param {string} backgroundImage - A URL da imagem de fundo ou 'none'.
  */
 function applyTheme(primaryColor, secondaryColor, backgroundImage = 'none') {
-    document.documentElement.style.setProperty('--primary-color', primaryColor);
-    document.documentElement.style.setProperty('--secondary-color', secondaryColor);
-    document.documentElement.style.setProperty('--background-image', backgroundImage === 'none' ? 'none' : `url(${backgroundImage})`);
-    document.documentElement.style.setProperty('--background-size', backgroundImage === 'none' ? 'auto' : 'auto');
-    document.documentElement.style.setProperty('--background-repeat', backgroundImage === 'none' ? 'repeat' : 'repeat');
-    document.documentElement.style.setProperty('--background-position', backgroundImage === 'none' ? 'center center' : 'center top');
-    document.documentElement.style.setProperty('--background-attachment', backgroundImage === 'none' ? 'scroll' : 'scroll');
+    const root = document.documentElement;
+
+    root.style.setProperty('--primary-color', primaryColor);
+
+    if (backgroundImage && backgroundImage !== 'none') {
+        // Se houver uma imagem de fundo
+        root.style.setProperty('--secondary-color', secondaryColor); // Mantém a cor de fundo como fallback
+        root.style.setProperty('--background-image', `url(${backgroundImage})`);
+        root.style.setProperty('--background-size', 'cover');
+        root.style.setProperty('--background-repeat', 'no-repeat');
+        root.style.setProperty('--background-position', 'center center');
+        root.style.setProperty('--background-attachment', 'fixed');
+    } else {
+        // Se NÃO houver imagem de fundo
+        root.style.setProperty('--secondary-color', secondaryColor);
+        root.style.setProperty('--background-image', 'none');
+        root.style.setProperty('--background-size', 'auto');
+        root.style.setProperty('--background-repeat', 'repeat');
+        root.style.setProperty('--background-position', 'center center');
+        root.style.setProperty('--background-attachment', 'scroll');
+    }
 }
+
 
 /**
  * Carrega o tema salvo do Firestore para o usuário.
@@ -140,23 +155,6 @@ function loadNavAndProfile() {
     `;
 
     navPlaceholder.innerHTML = navHTML;
-    
-    // ... (O resto do seu nav.js continua aqui, sem alterações necessárias)
-
-    // Elementos do DOM
-    const navProfilePic = document.getElementById('nav-profile-pic');
-    const mobileNavProfilePic = document.getElementById('mobile-nav-profile-pic');
-    const desktopProfileContainer = document.getElementById('desktop-profile-container');
-    const desktopLoginBtn = document.getElementById('nav-login-btn');
-    const mobileProfileContainer = document.getElementById('mobile-profile-container');
-    const mobileLoginBtn = document.getElementById('mobile-nav-login-btn');
-    const logoutBtnSubmenu = document.getElementById('logout-btn-submenu');
-    const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
-    const desktopNotificationContainer = document.getElementById('desktop-notification-container');
-    const notificationBellBtn = document.getElementById('notification-bell-btn');
-    const notificationBadge = document.getElementById('notification-badge');
-    const notificationsSubmenu = document.getElementById('desktop-notifications-submenu');
-    const notificationsList = document.getElementById('desktop-notifications-list');
 
     // Lógica de Autenticação e Perfil
     onAuthStateChanged(auth, async (user) => {
@@ -164,11 +162,11 @@ function loadNavAndProfile() {
             // Usuário está LOGADO
             loadUserTheme(user.uid);
 
-            desktopProfileContainer.style.display = 'list-item';
-            desktopNotificationContainer.style.display = 'list-item';
-            desktopLoginBtn.style.display = 'none';
-            mobileProfileContainer.style.display = 'list-item';
-            mobileLoginBtn.style.display = 'none';
+            document.getElementById('desktop-profile-container').style.display = 'list-item';
+            document.getElementById('desktop-notification-container').style.display = 'list-item';
+            document.getElementById('nav-login-btn').style.display = 'none';
+            document.getElementById('mobile-profile-container').style.display = 'list-item';
+            document.getElementById('mobile-nav-login-btn').style.display = 'none';
 
             const docRef = doc(db, "users", user.uid);
             const docSnap = await getDoc(docRef);
@@ -185,8 +183,8 @@ function loadNavAndProfile() {
                 username = data.username ? `@${data.username}` : "";
             }
             
-            navProfilePic.src = photoURL;
-            mobileNavProfilePic.src = photoURL;
+            document.getElementById('nav-profile-pic').src = photoURL;
+            document.getElementById('mobile-nav-profile-pic').src = photoURL;
             
             document.getElementById('submenu-profile-pic').src = photoURL;
             document.getElementById('submenu-fullname').textContent = fullname;
@@ -198,16 +196,16 @@ function loadNavAndProfile() {
             document.getElementById('mobile-submenu-email').textContent = email;
             document.getElementById('mobile-submenu-username').textContent = username;
 
-            setupNotificationListeners(user.uid, notificationBadge, notificationsList);
+            setupNotificationListeners(user.uid, document.getElementById('notification-badge'), document.getElementById('desktop-notifications-list'));
 
         } else {
             // Usuário está DESLOGADO
             applyTheme('#4CAF50', '#f0f2f5', 'none');
-            desktopProfileContainer.style.display = 'none';
-            desktopNotificationContainer.style.display = 'none';
-            desktopLoginBtn.style.display = 'list-item';
-            mobileProfileContainer.style.display = 'none';
-            mobileLoginBtn.style.display = 'list-item';
+            document.getElementById('desktop-profile-container').style.display = 'none';
+            document.getElementById('desktop-notification-container').style.display = 'none';
+            document.getElementById('nav-login-btn').style.display = 'list-item';
+            document.getElementById('mobile-profile-container').style.display = 'none';
+            document.getElementById('mobile-nav-login-btn').style.display = 'list-item';
         }
     });
 
@@ -221,8 +219,8 @@ function loadNavAndProfile() {
             console.error('Erro ao fazer signOut:', err);
         }
     }
-    logoutBtnSubmenu.addEventListener('click', handleLogout);
-    mobileLogoutBtn.addEventListener('click', handleLogout);
+    document.getElementById('logout-btn-submenu').addEventListener('click', handleLogout);
+    document.getElementById('mobile-logout-btn').addEventListener('click', handleLogout);
 
     setupMenuControls();
     setActiveLink();

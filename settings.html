@@ -19,6 +19,7 @@
     <main class="settings-container">
         <section class="settings-section">
             <h2><i class="fa-solid fa-palette"></i> Personalização da Aparência</h2>
+            
             <div class="settings-option">
                 <label for="primary-color-picker">Cor Principal:</label>
                 <div class="color-picker-wrapper">
@@ -27,6 +28,7 @@
                 </div>
                 <p class="setting-description">Define a cor principal usada em botões, links e destaques.</p>
             </div>
+
             <div class="settings-option">
                 <label for="secondary-color-picker">Cor de Fundo (Claro):</label>
                 <div class="color-picker-wrapper">
@@ -35,8 +37,9 @@
                 </div>
                 <p class="setting-description">Define a cor de fundo principal para o modo claro. Será ignorado se uma imagem de fundo for selecionada.</p>
             </div>
+
             <div class="settings-option">
-                <h3>Temas Pré-definidos (Cores)</h3>
+                <h3>Temas Pré-definidos (Cores e Texturas)</h3>
                 <div class="theme-buttons">
                     <button class="theme-btn" data-primary="#4CAF50" data-secondary="#f0f2f5">Padrão</button>
                     <button class="theme-btn" data-primary="#1976D2" data-secondary="#e3f2fd">Azul</button>
@@ -45,40 +48,37 @@
                     <button class="theme-btn" data-primary="#f57c00" data-secondary="#fff3e0">Laranja</button>
                     <button class="theme-btn" data-primary="#004d40" data-secondary="#e0f2f1">Verde Escuro</button>
                     <button class="theme-btn" data-primary="#c2185b" data-secondary="#fde7f3">Magenta</button>
-                </div>
-            </div>
-            <div class="settings-option">
-                <h3>Imagens de Fundo (Padrões e Texturas)</h3>
-                <div class="background-image-buttons theme-buttons">
+                    <span class="divider"></span>
                     <button class="theme-btn" data-primary="#4CAF50" data-background-image="none">Sem Imagem</button>
-                    <button class="theme-btn" data-primary="#004d40" data-background-image="https://i.imgur.com/gK2Jk5k.png">Padrão Social (Verde)</button>
-                    <button class="theme-btn" data-primary="#673ab7" data-background-image="https://i.imgur.com/8Yy8YxL.png">Abstrato Geométrico (Roxo)</button>
-                    <button class="theme-btn" data-primary="#1976D2" data-background-image="https://i.imgur.com/dK3f9pU.png">Linhas Dinâmicas (Azul)</button>
-                    <button class="theme-btn" data-primary="#f57c00" data-background-image="https://i.imgur.com/eB3M7zC.png">Ondas Suaves (Laranja)</button>
-                    <button class="theme-btn" data-primary="#c2185b" data-background-image="https://i.imgur.com/yF9Qx4S.png">Textura Granulada (Rosa)</button>
+                    <button class="theme-btn" data-primary="#004d40" data-background-image="https://i.imgur.com/gK2Jk5k.png">Padrão Social</button>
+                    <button class="theme-btn" data-primary="#673ab7" data-background-image="https://i.imgur.com/8Yy8YxL.png">Abstrato Geométrico</button>
+                    <button class="theme-btn" data-primary="#1976D2" data-background-image="https://i.imgur.com/dK3f9pU.png">Linhas Dinâmicas</button>
+                    <button class="theme-btn" data-primary="#f57c00" data-background-image="https://i.imgur.com/eB3M7zC.png">Ondas Suaves</button>
+                    <button class="theme-btn" data-primary="#c2185b" data-background-image="https://i.imgur.com/yF9Qx4S.png">Textura Granulada</button>
                 </div>
-            </div>
-            <div class="settings-option">
-                <h3>Imagens de Fundo (Locais)</h3>
-                <div class="theme-buttons local-images">
-                    <button class="theme-btn" data-primary="#4CAF50" data-background-image="media/images/background/Gemini_Generated_Image_pq0vawpq0vawpq0v.png">Imagem Gerada</button>
-                    </div>
             </div>
 
             <div class="settings-option">
-                <h3>Buscar Imagem de Fundo (Shutterstock API)</h3>
+                <h3>Imagens de Fundo (Locais)</h3>
+                <div class="theme-buttons local-images">
+                    <button class="theme-btn image-btn" data-primary="#4CAF50" data-background-image="media/images/background/Gemini_Generated_Image_pq0vawpq0vawpq0v.png" style="background-image: url('media/images/background/Gemini_Generated_Image_pq0vawpq0vawpq0v.png');" title="Imagem Gerada"></button>
+                </div>
+            </div>
+
+            <div class="settings-option">
+                <h3>Buscar Imagem de Fundo (Shutterstock API) <span class="beta-tag">Versão de Teste</span></h3>
                 <div class="shutterstock-search">
                     <input type="text" id="shutterstock-query" placeholder="Buscar por imagens (ex: nature, office)">
                     <button id="shutterstock-search-btn" class="btn-primary">Buscar</button>
                 </div>
                 <div id="shutterstock-results" class="theme-buttons">
                 </div>
-                <p class="setting-description">Para usar esta funcionalidade, você precisará de uma chave de API do Shutterstock.</p>
+                <p class="setting-description">Esta funcionalidade requer uma chave de API válida e pode expirar.</p>
             </div>
 
             <div class="settings-actions">
-                <button id="save-theme-btn" class="btn-primary">Salvar Tema</button>
-                <button id="reset-theme-btn" class="btn-neutral">Restaurar Padrão</button>
+                <button id="save-theme-btn" class="btn-save">Salvar Tema</button>
+                <button id="reset-theme-btn" class="btn-reset">Restaurar Padrão</button>
             </div>
             <p id="settings-message" class="message"></p>
         </section>

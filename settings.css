@@ -25,7 +25,7 @@
 }
 
 .settings-option {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 .settings-option label {
@@ -74,6 +74,7 @@ input[type="color"]::-moz-color-swatch {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .theme-btn {
@@ -83,12 +84,6 @@ input[type="color"]::-moz-color-swatch {
     cursor: pointer;
     border-radius: 8px;
     font-weight: 600;
-}
-
-.settings-actions {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
 }
 
 .shutterstock-search {
@@ -104,18 +99,76 @@ input[type="color"]::-moz-color-swatch {
     border-radius: 8px;
 }
 
-#shutterstock-results .theme-btn {
+#shutterstock-results .theme-btn,
+.local-images .theme-btn {
     width: 100px;
     height: 75px;
     background-size: cover;
     background-position: center;
     padding: 0;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
 }
 
-.theme-btn.image-btn {
-    width: 100px;
-    height: 75px;
-    background-size: cover;
-    background-position: center;
-    padding: 0;
+#shutterstock-results .theme-btn:hover,
+.local-images .theme-btn:hover {
+    border-color: var(--primary-color, #4CAF50);
+}
+
+.beta-tag {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #f57c00;
+    padding: 2px 8px;
+    border-radius: 10px;
+    vertical-align: middle;
+}
+
+.theme-buttons .divider {
+    height: 25px;
+    width: 1px;
+    background-color: #ddd;
+    margin: 0 5px;
+}
+
+/* --- NOVOS ESTILOS PARA OS BOTÕES DE AÇÃO --- */
+.settings-actions {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.settings-actions button {
+    padding: 12px 25px;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-save {
+    background-color: var(--primary-color, #4CAF50);
+    color: white;
+}
+.btn-save:hover {
+    filter: brightness(0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+.btn-reset {
+    background-color: #f44336;
+    color: white;
+}
+.btn-reset:hover {
+    background-color: #d32f2f;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }

@@ -116,12 +116,15 @@ async function searchShutterstock(query) {
 function displayShutterstockImages(images) {
     shutterstockResults.innerHTML = '';
     images.forEach(image => {
-        const imageUrl = image.assets.preview.url;
+        // **ALTERAÇÃO AQUI**: Usando 'preview_1000' para alta resolução e 'preview' para o botão pequeno
+        const highResUrl = image.assets.preview_1000.url;
+        const thumbnailUrl = image.assets.preview.url;
+
         const button = document.createElement('button');
         button.className = 'theme-btn image-btn';
-        button.style.backgroundImage = `url(${imageUrl})`;
+        button.style.backgroundImage = `url(${thumbnailUrl})`; // Usa a miniatura para o botão
         button.addEventListener('click', () => {
-            applyTheme(primaryColorPicker.value, secondaryColorPicker.value, imageUrl);
+            applyTheme(primaryColorPicker.value, secondaryColorPicker.value, highResUrl); // Aplica a alta resolução
         });
         shutterstockResults.appendChild(button);
     });
