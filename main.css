@@ -725,3 +725,76 @@ footer a:hover { color:#388E3C; text-decoration:underline; }
     text-decoration: none;
     font-weight: 600;
 }
+
+/* === ESTILOS PARA O NOVO CABEÇALHO DO SUBMENU DE PERFIL (VERSÃO FINAL 2.0) === */
+
+/* Aumenta a largura do submenu para acomodar o conteúdo */
+.profile-submenu {
+    width: 320px; /* Aumentado de 280px para 320px para caber o e-mail */
+}
+
+/* Remove o padding do item da lista que contém o cabeçalho */
+.profile-submenu .submenu-profile-item {
+    padding: 0;
+}
+
+/* Garante que o item do cabeçalho não tenha efeito hover como os links */
+.profile-submenu .submenu-profile-item:hover {
+    background-color: transparent;
+}
+
+/* Container principal do cabeçalho com a nova cor de fundo */
+.submenu-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background-color: #c2185b; /* Cor de fundo inspirada na imagem */
+    color: #ffffff; /* Cor do texto principal para branco */
+    border-bottom: 1px solid #eee; /* Linha separadora */
+}
+
+/* Estilo da foto de perfil maior no submenu */
+.submenu-profile-pic {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0; /* Impede que a imagem encolha */
+}
+
+/* Container para as informações de texto */
+.submenu-profile-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Evita que o texto vaze */
+}
+
+/* Estilo para o nome completo (agora branco) */
+.submenu-profile-info h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff; /* Cor do texto alterada para branco */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Adiciona "..." se o nome for muito longo */
+}
+
+/* Estilo para e-mail (agora branco e um pouco mais claro) */
+.submenu-profile-info p {
+    margin: 2px 0 0 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9); /* Branco com leve transparência */
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Adiciona "..." se for muito longo */
+}
+
+/* Estilo específico para o nome de usuário (agora branco e mais claro) */
+.submenu-username-display {
+    font-size: 0.8rem !important;
+    color: rgba(255, 255, 255, 0.7) !important; /* Branco com mais transparência */
+    margin-top: 4px !important;
+}

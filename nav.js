@@ -26,7 +26,7 @@ function loadNavAndProfile() {
         return;
     }
 
-    // O HTML do menu de navegação, com a foto do perfil sem o nome de usuário ao lado.
+    // O HTML do menu de navegação, agora com o novo cabeçalho de perfil no submenu.
     const navHTML = `
     <nav>
         <div class="nav-mobile-header-bar">
@@ -41,6 +41,16 @@ function loadNavAndProfile() {
                     <img id="mobile-nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
                 </div>
                 <ul class="profile-submenu" id="mobile-profile-submenu">
+                    <li class="submenu-profile-item">
+                        <div class="submenu-profile-header">
+                            <img id="mobile-submenu-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="submenu-profile-pic">
+                            <div class="submenu-profile-info">
+                                <h4 id="mobile-submenu-fullname">Carregando...</h4>
+                                <p id="mobile-submenu-email">email@example.com</p>
+                                <p id="mobile-submenu-username" class="submenu-username-display">@username</p>
+                            </div>
+                        </div>
+                    </li>
                     <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
                     <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
                     <li><a href="#" id="mobile-logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
@@ -73,6 +83,16 @@ function loadNavAndProfile() {
                     <img id="nav-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="nav-avatar">
                 </div>
                 <ul class="profile-submenu" id="desktop-profile-submenu">
+                    <li class="submenu-profile-item">
+                        <div class="submenu-profile-header">
+                            <img id="submenu-profile-pic" src="https://via.placeholder.com/150" alt="Foto do Perfil" class="submenu-profile-pic">
+                            <div class="submenu-profile-info">
+                                <h4 id="submenu-fullname">Carregando...</h4>
+                                <p id="submenu-email">email@example.com</p>
+                                <p id="submenu-username" class="submenu-username-display">@username</p>
+                            </div>
+                        </div>
+                    </li>
                     <li><a href="public-profile.html"><i class="fa-solid fa-eye"></i> Ver Perfil Público</a></li>
                     <li><a href="profile.html"><i class="fa-solid fa-gear"></i> Minha Conta</a></li>
                     <li><a href="#" id="logout-btn-submenu"><i class="fa-solid fa-right-from-bracket"></i> Sair</a></li>
@@ -115,13 +135,33 @@ function loadNavAndProfile() {
             const docSnap = await getDoc(docRef);
             const placeholder = "https://via.placeholder.com/150";
             let photoURL = user.photoURL || placeholder;
+            let fullname = user.displayName || "Usuário";
+            let email = user.email || "";
+            let username = "";
 
             if (docSnap.exists()) {
-                photoURL = docSnap.data().fotoURL || photoURL;
+                const data = docSnap.data();
+                photoURL = data.fotoURL || photoURL;
+                fullname = data.fullname || fullname;
+                username = data.username ? `@${data.username}` : "";
             }
             
+            // Popula as imagens do menu principal
             navProfilePic.src = photoURL;
             mobileNavProfilePic.src = photoURL;
+            
+            // Popula o novo cabeçalho do submenu (Desktop)
+            document.getElementById('submenu-profile-pic').src = photoURL;
+            document.getElementById('submenu-fullname').textContent = fullname;
+            document.getElementById('submenu-email').textContent = email;
+            document.getElementById('submenu-username').textContent = username;
+
+            // Popula o novo cabeçalho do submenu (Mobile)
+            document.getElementById('mobile-submenu-profile-pic').src = photoURL;
+            document.getElementById('mobile-submenu-fullname').textContent = fullname;
+            document.getElementById('mobile-submenu-email').textContent = email;
+            document.getElementById('mobile-submenu-username').textContent = username;
+
 
             // Lógica de Notificações
             setupNotificationListeners(user.uid, notificationBadge, notificationsList);
