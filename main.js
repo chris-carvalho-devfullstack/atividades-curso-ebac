@@ -32,7 +32,7 @@ let currentSubtaskData = {
 let calendar = null;
 let calendarInitialized = false;
 
-// --- NOVA VARIÁVEL GLOBAL PARA AS CONFIGURAÇÕES DO USUÁRIO ---
+// --- VARIÁVEL GLOBAL PARA AS CONFIGURAÇÕES DO USUÁRIO ---
 let USER_SETTINGS = {
     taskSettings: {
         alertLeadTimeMinutes: 60 // Padrão: 1 hora
@@ -92,7 +92,7 @@ function initializeGuestSession() {
     setupCommonEventListeners();
 }
 
-// --- NOVA FUNÇÃO PARA CARREGAR AS CONFIGURAÇÕES ---
+// --- FUNÇÃO PARA CARREGAR AS CONFIGURAÇÕES ---
 async function loadUserSettings() {
     if (!CURRENT_USER_UID) return;
     try {
@@ -112,7 +112,6 @@ async function loadUserSettings() {
 
 // ===============================================
 // 3. FUNÇÕES DE MANIPULAÇÃO DE DADOS (LOCAL & FIRESTORE)
-// ... (Funções auxiliares para subtasks) ...
 // ===============================================
 
 function getLocalTasks() {
@@ -725,11 +724,45 @@ function updateProgress() {
     $('.progress-bar').toggleClass('completed', percent === 100);
 }
 
-// --- FUNÇÃO MODIFICADA PARA USAR AS CONFIGURAÇÕES DO USUÁRIO ---
+// ===============================================
+// NOVO: FUNÇÃO PARA CRIAR NOTIFICAÇÃO DE PRAZO
+// ===============================================
+
+/**
+ * Cria uma notificação no Firestore para o usuário sobre uma tarefa urgente.
+ * @param {string} taskId - O ID da tarefa.
+ * @param {string} taskText - O texto da tarefa.
+ * @param {string} dueDateTime - A data e hora de vencimento formatada.
+ */
+async function createTaskDeadlineNotification(taskId, taskText, dueDateTime) {
+    if (!CURRENT_USER_UID) return;
+
+    try {
+        const notificationsRef = collection(db, 'users', CURRENT_USER_UID, 'notifications');
+        const LEADING_TIME = USER_SETTINGS.taskSettings.alertLeadTimeMinutes;
+        
+        await addDoc(notificationsRef, {
+            type: 'task_deadline',
+            // Mensagem mais informativa
+            message: `Atenção: A tarefa "${taskText}" vence em menos de ${LEADING_TIME} minutos (${dueDateTime}).`,
+            url: `/index.html#task-${taskId}`, // URL para destacar a tarefa
+            read: false,
+            timestamp: serverTimestamp()
+        });
+
+        console.log(`Notificação de prazo criada para a tarefa: ${taskId}`);
+
+    } catch (error) {
+        console.error("Erro ao criar notificação de prazo:", error);
+    }
+}
+
+// --- FUNÇÃO MODIFICADA PARA USAR AS CONFIGURAÇÕES DO USUÁRIO E DISPARAR NOTIFICAÇÃO ---
 function updateTaskDueVisual(li, task) {
     li.removeClass('due-soon overdue');
     li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
 
+    // Verifica se é uma tarefa válida, não concluída e com data de vencimento
     if (!task || !task.dueDate || task.completed) return;
 
     const dueDateTimeString = task.dueDate + (task.dueTime ? 'T' + task.dueTime : 'T00:00:00');
@@ -740,10 +773,39 @@ function updateTaskDueVisual(li, task) {
     const LEAD_TIME_MINUTES = USER_SETTINGS.taskSettings.alertLeadTimeMinutes || 60; 
     
     const diffMinutes = (due - now) / (1000 * 60);
+    
+    // Variáveis auxiliares para controle de estado
+    // Inclui o buffer de +1 minuto para a notificação visual (o que resolveu o seu problema de margem)
+    const isDueSoon = diffMinutes > 0 && diffMinutes <= LEAD_TIME_MINUTES + 1;
+    const isOverdue = diffMinutes < 0;
 
-    if (diffMinutes < 0) li.addClass('overdue');
-    // NOVO: Usa o valor de LEAD_TIME_MINUTES carregado nas configurações
-    else if (diffMinutes <= LEAD_TIME_MINUTES) li.addClass('due-soon');
+    if (isOverdue) {
+        li.addClass('overdue');
+        // Se a tarefa está atrasada, reseta o flag de notificação, pois ela não é mais 'due-soon' e pode ser adiada
+        if (task.deadlineNotified === true) {
+             updateTaskInFirestore(task.id, { deadlineNotified: false });
+        }
+    } 
+    
+    if (isDueSoon) {
+        li.addClass('due-soon');
+        
+        // **LÓGICA DE NOTIFICAÇÃO: DISPARA APENAS SE NUNCA FOI NOTIFICADA**
+        // A notificação de prazo só será criada se for a primeira vez que a tarefa entra no estado 'due-soon'
+        if (CURRENT_USER_UID && !task.deadlineNotified) {
+            const formattedDue = new Date(dueDateTimeString).toLocaleTimeString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+            createTaskDeadlineNotification(task.id, task.text, formattedDue);
+            
+            // Marca o campo no Firestore para evitar notificações repetidas
+            updateTaskInFirestore(task.id, { deadlineNotified: true });
+        }
+    } 
+    
+    // Reseta o flag se a tarefa saiu do estado de urgência (usuário adiou para um prazo longe)
+    if (!isDueSoon && !isOverdue && task.deadlineNotified === true) {
+         updateTaskInFirestore(task.id, { deadlineNotified: false });
+    }
 }
 // ----------------------------------------
 
@@ -900,6 +962,7 @@ function hideModal(selector) {
 // ===============================================
 
 function setupCommonEventListeners() {
+    // Verifica a data de vencimento a cada 60 segundos
     setInterval(checkAllDueDates, 60 * 1000);
 
     const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
@@ -1160,6 +1223,12 @@ function setupCommonEventListeners() {
         };
         
         if (CURRENT_USER_UID) {
+            // Se o usuário está editando a data, garante que o status de notificação seja resetado.
+            const originalTask = tasks.find(t => t.id === taskId);
+            if (originalTask.dueDate !== updatedData.dueDate || originalTask.dueTime !== updatedData.dueTime) {
+                updatedData.deadlineNotified = false;
+            }
+            
             await updateTaskInFirestore(taskId, updatedData);
         } else {
             const taskIndex = tasks.findIndex(t => t.id === taskId);
