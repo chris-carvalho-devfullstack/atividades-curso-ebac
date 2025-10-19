@@ -1,73 +1,63 @@
 /**
  * ARQUIVO: functions/index.js
- * * Implementação da Cloud Function para enviar notificações Push
- * via Firebase Cloud Messaging (FCM) sempre que uma nova notificação
- * for criada no Firestore.
+ * CORREÇÃO APLICADA: Uso da API v2 com o parâmetro 'databaseId' na inicialização do Admin SDK.
  */
 
-const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-
-// 🚨 IMPORTAÇÃO COMPLETA: Incluindo setGlobalOptions
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions } = require('firebase-functions');
 
-// Inicializa o Admin SDK.
-admin.initializeApp();
+// 🚨 CORREÇÃO ESSENCIAL #1: Inicializa o app com o nome do banco de dados.
+// Isso garante que o Admin SDK (dbAdmin) use a instância correta, parando de procurar por (default).
+admin.initializeApp({
+    databaseId: 'banco-de-dados-gerenciador-de-tarefas' 
+});
 const dbAdmin = admin.firestore();
 
-// 🚨 URL DE DEPLOY ATUALIZADO (Vercel)
-const APP_URL = 'https://lista20.vercel.app'; 
 
-// Opções globais (mantidas do boilerplate)
+const APP_URL = 'https://lista20.vercel.app'; 
 setGlobalOptions({ maxInstances: 10 });
 
-
 // =================================================================
-// CLOUD FUNCTION: Monitora novas notificações no Firestore
-// * A sintaxe functions.firestore.document() é a correta para a API v1.
+// CLOUD FUNCTION (API V2) - Gatilho que escuta a instância nomeada
 // =================================================================
-exports.sendPushNotification = functions.firestore
-    .document('users/{userId}/notifications/{notificationId}')
-    .onCreate(async (snapshot, context) => {
-        const newNotification = snapshot.data();
-        const userId = context.params.userId;
+exports.sendPushNotification = onDocumentCreated({
+    document: 'users/{userId}/notifications/{notificationId}',
+    
+    // 🚨 CORREÇÃO ESSENCIAL #2: Define o nome da instância também no gatilho v2
+    instance: 'banco-de-dados-gerenciador-de-tarefas',
+    
+    // Usamos a região onde a função foi deployada nas tentativas anteriores
+    region: 'us-central1' 
+}, async (event) => {
+    // A API v2 passa o novo documento em event.data
+    const newNotification = event.data.data();
+    const userId = event.params.userId; 
 
-        // 1. Busca os dados de configuração (token e canal) do usuário destinatário
-        const userDoc = await dbAdmin.doc(`users/${userId}`).get();
-        const userData = userDoc.data();
+    // O dbAdmin carregado acima já usa a instância nomeada
+    // Se precisar fazer uma query:
+    const userDoc = await dbAdmin.doc(`users/${userId}`).get();
+    const userData = userDoc.data();
+    
+    const fcmToken = userData?.fcmToken;
+    const notificationChannel = userData?.notificationSettings?.channel;
+    const isCriticalAlert = newNotification.type === 'task_deadline';
+
+    if (fcmToken && (notificationChannel === 'push' || isCriticalAlert)) {
         
-        const fcmToken = userData?.fcmToken;
-        const notificationChannel = userData?.notificationSettings?.channel;
-        
-        // Alertas críticos (como prazo de tarefa) sempre tentam enviar Push se o token existir
-        const isCriticalAlert = newNotification.type === 'task_deadline';
-
-        // 2. FILTRO DE ENVIO
-        // Condição: Deve existir um token válido E (o canal deve ser 'push' OU deve ser um alerta crítico)
-        if (fcmToken && (notificationChannel === 'push' || isCriticalAlert)) {
-            
-            // 3. Monta o Payload (a mensagem Push)
-            const payload = {
-                notification: {
-                    title: isCriticalAlert ? '🚨 ALERTA DE PRAZO URGENTE' : 'Nova Atividade Social',
-                    body: newNotification.message,
-                    icon: `${APP_URL}/media/icons/icon-192x192.png`, 
-                    
-                    // click_action: A URL completa para onde o usuário será levado ao clicar
-                    click_action: `${APP_URL}${newNotification.url}`
-                }
-            };
-
-            // 4. Envia a mensagem via FCM (Firebase Cloud Messaging)
-            try {
-                const response = await admin.messaging().sendToDevice(fcmToken, payload);
-                console.log(`Push Notification enviado com sucesso para ${userId}:`, response);
-                return response;
-            } catch (error) {
-                console.error(`Falha ao enviar Push para ${userId}:`, error);
-                return null;
+        const payload = {
+            notification: {
+                title: isCriticalAlert ? '🚨 ALERTA DE PRAZO URGENTE' : 'Nova Atividade Social',
+                body: newNotification.message,
+                icon: `${APP_URL}/media/icons/icon-192x192.png`, 
+                click_action: `${APP_URL}${newNotification.url}`
             }
+        };
+
+        try {
+            await admin.messaging().sendToDevice(fcmToken, payload);
+        } catch (error) {
+            console.error(`Falha ao enviar Push para ${userId}:`, error);
         }
-        
-        return console.log(`Notificação no App criada. Push ignorado para ${userId}. Canal: ${notificationChannel}`);
-    });
+    }
+});
