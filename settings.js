@@ -2,6 +2,8 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+// NOVO: Importa a função do serviço de push
+import { requestPushNotificationPermission } from "./push-service.js"; 
 
 let currentUser;
 
@@ -86,6 +88,21 @@ async function saveUserSettings(uid) {
     };
 
     try {
+        // --- NOVO: TENTA ATIVAR PUSH SE SELECIONADO ---
+        let pushMessage = '';
+        if (notificationSettings.channel === 'push') {
+             const result = await requestPushNotificationPermission();
+             if (!result.success) {
+                 pushMessage = `Atenção: Push não ativado. ${result.message}`;
+                 // Reverte o canal para in_app se a permissão falhar, mas permite o salvamento dos outros settings
+                 notificationSettings.channel = 'in_app';
+             } else {
+                 pushMessage = result.message;
+             }
+        }
+        // ---------------------------------------------
+
+
         const userRef = doc(db, "users", uid);
         await setDoc(userRef, {
             theme: currentTheme, // Tema existente
@@ -93,8 +110,8 @@ async function saveUserSettings(uid) {
             taskSettings: taskSettings // Novas configurações
         }, { merge: true });
 
-        messageEl.textContent = 'Configurações salvas com sucesso!';
-        messageEl.className = 'message success';
+        messageEl.textContent = `Configurações salvas com sucesso! ${pushMessage}`;
+        messageEl.className = pushMessage.includes('Atenção') ? 'message error' : 'message success';
 
     } catch (error) {
         console.error("Erro ao salvar configurações: ", error);
