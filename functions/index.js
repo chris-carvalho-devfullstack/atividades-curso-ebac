@@ -8,7 +8,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
-// 🚨 CORREÇÃO DE ERRO: Importa corretamente a função setGlobalOptions
+// 🚨 IMPORTAÇÃO COMPLETA: Incluindo setGlobalOptions
 const { setGlobalOptions } = require('firebase-functions');
 
 // Inicializa o Admin SDK.
@@ -19,13 +19,12 @@ const dbAdmin = admin.firestore();
 const APP_URL = 'https://lista20.vercel.app'; 
 
 // Opções globais (mantidas do boilerplate)
-// NOTA: Esta função só é aplicada se as funções usarem a API v1.
 setGlobalOptions({ maxInstances: 10 });
 
 
 // =================================================================
 // CLOUD FUNCTION: Monitora novas notificações no Firestore
-// Gatilho: on Document Create em users/{userId}/notifications/{notificationId}
+// * A sintaxe functions.firestore.document() é a correta para a API v1.
 // =================================================================
 exports.sendPushNotification = functions.firestore
     .document('users/{userId}/notifications/{notificationId}')
