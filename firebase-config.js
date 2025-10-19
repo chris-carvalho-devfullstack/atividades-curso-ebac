@@ -23,7 +23,7 @@ const app = initializeApp(firebaseConfig);
 // Instâncias
 export const auth = getAuth(app);
 // Aponte para o banco de dados específico pelo nome dele
-export const db = getFirestore(app, "banco-de-dados-gerenciador-de-tarefas"); // <-- MUDANÇA AQUI
+export const db = getFirestore(app, "banco-de-dados-gerenciador-de-tarefas"); // <-- NOME DA INSTÂNCIA
 export const storage = getStorage(app);
 export const provider = new GoogleAuthProvider();
 
@@ -48,4 +48,3 @@ export async function logout() {
     console.error("Erro ao deslogar:", error);
   }
 }
-
