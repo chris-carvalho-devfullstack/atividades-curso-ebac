@@ -4,7 +4,7 @@
 importScripts('https://www.gstatic.com/firebasejs/12.4.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.4.0/firebase-messaging-compat.js');
 
-// Configuração do Firebase (Use a config do seu firebase-config.js)
+// Configuração do Firebase (copiado do seu firebase-config.js)
 const firebaseConfig = {
   apiKey: "AIzaSyBsfGTZ1yypzWE4R_thDARSh61Osc6OUbU",
   authDomain: "gerenciador-tarefas-fd5be.firebaseapp.com",
@@ -16,8 +16,6 @@ const firebaseConfig = {
 
 // Inicializa o Firebase no Service Worker
 firebase.initializeApp(firebaseConfig);
-
-// Obtém a instância de Messaging
 const messaging = firebase.messaging();
 
 // Lógica para manipular mensagens recebidas enquanto o navegador está fechado/em segundo plano
@@ -27,9 +25,9 @@ messaging.onBackgroundMessage(function(payload) {
   const notificationTitle = payload.notification.title || 'Nova Notificação';
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/media/icons/icon-192x192.png', // Ícone para a notificação
+    icon: '/media/icons/icon-192x192.png', 
     data: {
-      url: payload.data.url || '/index.html' // URL para abrir ao clicar
+      url: payload.data.url || '/index.html'
     }
   };
 
@@ -39,8 +37,6 @@ messaging.onBackgroundMessage(function(payload) {
 // Lógica para abrir a página correta quando o usuário clica na notificação
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-
-  // Obtém a URL salva no payload
   const targetUrl = event.notification.data.url;
 
   event.waitUntil(
@@ -48,10 +44,10 @@ self.addEventListener('notificationclick', function(event) {
       for (var i = 0; i < clientList.length; i++) {
         var client = clientList[i];
         if (client.url.endsWith(targetUrl) && 'focus' in client) {
-          return client.focus(); // Se a página já estiver aberta, apenas foca
+          return client.focus(); 
         }
       }
-      return clients.openWindow(targetUrl); // Senão, abre uma nova janela
+      return clients.openWindow(targetUrl);
     })
   );
 });
