@@ -1,20 +1,23 @@
 /**
  * ARQUIVO: functions/index.js
- * VERSÃO CORRIGIDA: Força o SDK Admin a usar a base de dados nomeada
- * através da variável de ambiente do próprio Firebase.
+ * VERSÃO FINAL CORRIGIDA: Força a inicialização do Admin SDK com a URL
+ * do banco de dados do projeto para eliminar qualquer ambiguidade.
  */
 
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions');
 
-// Inicializa a aplicação. O SDK irá herdar a configuração do ambiente.
-admin.initializeApp();
+// --- CORREÇÃO CRUCIAL ---
+// Inicializa a aplicação FORÇANDO a URL do banco de dados do seu projeto.
+// Isso garante que todas as operações subsequentes usem o contexto correto.
+admin.initializeApp({
+  databaseURL: "https://gerenciador-tarefas-fd5be.firebaseio.com"
+});
+// -------------------------
 
-// ESTA É A CORREÇÃO CRUCIAL:
-// Em vez de passar 'undefined', vamos forçar a utilização da variável de ambiente
-// que o Firebase define para a base de dados associada à função.
-const dbAdmin = admin.firestore(process.env.FIRESTORE_DATABASE_ID);
+// Agora, obtemos a instância do Firestore especificando o databaseId.
+const dbAdmin = admin.firestore(undefined, { databaseId: 'banco-de-dados-gerenciador-de-tarefas' });
 
 const APP_URL = 'https://lista20.vercel.app'; 
 setGlobalOptions({ maxInstances: 10 });
@@ -22,7 +25,7 @@ setGlobalOptions({ maxInstances: 10 });
 exports.sendPushNotification = onDocumentCreated({
     document: 'users/{userId}/notifications/{notificationId}',
     region: 'southamerica-east1',
-    database: 'banco-de-dados-gerenciador-de-tarefas' // Garante que o gatilho ouve a base de dados correta.
+    database: 'banco-de-dados-gerenciador-de-tarefas'
 }, async (event) => {
     
     logger.info("Função sendPushNotification acionada com sucesso!");
@@ -32,7 +35,6 @@ exports.sendPushNotification = onDocumentCreated({
     logger.info(`Nova notificação do tipo '${newNotification.type}' para o utilizador: ${userId}`);
 
     try {
-        // Esta chamada agora usará o dbAdmin que aponta para a base de dados correta.
         const userDoc = await dbAdmin.doc(`users/${userId}`).get();
         if (!userDoc.exists) {
             logger.warn(`Documento do utilizador ${userId} não encontrado na base de dados nomeada.`);
