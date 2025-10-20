@@ -793,11 +793,18 @@ function updateTaskDueVisual(li, task) {
         // **LÓGICA DE NOTIFICAÇÃO: DISPARA APENAS SE NUNCA FOI NOTIFICADA**
         // A notificação de prazo só será criada se for a primeira vez que a tarefa entra no estado 'due-soon'
         if (CURRENT_USER_UID && !task.deadlineNotified) {
+            
+            // ======= INÍCIO DA CORREÇÃO =======
+            // 1. ATUALIZA O ESTADO LOCAL IMEDIATAMENTE PARA EVITAR DUPLICAÇÃO
+            task.deadlineNotified = true; 
+            // ======= FIM DA CORREÇÃO =======
+
             const formattedDue = new Date(dueDateTimeString).toLocaleTimeString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 
+            // 2. Cria a notificação no Firestore
             createTaskDeadlineNotification(task.id, task.text, formattedDue);
             
-            // Marca o campo no Firestore para evitar notificações repetidas
+            // 3. Atualiza o Firestore em segundo plano
             updateTaskInFirestore(task.id, { deadlineNotified: true });
         }
     } 
