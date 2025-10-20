@@ -1,17 +1,19 @@
 /**
  * ARQUIVO: functions/index.js
- * VERSÃO FINAL: Simplifica a inicialização do Admin SDK para herdar
- * a configuração correta da base de dados do ambiente da função.
+ * VERSÃO FINAL E DEFINITIVA: Garante que tanto o gatilho como o SDK de Admin
+ * usem explicitamente a base de dados nomeada.
  */
 
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions');
 
-// 🚨 CORREÇÃO: Deixe o Firebase gerir a inicialização.
-// Ele irá herdar a base de dados correta do ambiente.
+// Inicializa a aplicação. O SDK irá herdar a configuração do ambiente.
 admin.initializeApp();
-const dbAdmin = admin.firestore();
+
+// Ao obter a instância do Firestore, especificamos QUAL base de dados queremos usar.
+// Esta é a correção crucial.
+const dbAdmin = admin.firestore(undefined, { databaseId: 'banco-de-dados-gerenciador-de-tarefas' });
 
 const APP_URL = 'https://lista20.vercel.app'; 
 setGlobalOptions({ maxInstances: 10 });
@@ -19,8 +21,7 @@ setGlobalOptions({ maxInstances: 10 });
 exports.sendPushNotification = onDocumentCreated({
     document: 'users/{userId}/notifications/{notificationId}',
     region: 'southamerica-east1',
-    // A propriedade database aqui continua a ser a mais importante.
-    database: 'banco-de-dados-gerenciador-de-tarefas'
+    database: 'banco-de-dados-gerenciador-de-tarefas' // Garante que o gatilho ouve a base de dados correta.
 }, async (event) => {
     
     logger.info("Função sendPushNotification acionada com sucesso!");
@@ -30,15 +31,15 @@ exports.sendPushNotification = onDocumentCreated({
     logger.info(`Nova notificação do tipo '${newNotification.type}' para o utilizador: ${userId}`);
 
     try {
+        // Esta chamada agora usa o dbAdmin que aponta para a base de dados correta.
         const userDoc = await dbAdmin.doc(`users/${userId}`).get();
         if (!userDoc.exists) {
-            logger.warn(`Documento do utilizador ${userId} não encontrado.`);
+            logger.warn(`Documento do utilizador ${userId} não encontrado na base de dados nomeada.`);
             return;
         }
 
         const userData = userDoc.data();
         const fcmToken = userData?.fcmToken;
-        // ... (resto do código permanece igual) ...
         const notificationChannel = userData?.notificationSettings?.channel;
         const isCriticalAlert = newNotification.type === 'task_deadline';
 
