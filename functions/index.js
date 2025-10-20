@@ -4,6 +4,7 @@
  * para a base de dados nomeada, eliminando a ambiguidade causada pela
  * existência de uma base de dados "(default)".
  */
+// Forçando deploy v1.4
 
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
