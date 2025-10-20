@@ -1,41 +1,36 @@
 /**
  * ARQUIVO: functions/index.js
- * CORREÇÃO DEFINITIVA: Inicializa o Admin SDK apontando explicitamente
- * para a base de dados nomeada, eliminando a ambiguidade causada pela
- * existência de uma base de dados "(default)".
+ * CORREÇÃO FINAL E DEFINITIVA: Adiciona o nome da base de dados diretamente
+ * nas opções do gatilho onDocumentCreated para forçar a ligação correta.
  */
-// Forçando deploy v1.4
 
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions');
 
-// 🚨 CORREÇÃO ESSENCIAL: Inicializa a aplicação especificando QUAL base de dados usar.
-// Isto força o Admin SDK a conectar-se à instância correta.
+// A inicialização continua explícita para o Admin SDK.
 admin.initializeApp({
     databaseId: 'banco-de-dados-gerenciador-de-tarefas' 
 });
-
-// Agora, dbAdmin irá usar a base de dados correta garantidamente.
 const dbAdmin = admin.firestore();
 
 const APP_URL = 'https://lista20.vercel.app'; 
 setGlobalOptions({ maxInstances: 10 });
 
+// 🚨 CORREÇÃO ESSENCIAL FINAL: Adicionamos a propriedade "database" aqui.
 exports.sendPushNotification = onDocumentCreated({
     document: 'users/{userId}/notifications/{notificationId}',
-    instance: 'banco-de-dados-gerenciador-de-tarefas',
-    region: 'southamerica-east1' // <-- PARA A REGIÃO CORRETA
+    region: 'southamerica-east1',
+    database: 'banco-de-dados-gerenciador-de-tarefas' // Força o gatilho a usar esta base de dados.
 }, async (event) => {
     
-    logger.info("Função sendPushNotification acionada!");
+    logger.info("Função sendPushNotification acionada com sucesso!");
 
     const newNotification = event.data.data();
     const userId = event.params.userId;
     logger.info(`Nova notificação do tipo '${newNotification.type}' para o utilizador: ${userId}`);
 
     try {
-        // Esta chamada agora usa o dbAdmin que foi inicializado corretamente.
         const userDoc = await dbAdmin.doc(`users/${userId}`).get();
         if (!userDoc.exists) {
             logger.warn(`Documento do utilizador ${userId} não encontrado.`);
