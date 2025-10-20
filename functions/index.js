@@ -1,27 +1,26 @@
 /**
  * ARQUIVO: functions/index.js
- * CORREÇÃO FINAL E DEFINITIVA: Adiciona o nome da base de dados diretamente
- * nas opções do gatilho onDocumentCreated para forçar a ligação correta.
+ * VERSÃO FINAL: Simplifica a inicialização do Admin SDK para herdar
+ * a configuração correta da base de dados do ambiente da função.
  */
 
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions');
 
-// A inicialização continua explícita para o Admin SDK.
-admin.initializeApp({
-    databaseId: 'banco-de-dados-gerenciador-de-tarefas' 
-});
+// 🚨 CORREÇÃO: Deixe o Firebase gerir a inicialização.
+// Ele irá herdar a base de dados correta do ambiente.
+admin.initializeApp();
 const dbAdmin = admin.firestore();
 
 const APP_URL = 'https://lista20.vercel.app'; 
 setGlobalOptions({ maxInstances: 10 });
 
-// 🚨 CORREÇÃO ESSENCIAL FINAL: Adicionamos a propriedade "database" aqui.
 exports.sendPushNotification = onDocumentCreated({
     document: 'users/{userId}/notifications/{notificationId}',
     region: 'southamerica-east1',
-    database: 'banco-de-dados-gerenciador-de-tarefas' // Força o gatilho a usar esta base de dados.
+    // A propriedade database aqui continua a ser a mais importante.
+    database: 'banco-de-dados-gerenciador-de-tarefas'
 }, async (event) => {
     
     logger.info("Função sendPushNotification acionada com sucesso!");
@@ -39,6 +38,7 @@ exports.sendPushNotification = onDocumentCreated({
 
         const userData = userDoc.data();
         const fcmToken = userData?.fcmToken;
+        // ... (resto do código permanece igual) ...
         const notificationChannel = userData?.notificationSettings?.channel;
         const isCriticalAlert = newNotification.type === 'task_deadline';
 
