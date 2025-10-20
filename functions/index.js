@@ -1,7 +1,7 @@
 /**
  * ARQUIVO: functions/index.js
- * VERSÃO FINAL E DEFINITIVA: Garante que tanto o gatilho como o SDK de Admin
- * usem explicitamente a base de dados nomeada.
+ * VERSÃO CORRIGIDA: Força o SDK Admin a usar a base de dados nomeada
+ * através da variável de ambiente do próprio Firebase.
  */
 
 const admin = require('firebase-admin');
@@ -11,9 +11,10 @@ const { setGlobalOptions, logger } = require('firebase-functions');
 // Inicializa a aplicação. O SDK irá herdar a configuração do ambiente.
 admin.initializeApp();
 
-// Ao obter a instância do Firestore, especificamos QUAL base de dados queremos usar.
-// Esta é a correção crucial.
-const dbAdmin = admin.firestore(undefined, { databaseId: 'banco-de-dados-gerenciador-de-tarefas' });
+// ESTA É A CORREÇÃO CRUCIAL:
+// Em vez de passar 'undefined', vamos forçar a utilização da variável de ambiente
+// que o Firebase define para a base de dados associada à função.
+const dbAdmin = admin.firestore(process.env.FIRESTORE_DATABASE_ID);
 
 const APP_URL = 'https://lista20.vercel.app'; 
 setGlobalOptions({ maxInstances: 10 });
@@ -31,7 +32,7 @@ exports.sendPushNotification = onDocumentCreated({
     logger.info(`Nova notificação do tipo '${newNotification.type}' para o utilizador: ${userId}`);
 
     try {
-        // Esta chamada agora usa o dbAdmin que aponta para a base de dados correta.
+        // Esta chamada agora usará o dbAdmin que aponta para a base de dados correta.
         const userDoc = await dbAdmin.doc(`users/${userId}`).get();
         if (!userDoc.exists) {
             logger.warn(`Documento do utilizador ${userId} não encontrado na base de dados nomeada.`);
