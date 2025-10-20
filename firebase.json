@@ -1,13 +1,11 @@
 {
   "hosting": {
-    
     "public": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    
     "rewrites": [
       {
         "source": "**",
@@ -17,9 +15,8 @@
   },
   "functions": {
     "source": "functions",
-    
     "runtime": "nodejs20",
-    
+    "database": "banco-de-dados-gerenciador-de-tarefas",
     "env": {
       "FIRESTORE_DATABASE_ID": "banco-de-dados-gerenciador-de-tarefas"
     }
