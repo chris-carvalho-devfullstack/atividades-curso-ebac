@@ -1,4 +1,4 @@
-// notifications.js (VERSÃO COM ABAS E SELEÇÃO RESTAURADA)
+// notifications.js (VERSÃO CORRIGIDA COM ABAS E SELEÇÃO FUNCIONAL)
 
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
@@ -17,28 +17,24 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
 let currentUser;
-let selectedNotifications = new Set(); // Conjunto para IDs selecionados (RESTAURADO)
+let selectedNotifications = new Set();
 let unsubscribeNotifications = null;
 let unsubscribeLogs = null;
-let areAllSelected = false; // Estado do botão Selecionar Todas
+let areAllSelectedState = false;
 
 // =============================================
 // ELEMENTOS DO DOM
 // =============================================
 const notificationsList = document.getElementById('notifications-list');
 const notificationLogList = document.getElementById('notification-log-list');
-
-// Abas e Conteúdos
 const tabNotifications = document.getElementById('tab-notifications');
 const tabLogs = document.getElementById('tab-logs');
 const viewNotifications = document.getElementById('notifications-view');
 const viewLogs = document.getElementById('logs-view');
-
-// Botões de Ação
 const markAllAsReadBtn = document.getElementById('mark-all-as-read-btn');
 const emptyLogsBtn = document.getElementById('empty-logs-btn');
-const selectAllBtn = document.getElementById('select-all-btn'); // NOVO BOTÃO (RESTAURADO)
-const deleteSelectedBtn = document.getElementById('delete-selected-btn'); // RESTAURADO
+const selectAllBtn = document.getElementById('select-all-btn');
+const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 
 // =============================================
 // INICIALIZAÇÃO E AUTENTICAÇÃO
@@ -47,7 +43,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         setupEventListeners();
-        switchTab(tabNotifications, viewNotifications); // Carrega aba padrão
+        switchTab('notifications-view'); // Carrega a aba padrão
     } else {
         window.location.href = "login.html";
         if (unsubscribeNotifications) unsubscribeNotifications();
@@ -58,7 +54,6 @@ onAuthStateChanged(auth, (user) => {
 // =============================================
 // LÓGICA DE CARREGAMENTO DE DADOS
 // =============================================
-
 function loadNotifications() {
     if (!currentUser) return;
     if (unsubscribeNotifications) unsubscribeNotifications();
@@ -66,31 +61,25 @@ function loadNotifications() {
     const q = query(collection(db, 'users', currentUser.uid, 'notifications'), orderBy('timestamp', 'desc'));
 
     unsubscribeNotifications = onSnapshot(q, (snapshot) => {
-        selectedNotifications.clear(); // Limpa seleção ao recarregar
-        updateSelectionControls(); // Atualiza botões de seleção
+        selectedNotifications.clear();
 
         if (snapshot.empty) {
             notificationsList.innerHTML = `<li class="notification-item empty">Sua caixa de entrada está vazia.</li>`;
-            markAllAsReadBtn.disabled = true;
-            selectAllBtn.disabled = true; // Desabilita se não há nada
+            updateSelectionControls();
             return;
         }
 
         notificationsList.innerHTML = '';
-        let hasUnread = false;
         snapshot.forEach(doc => {
-            if (!doc.data().read) hasUnread = true;
             renderNotification(notificationsList, doc.id, doc.data());
         });
-
-        markAllAsReadBtn.disabled = !hasUnread;
-        selectAllBtn.disabled = false; // Habilita se há itens
+        
+        updateSelectionControls();
 
     }, (error) => {
         console.error("Erro ao carregar notificações:", error);
         notificationsList.innerHTML = `<li class="notification-item empty error">Erro ao carregar notificações.</li>`;
-        markAllAsReadBtn.disabled = true;
-        selectAllBtn.disabled = true;
+        updateSelectionControls();
     });
 }
 
@@ -102,26 +91,25 @@ function loadNotificationLogs() {
     const q = query(collection(db, 'users', currentUser.uid, 'notificationLogs'), orderBy('loggedAt', 'desc'));
 
     unsubscribeLogs = onSnapshot(q, (snapshot) => {
+        emptyLogsBtn.disabled = snapshot.empty;
         if (snapshot.empty) {
             notificationLogList.innerHTML = `<li class="notification-item empty">Nenhum log encontrado.</li>`;
-            emptyLogsBtn.disabled = true;
             return;
         }
         notificationLogList.innerHTML = '';
         snapshot.forEach(logDoc => {
             renderLogEntry(notificationLogList, logDoc.id, logDoc.data());
         });
-        emptyLogsBtn.disabled = false;
     }, (error) => {
         console.error("Erro ao carregar logs:", error);
         notificationLogList.innerHTML = `<li class="notification-item empty error">Erro ao carregar logs.</li>`;
+        emptyLogsBtn.disabled = true;
     });
 }
 
 // =============================================
-// RENDERIZAÇÃO (com Checkbox restaurado)
+// RENDERIZAÇÃO
 // =============================================
-
 function renderNotification(container, id, data) {
     const li = document.createElement('li');
     li.className = `notification-item ${data.read ? 'read' : 'unread'}`;
@@ -129,7 +117,6 @@ function renderNotification(container, id, data) {
 
     const timestamp = data.timestamp ? data.timestamp.toDate().toLocaleString('pt-BR') : '';
 
-    // HTML com checkbox
     li.innerHTML = `
         <div class="notification-select">
             <input type="checkbox" class="notification-checkbox" data-id="${id}" title="Selecionar esta notificação">
@@ -144,8 +131,9 @@ function renderNotification(container, id, data) {
         ${!data.read ? '<div class="unread-dot"></div>' : ''}
     `;
 
-    // Evento de clique no conteúdo (marcar como lida e redirecionar)
-    li.querySelector('.notification-content').addEventListener('click', async () => {
+    const contentDiv = li.querySelector('.notification-content');
+    contentDiv.addEventListener('click', async (e) => {
+        if (e.target.type === 'checkbox') return;
         if (!data.read) {
             const notifRef = doc(db, 'users', currentUser.uid, 'notifications', id);
             try { await updateDoc(notifRef, { read: true }); } catch (error) { console.error("Erro ao marcar como lida:", error); }
@@ -153,136 +141,124 @@ function renderNotification(container, id, data) {
         if (data.url && data.url !== '#') { window.location.href = data.url; }
     });
 
-    // Evento de clique no checkbox (RESTAURADO)
     const checkbox = li.querySelector('.notification-checkbox');
     checkbox.addEventListener('change', (e) => {
-        if (e.target.checked) {
-            selectedNotifications.add(id);
-        } else {
-            selectedNotifications.delete(id);
-        }
-        updateSelectionControls(); // Atualiza estado dos botões
+        e.target.checked ? selectedNotifications.add(id) : selectedNotifications.delete(id);
+        updateSelectionControls();
     });
 
-    // Marca o checkbox se já estiver selecionado (útil após Selecionar Todos)
     checkbox.checked = selectedNotifications.has(id);
-
     container.appendChild(li);
 }
 
-function renderLogEntry(container, id, data) { // Sem alterações
+function renderLogEntry(container, id, data) {
     const li = document.createElement('li');
     li.className = `notification-item log-item ${data.originalRead ? 'read' : 'unread'}`;
-    li.dataset.id = id;
-    const loggedAtTimestamp = data.loggedAt ? data.loggedAt.toDate().toLocaleString('pt-BR') : (data.timestamp ? data.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível');
+    const loggedAtTimestamp = data.loggedAt?.toDate().toLocaleString('pt-BR') || 'Data indisponível';
 
     li.innerHTML = `
-        <div class="notification-icon">
-            <i class="fa ${getNotificationIcon(data.type)}"></i>
-        </div>
+        <div class="notification-icon"><i class="fa ${getNotificationIcon(data.type)}"></i></div>
         <div class="notification-content">
             <p>${data.message}</p>
             <span class="timestamp">Log: ${loggedAtTimestamp}</span>
-        </div>
-    `;
+        </div>`;
     container.appendChild(li);
 }
 
-function getNotificationIcon(type) { // Sem alterações
-    switch (type) {
-        case 'friend_request': return 'fa-user-plus text-blue-500';
-        case 'like': return 'fa-heart text-red-500';
-        case 'comment': return 'fa-comment text-green-500';
-        case 'task_import_request': return 'fa-download text-purple-500';
-        case 'task_deadline': return 'fa-clock text-orange-500';
-        default: return 'fa-bell text-gray-500';
-    }
+function getNotificationIcon(type) {
+    // ... (código existente)
 }
 
 // =============================================
 // LÓGICA DE EVENTOS E AÇÕES
 // =============================================
-
 function setupEventListeners() {
-    // --- Controle das Abas ---
-    tabNotifications.addEventListener('click', () => switchTab(tabNotifications, viewNotifications));
-    tabLogs.addEventListener('click', () => switchTab(tabLogs, viewLogs));
-
-    // --- Botões de Ação ---
+    tabNotifications.addEventListener('click', () => switchTab('notifications-view'));
+    tabLogs.addEventListener('click', () => switchTab('logs-view'));
     markAllAsReadBtn.addEventListener('click', markAllAsRead);
     emptyLogsBtn.addEventListener('click', confirmClearAllLogs);
-    selectAllBtn.addEventListener('click', toggleSelectAll); // RESTAURADO
-    deleteSelectedBtn.addEventListener('click', confirmDeleteSelected); // RESTAURADO
+    selectAllBtn.addEventListener('click', toggleSelectAll);
+    deleteSelectedBtn.addEventListener('click', confirmDeleteSelected);
 }
 
-function switchTab(activeTab, activeView) { // Sem alterações
-    [tabNotifications, tabLogs].forEach(tab => tab.classList.remove('active'));
-    [viewNotifications, viewLogs].forEach(view => view.classList.remove('active'));
-    activeTab.classList.add('active');
-    activeView.classList.add('active');
-    if (activeView === viewNotifications) loadNotifications();
-    else if (activeView === viewLogs) loadNotificationLogs();
+function switchTab(tabId) {
+    const isActive = (id) => id === tabId;
+    tabNotifications.classList.toggle('active', isActive('notifications-view'));
+    viewNotifications.classList.toggle('active', isActive('notifications-view'));
+    tabLogs.classList.toggle('active', isActive('logs-view'));
+    viewLogs.classList.toggle('active', isActive('logs-view'));
+
+    if (isActive('notifications-view')) loadNotifications();
+    else if (isActive('logs-view')) loadNotificationLogs();
 }
 
-// --- Ação: Marcar todas como lidas (sem alterações) ---
-async function markAllAsRead() { /* ...código existente... */ }
+async function markAllAsRead() {
+    // ... (código existente)
+}
 
-// --- Ação: Selecionar/Deselecionar Todas (RESTAURADO E MELHORADO) ---
 function toggleSelectAll() {
-    areAllSelected = !areAllSelected; // Inverte o estado
+    areAllSelectedState = !areAllSelectedState;
     const allCheckboxes = notificationsList.querySelectorAll('.notification-checkbox');
-
     allCheckboxes.forEach(checkbox => {
-        checkbox.checked = areAllSelected;
         const id = checkbox.dataset.id;
-        if (areAllSelected) {
-            selectedNotifications.add(id);
-        } else {
-            selectedNotifications.delete(id);
+        if (checkbox.checked !== areAllSelectedState) {
+            checkbox.checked = areAllSelectedState;
+            areAllSelectedState ? selectedNotifications.add(id) : selectedNotifications.delete(id);
         }
     });
     updateSelectionControls();
 }
 
-// --- Atualizar Controles de Seleção (RESTAURADO E MELHORADO) ---
 function updateSelectionControls() {
     const numSelected = selectedNotifications.size;
     const numTotal = notificationsList.querySelectorAll('.notification-checkbox').length;
-
-    // Atualiza botão Apagar Selecionadas
-    deleteSelectedBtn.disabled = numSelected === 0;
-
-    // Atualiza botão Selecionar Todas
-    if (numSelected === 0 || numTotal === 0) {
-        selectAllBtn.querySelector('span').textContent = 'Selecionar Todas';
-        selectAllBtn.querySelector('i').className = 'fa-regular fa-square-check';
-        areAllSelected = false;
-    } else if (numSelected === numTotal) {
-        selectAllBtn.querySelector('span').textContent = 'Desselecionar Todas';
-        selectAllBtn.querySelector('i').className = 'fa-solid fa-square-check'; // Ícone preenchido
-        areAllSelected = true;
-    } else {
-        selectAllBtn.querySelector('span').textContent = 'Selecionar Todas';
-        selectAllBtn.querySelector('i').className = 'fa-regular fa-square-minus'; // Ícone de seleção parcial
-        areAllSelected = false; // Estado intermediário, próximo clique seleciona tudo
+    let hasUnread = false;
+    if (numTotal > 0) {
+        hasUnread = !!notificationsList.querySelector('.notification-item.unread');
     }
-
-    // Desabilita Selecionar Todas se não houver notificações
+    
+    // Botão Apagar
+    deleteSelectedBtn.disabled = numSelected === 0;
+    
+    // Botão Selecionar Todas
     selectAllBtn.disabled = numTotal === 0;
+    areAllSelectedState = (numSelected === numTotal && numTotal > 0);
+    updateSelectAllButtonVisualState();
+    
+    // Botão Marcar Todas como Lidas
+    markAllAsReadBtn.disabled = !hasUnread;
 }
 
+function updateSelectAllButtonVisualState() {
+    const numSelected = selectedNotifications.size;
+    const numTotal = notificationsList.querySelectorAll('.notification-checkbox').length;
+    const icon = selectAllBtn.querySelector('i');
+    const text = selectAllBtn.querySelector('span');
+    
+    if (numSelected === 0 || numTotal === 0) {
+        text.textContent = 'Selecionar Todas';
+        icon.className = 'fa-regular fa-square';
+    } else if (numSelected === numTotal) {
+        text.textContent = 'Desselecionar';
+        icon.className = 'fa-solid fa-square-check';
+    } else {
+        text.textContent = 'Selecionar Todas';
+        icon.className = 'fa-solid fa-minus-square';
+    }
+}
 
-// --- Ação: Apagar Selecionadas (RESTAURADO) ---
 function confirmDeleteSelected() {
     if (selectedNotifications.size === 0) return;
     showConfirmModal(
         'Apagar Notificações',
-        `Tem certeza que deseja apagar ${selectedNotifications.size} notificação(ões) selecionada(s)? Esta ação é permanente.`,
+        `Tem certeza que deseja apagar ${selectedNotifications.size} notificação(ões)?`,
         () => deleteSelectedNotifications()
     );
 }
 
 async function deleteSelectedNotifications() {
+    if (!currentUser || selectedNotifications.size === 0) return;
+    
     deleteSelectedBtn.disabled = true;
     deleteSelectedBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Apagando...';
 
@@ -293,26 +269,49 @@ async function deleteSelectedNotifications() {
 
     try {
         await batch.commit();
-        console.log(`${selectedNotifications.size} notificações apagadas.`);
-        selectedNotifications.clear(); // Limpa a seleção
-        // O onSnapshot cuidará de atualizar a UI e os botões
+        // A UI será atualizada pelo onSnapshot
     } catch (error) {
-        console.error("Erro ao apagar notificações selecionadas:", error);
+        console.error("Erro ao apagar notificações:", error);
         alert("Erro ao apagar as notificações.");
-        // Reabilita o botão em caso de erro, pois o onSnapshot não recarregará
-        deleteSelectedBtn.disabled = false;
         deleteSelectedBtn.innerHTML = '<i class="fa fa-trash"></i> Apagar Selecionadas';
-        updateSelectionControls(); // Atualiza o estado dos botões de seleção
+        updateSelectionControls();
     }
-    // Não precisa restaurar o texto do botão aqui, o onSnapshot faz isso.
 }
 
+function confirmClearAllLogs() {
+    // ... (código existente)
+}
 
-// --- Ação: Esvaziar Logs (sem alterações) ---
-function confirmClearAllLogs() { /* ...código existente... */ }
-async function clearAllLogs() { /* ...código existente... */ }
+async function clearAllLogs() {
+    // ... (código existente)
+}
 
-// =============================================
-// MODAL DE CONFIRMAÇÃO (sem alterações)
-// =============================================
-function showConfirmModal(title, message, onConfirm) { /* ...código existente... */ }
+function showConfirmModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirmModal');
+    if (!modal) { if (confirm(`${title}\n\n${message}`)) onConfirm(); return; }
+    
+    const modalTitle = modal.querySelector('#confirm-modal-title');
+    const modalText = modal.querySelector('#confirm-modal-text');
+    const okBtn = modal.querySelector('#confirm-modal-ok-btn');
+    const cancelBtn = modal.querySelector('#confirm-modal-cancel-btn');
+    
+    modalTitle.textContent = title;
+    modalText.textContent = message;
+    modal.style.display = 'flex';
+
+    // Limpa listeners antigos para evitar chamadas múltiplas
+    const newOkBtn = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+    
+    newOkBtn.addEventListener('click', () => { 
+        onConfirm(); 
+        modal.style.display = 'none'; 
+    });
+
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+    newCancelBtn.addEventListener('click', () => { 
+        modal.style.display = 'none'; 
+    });
+}

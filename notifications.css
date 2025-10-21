@@ -1,4 +1,4 @@
-/* notifications.css (VERSÃO COM ABAS E SELEÇÃO RESTAURADA) */
+/* notifications.css (VERSÃO REVISADA) */
 
 .notifications-container {
     max-width: 800px;
@@ -28,7 +28,7 @@
     font-weight: 600;
     color: #888;
     position: relative;
-    transition: color 0.3s;
+    transition: color 0.3s, border-color 0.3s;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -36,7 +36,7 @@
 }
 
 .tab-link:hover {
-    color: #333;
+    color: #555; /* Cor um pouco mais escura no hover */
 }
 
 .tab-link.active {
@@ -62,58 +62,65 @@
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid #f0f0f0;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
-.notifications-header h3 { /* Título dentro da aba Notificações */
-    margin: 0;
-    font-size: 1.3rem;
-    color: #333;
-    /* Escondido na aba de notificações para dar espaço aos controles */
-    display: none;
-}
-#logs-view .notifications-header h3 { /* Mostra o h3 apenas na aba de logs */
-    display: block;
-}
-
+/* Esconde o h3 na aba de notificações para dar espaço aos controles */
+#notifications-view .notifications-header h3 { display: none; }
+/* Mostra o h3 apenas na aba de logs */
+#logs-view .notifications-header h3 { margin: 0; font-size: 1.3rem; color: #333; }
 
 /* --- Ações na Aba de Notificações --- */
-#notifications-view .notifications-header {
-    flex-wrap: wrap; /* Permite quebrar linha em telas menores */
-    gap: 10px; /* Espaçamento entre grupos de botões */
-}
-
 .notification-actions {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.btn-small { /* Classe para botões menores como Selecionar e Apagar */
-    padding: 6px 12px !important;
-    font-size: 0.85rem !important;
-}
-
-#select-all-btn span {
-    margin-left: 4px; /* Espaço entre ícone e texto */
-}
-
-#delete-selected-btn:disabled {
-    background-color: #f8d7da;
-    color: #721c24;
-    border-color: #f5c6cb;
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-/* --- Botões Gerais no Header --- */
-.notifications-header .btn-neutral,
-.notifications-header .btn-danger {
+/* --- Botões no Header --- */
+/* Garante que os botões tenham estilo base se main.css não carregar */
+.notifications-header button {
     padding: 8px 14px;
     font-size: 0.9rem;
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Estilos base vêm de main.css */
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+}
+.notifications-header button:hover:not(:disabled) {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+/* Sobrescreve/Define estilos específicos */
+.notifications-header .btn-danger { background-color: #dc3545; color: white; border-color: #dc3545;}
+.notifications-header .btn-danger:hover:not(:disabled) { background-color: #c82333; border-color: #c82333; }
+.notifications-header .btn-neutral { background-color: #f8f9fa; color: #343a40; border-color: #dee2e6;}
+.notifications-header .btn-neutral:hover:not(:disabled) { background-color: #e2e6ea; border-color: #ced4da; }
+
+/* Classe para botões menores */
+.btn-small {
+    padding: 6px 12px !important;
+    font-size: 0.85rem !important;
+}
+
+/* Espaço entre ícone e texto */
+.notifications-header button span { margin-left: 5px; }
+
+/* Estilo para botões desabilitados */
+.notifications-header button:disabled {
+    background-color: #e9ecef !important; /* Cor mais clara */
+    color: #adb5bd !important; /* Cor mais apagada */
+    border-color: #dee2e6 !important;
+    cursor: not-allowed;
+    opacity: 0.65;
+    box-shadow: none;
+    transform: none;
 }
 
 /* ============================================= */
@@ -128,124 +135,45 @@
 .notification-item {
     display: flex;
     align-items: center;
-    gap: 10px; /* Espaçamento entre checkbox, ícone e conteúdo */
+    gap: 10px;
     padding: 12px 15px;
     border-radius: 8px;
     margin-bottom: 10px;
     transition: background-color 0.2s;
-    position: relative;
     border: 1px solid #eee;
 }
 
-/* --- Checkbox de Seleção (Restaurado) --- */
-.notification-select {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-}
-.notification-checkbox {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    accent-color: var(--primary-color, #4CAF50); /* Cor do check */
-}
+/* --- Checkbox de Seleção --- */
+.notification-select { flex-shrink: 0; display: flex; align-items: center; }
+.notification-checkbox { cursor: pointer; width: 18px; height: 18px; accent-color: var(--primary-color, #4CAF50); }
 
 /* --- Ícone --- */
-.notification-icon {
-    flex-shrink: 0;
-    width: 30px;
-    text-align: center;
-}
-.notification-icon i {
-    font-size: 1.4rem;
-}
+.notification-icon { flex-shrink: 0; width: 30px; text-align: center; }
+.notification-icon i { font-size: 1.4rem; }
 
 /* --- Conteúdo (Clicável) --- */
-.notification-content {
-    flex-grow: 1;
-    cursor: pointer;
-    /* Previne que o clique no checkbox acione o clique no conteúdo */
-    position: relative;
-    z-index: 1;
-}
-.notification-content p {
-    margin: 0 0 4px 0;
-    line-height: 1.4;
-}
-.notification-content .timestamp {
-    font-size: 0.8rem;
-    color: #888;
-    font-weight: 400;
-}
+.notification-content { flex-grow: 1; cursor: pointer; }
+.notification-content p { margin: 0 0 4px 0; line-height: 1.4; }
+.notification-content .timestamp { font-size: 0.8rem; color: #888; }
 
 /* --- Estado Não Lido --- */
-.notification-item.unread {
-    background-color: #eaf5ff; /* Tom de azul mais suave */
-    border-left: 4px solid #007bff; /* Borda azul à esquerda */
-    padding-left: 11px; /* Compensa a borda */
-}
-.notification-item.unread .notification-content p {
-    font-weight: 600;
-    color: #222;
-}
+.notification-item.unread { background-color: #eaf5ff; border-left: 4px solid #007bff; padding-left: 11px; }
+.notification-item.unread .notification-content p { font-weight: 600; }
 
 /* --- Hover --- */
-.notification-item:not(.log-item):not(.empty):not(.placeholder):hover {
-    background-color: #f9f9f9;
-}
-
-/* --- Bolinha de Não Lido (Opcional, pode remover se a borda for suficiente) --- */
-.unread-dot {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
-    background-color: #007bff;
-    border-radius: 50%;
-}
-.notification-item.read .unread-dot {
-   display: none;
-}
-
+.notification-item:not(.log-item):not(.empty):not(.placeholder):hover { background-color: #f9f9f9; }
 
 /* --- Itens de Log (Sem Checkbox) --- */
-.log-item {
-    cursor: default;
-    background-color: #fdfdfd;
-}
-.log-item .notification-select { /* Esconde checkbox nos logs */
-    display: none;
-}
-.log-item .notification-content {
-    cursor: default;
-}
-.log-item:hover {
-    background-color: #fdfdfd;
-}
-.log-item .timestamp {
-    font-size: 0.75rem;
-    color: #999;
-}
+.log-item { cursor: default; }
+.log-item .notification-select { display: none; }
+.log-item:hover { background-color: transparent; }
+.log-item .timestamp { font-size: 0.75rem; color: #999; }
 
 /* --- Placeholders e Erros --- */
-.notification-item.empty,
-.notification-item.placeholder {
-    justify-content: center;
-    font-style: italic;
-    color: #888;
-    cursor: default;
-    border: 1px dashed #ddd;
-    background-color: #fafafa;
-}
-.notification-item.error {
-    color: #dc3545;
-    border-color: #f5c6cb;
-    background-color: #f8d7da;
-}
+.notification-item.placeholder, .notification-item.empty { justify-content: center; font-style: italic; color: #888; background-color: #fafafa; border-style: dashed; }
+.notification-item.error { color: #dc3545; border-color: #f5c6cb; background-color: #f8d7da; }
 
-/* --- Cores dos Ícones (Classes de Texto) --- */
+/* --- Cores dos Ícones --- */
 .text-blue-500 { color: #007bff; }
 .text-red-500 { color: #dc3545; }
 .text-green-500 { color: #28a745; }

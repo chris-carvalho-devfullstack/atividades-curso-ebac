@@ -6,7 +6,8 @@
     <title>Notificações - Gerenciador de Tarefas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="notifications.css"> </head>
+    <link rel="stylesheet" href="notifications.css">
+</head>
 <body>
     <div id="nav-placeholder"></div>
 
@@ -28,32 +29,29 @@
 
         <div id="notifications-view" class="tab-content active">
             <div class="notifications-header">
-                {/* Controles de Seleção e Ação */}
                 <div class="notification-actions">
-                    <button id="select-all-btn" class="btn-neutral btn-small" title="Selecionar Todas">
-                        <i class="fa-regular fa-square-check"></i> <span>Selecionar Todas</span>
+                    <button id="select-all-btn" class="btn-neutral btn-small" title="Selecionar/Desselecionar Todas" disabled>
+                        <i class="fa-regular fa-square"></i> <span>Selecionar Todas</span>
                     </button>
                     <button id="delete-selected-btn" class="btn-danger btn-small" disabled>
-                        <i class="fa fa-trash"></i> Apagar Selecionadas
+                        <i class="fa fa-trash"></i> <span>Apagar Selecionadas</span>
                     </button>
                 </div>
-                {/* Botão Marcar como Lidas */}
-                <button id="mark-all-as-read-btn" class="btn-neutral">
-                    <i class="fa-solid fa-check-double"></i> Marcar todas como lidas
+                <button id="mark-all-as-read-btn" class="btn-neutral" disabled>
+                    <i class="fa-solid fa-check-double"></i> <span>Marcar como Lidas</span>
                 </button>
             </div>
             <ul id="notifications-list">
                 <li class="notification-item placeholder">
                     <i class="fa fa-spinner fa-spin"></i> Carregando notificações...
                 </li>
-                {/* Notificações renderizadas pelo JS com checkboxes */}
-            </ul>
+                </ul>
         </div>
 
         <div id="logs-view" class="tab-content">
             <div class="notifications-header">
                 <h3>Histórico de Notificações</h3>
-                <button id="empty-logs-btn" class="btn-danger">
+                <button id="empty-logs-btn" class="btn-danger" disabled>
                     <i class="fa-solid fa-eraser"></i> Esvaziar Logs
                 </button>
             </div>
@@ -61,8 +59,7 @@
                  <li class="notification-item placeholder">
                     <i class="fa fa-spinner fa-spin"></i> Carregando logs...
                 </li>
-                {/* Logs renderizados pelo JS (sem checkboxes) */}
-            </ul>
+                </ul>
         </div>
     </main>
 
@@ -88,6 +85,6 @@
     <script type="module" src="firebase-config.js"></script>
     <script type="module" src="auth-listener.js"></script>
     <script type="module" src="nav.js"></script>
-    <script type="module" src="notifications.js"></script> {/* JS Atualizado abaixo */}
+    <script type="module" src="notifications.js"></script>
 </body>
 </html>
