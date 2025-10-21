@@ -1,33 +1,30 @@
 /**
  * ARQUIVO: functions/index.js
- * VERSÃO FINAL CORRIGIDA: Força a inicialização do Admin SDK com a URL
- * do banco de dados do projeto para eliminar qualquer ambiguidade.
+ * VERSÃO ATUALIZADA: Aponta para o banco de dados (default).
  */
 
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions');
 
-// --- CORREÇÃO CRUCIAL ---
-// Inicializa a aplicação FORÇANDO a URL do banco de dados do seu projeto.
-// Isso garante que todas as operações subsequentes usem o contexto correto.
+// Inicializa a aplicação com a URL do banco de dados (Realtime Database, se usar)
+// A inicialização padrão sem argumentos já é suficiente para o Firestore usar o default.
 admin.initializeApp({
-  databaseURL: "https://gerenciador-tarefas-fd5be.firebaseio.com"
+  databaseURL: "https://gerenciador-tarefas-fd5be.firebaseio.com" // Mantenha se precisar do RDB
 });
-// -------------------------
 
-// Agora, obtemos a instância do Firestore especificando o databaseId.
-const dbAdmin = admin.firestore(undefined, { databaseId: 'banco-de-dados-gerenciador-de-tarefas' });
+// MODIFICADO: Obtém a instância do Firestore PADRÃO
+const dbAdmin = admin.firestore();
 
-const APP_URL = 'https://lista20.vercel.app'; 
+const APP_URL = 'https://lista20.vercel.app';
 setGlobalOptions({ maxInstances: 10 });
 
 exports.sendPushNotification = onDocumentCreated({
     document: 'users/{userId}/notifications/{notificationId}',
-    region: 'southamerica-east1',
-    database: 'banco-de-dados-gerenciador-de-tarefas'
+    region: 'southamerica-east1'
+    // MODIFICADO: Removida a linha 'database: ...'
 }, async (event) => {
-    
+
     logger.info("Função sendPushNotification acionada com sucesso!");
 
     const newNotification = event.data.data();
@@ -35,9 +32,10 @@ exports.sendPushNotification = onDocumentCreated({
     logger.info(`Nova notificação do tipo '${newNotification.type}' para o utilizador: ${userId}`);
 
     try {
+        // Usa dbAdmin que agora aponta para o banco de dados (default)
         const userDoc = await dbAdmin.doc(`users/${userId}`).get();
         if (!userDoc.exists) {
-            logger.warn(`Documento do utilizador ${userId} não encontrado na base de dados nomeada.`);
+            logger.warn(`Documento do utilizador ${userId} não encontrado na base de dados (default).`);
             return;
         }
 
@@ -49,7 +47,7 @@ exports.sendPushNotification = onDocumentCreated({
         logger.info(`Configurações para ${userId}: canal='${notificationChannel}', temToken=${!!fcmToken}, alertaCrítico=${isCriticalAlert}`);
 
         if (fcmToken && (notificationChannel === 'push' || isCriticalAlert)) {
-            
+
             logger.info(`Condição para envio de push satisfeita. A enviar para o token: ${fcmToken.substring(0, 20)}...`);
 
             const payload = {
