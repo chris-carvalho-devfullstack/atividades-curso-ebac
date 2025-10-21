@@ -1,8 +1,8 @@
 /**
  * ARQUIVO: functions/index.js
- * VERSÃO ATUALIZADA: Aponta para o banco de dados (default).
+ * VERSÃO ATUALIZADA: Aponta para o banco de dados (default) e inclui log de trigger.
  */
-
+// Forçando atualização - Oct 21, 2025
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { setGlobalOptions, logger } = require('firebase-functions');
@@ -13,7 +13,7 @@ admin.initializeApp({
   databaseURL: "https://gerenciador-tarefas-fd5be.firebaseio.com" // Mantenha se precisar do RDB
 });
 
-// MODIFICADO: Obtém a instância do Firestore PADRÃO
+// Obtém a instância do Firestore PADRÃO
 const dbAdmin = admin.firestore();
 
 const APP_URL = 'https://lista20.vercel.app';
@@ -22,10 +22,14 @@ setGlobalOptions({ maxInstances: 10 });
 exports.sendPushNotification = onDocumentCreated({
     document: 'users/{userId}/notifications/{notificationId}',
     region: 'southamerica-east1'
-    // MODIFICADO: Removida a linha 'database: ...'
+    // Não precisa da linha 'database: ...' aqui para o default
 }, async (event) => {
 
-    logger.info("Função sendPushNotification acionada com sucesso!");
+    // ===== INÍCIO DA LINHA DE LOG ADICIONADA =====
+    logger.info("sendPushNotification TRIGGERED! Resource:", event.resource);
+    // ===== FIM DA LINHA DE LOG ADICIONADA =====
+
+    logger.info("Função sendPushNotification acionada com sucesso!"); // Log original que pode ser mantido ou removido
 
     const newNotification = event.data.data();
     const userId = event.params.userId;
@@ -41,7 +45,9 @@ exports.sendPushNotification = onDocumentCreated({
 
         const userData = userDoc.data();
         const fcmToken = userData?.fcmToken;
-        const notificationChannel = userData?.notificationSettings?.channel;
+        // Garante que notificationSettings exista antes de tentar acessar 'channel'
+        const notificationSettings = userData?.notificationSettings || {};
+        const notificationChannel = notificationSettings.channel;
         const isCriticalAlert = newNotification.type === 'task_deadline';
 
         logger.info(`Configurações para ${userId}: canal='${notificationChannel}', temToken=${!!fcmToken}, alertaCrítico=${isCriticalAlert}`);
@@ -54,22 +60,23 @@ exports.sendPushNotification = onDocumentCreated({
                 notification: {
                     title: isCriticalAlert ? '🚨 ALERTA DE PRAZO URGENTE' : 'Nova Atividade Social',
                     body: newNotification.message,
-                    icon: `${APP_URL}/media/icons/icon-192x192.png`
+                    icon: `${APP_URL}/media/icons/icon-192x192.png` // Verifique se este caminho está correto no seu deploy
                 },
                 webpush: {
                     fcm_options: {
-                      link: `${APP_URL}${newNotification.url}`
+                      link: `${APP_URL}${newNotification.url || '/'}` // Adiciona uma URL padrão caso não exista
                     }
                 }
             };
 
+            // Envia a notificação
             await admin.messaging().sendToDevice(fcmToken, payload);
             logger.info(`Push enviado com sucesso para ${userId}!`);
 
         } else {
-            logger.info("Condição para envio de push não satisfeita. A ignorar.");
+            logger.info("Condição para envio de push não satisfeita (sem token, canal errado ou não crítico). A ignorar.");
         }
     } catch (error) {
         logger.error(`Falha CRÍTICA ao processar push para ${userId}:`, error);
     }
-});
+}); // Fim da função exports.sendPushNotification
