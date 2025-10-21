@@ -1,4 +1,5 @@
 /* notifications.css */
+
 .notifications-container {
     max-width: 800px;
     margin: 30px auto;
@@ -10,49 +11,114 @@
 
 .notifications-header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between; /* Alinha os grupos de controle */
+    align-items: center;
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid #eee;
 }
 
+/* NOVO: Estilos para controles de seleção */
+.selection-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#select-all-checkbox {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    margin-left: 5px; /* Pequeno espaçamento à esquerda */
+}
+
+#delete-selected-btn {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    /* Estilos de botão perigo já devem estar em main.css */
+}
+
+#delete-selected-btn:disabled {
+    background-color: #f8d7da; /* Cor de fundo desabilitado */
+    color: #721c24; /* Cor do texto desabilitado */
+    border-color: #f5c6cb; /* Cor da borda desabilitado */
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Grupo de botões à direita */
+.view-controls {
+    display: flex;
+    gap: 10px;
+}
+
+/* Estilos para botões neutros (reutilizado de main.css ou definido aqui) */
+.notifications-header .btn-neutral,
+#close-log-view-btn { /* Aplicar também ao botão de fechar log */
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-weight: 600;
+    cursor: pointer;
+    background: #f5f5f5;
+    color: #333;
+    transition: transform .12s, background-color .12s, box-shadow .12s;
+}
+
+.notifications-header .btn-neutral:hover,
+#close-log-view-btn:hover {
+    background: #e9e9e9;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Lista de Notificações */
 #notifications-list {
     list-style: none;
     padding: 0;
 }
 
+/* Estilos para layout do item de notificação com checkbox */
 .notification-item {
     display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
+    align-items: center; /* Alinha verticalmente */
+    gap: 10px; /* Espaçamento geral */
+    padding: 12px 15px;
     border-radius: 8px;
     margin-bottom: 10px;
-    cursor: pointer;
     transition: background-color 0.2s;
     position: relative;
     border: 1px solid #eee;
 }
 
-.notification-item.unread {
-    background-color: #f0f8ff;
-    font-weight: 600;
+.notification-select {
+    flex-shrink: 0; /* Impede que o checkbox encolha */
+    display: flex; /* Para alinhar o checkbox se necessário */
+    align-items: center;
 }
 
-.notification-item:hover {
-    background-color: #e9ecef;
+.notification-checkbox {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
 }
 
-.notification-item.empty, .notification-item.placeholder {
-    justify-content: center;
-    font-style: italic;
-    color: #888;
-    cursor: default;
+.notification-icon {
+    flex-shrink: 0; /* Impede que o ícone encolha */
+    width: 30px; /* Largura fixa para alinhar */
+    text-align: center;
 }
-
 .notification-icon i {
-    font-size: 1.5rem;
-    color: #4CAF50;
+    font-size: 1.4rem;
+    /* Cores aplicadas via JS com classes de texto */
+}
+
+.notification-content {
+    flex-grow: 1; /* Ocupa o espaço restante */
+    cursor: pointer; /* Indica que o conteúdo é clicável */
 }
 
 .notification-content p {
@@ -63,7 +129,7 @@
 .notification-content .timestamp {
     font-size: 0.8rem;
     color: #888;
-    font-weight: 400;
+    font-weight: 400; /* Reduz o peso no modo unread */
 }
 
 .unread-dot {
@@ -77,20 +143,113 @@
     border-radius: 50%;
 }
 
-/* Adicione este código ao final de notifications.css */
-
-.notifications-header .btn-neutral {
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: none;
-    font-weight: 700;
-    cursor: pointer;
-    background: #eee;
-    color: #333;
-    transition: transform .12s, background-color .12s;
+.notification-item.unread {
+    background-color: #f0f8ff; /* Fundo azul claro para não lidas */
 }
 
-.notifications-header .btn-neutral:hover {
-    background: #e0e0e0;
+/* Remove o negrito do item não lido para melhor leitura com checkbox */
+.notification-item.unread .notification-content p {
+    font-weight: normal;
+}
+
+.notification-item:not(.log-item):hover { /* Aplicar hover apenas se não for log */
+    background-color: #e9ecef;
+}
+
+.notification-item.empty,
+.notification-item.placeholder {
+    justify-content: center;
+    font-style: italic;
+    color: #888;
+    cursor: default;
+    border: 1px dashed #ddd;
+    background-color: #fafafa;
+}
+.notification-item.error {
+    color: #dc3545;
+    border-color: #f5c6cb;
+    background-color: #f8d7da;
+}
+
+/* Estilos para a seção de Log */
+#notification-log-container h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.4rem;
+    color: #555;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+#notification-log-list {
+    list-style: none;
+    padding: 0;
+}
+
+#notification-log-list .log-item {
+    cursor: default; /* Logs não são clicáveis */
+    background-color: #f9f9f9; /* Fundo ligeiramente diferente */
+}
+
+#notification-log-list .log-item:hover {
+    background-color: #f1f1f1; /* Hover sutil */
+}
+
+#notification-log-list .log-item .timestamp {
+    font-size: 0.75rem; /* Timestamp menor para logs */
+    color: #999;
+}
+
+/* Ocultar checkbox e bolinha de não lido nos logs */
+#notification-log-list .log-item .notification-select,
+#notification-log-list .log-item .unread-dot {
+    display: none;
+}
+
+/* Cores dos ícones (classes de texto para serem usadas no JS) */
+.text-blue-500 { color: #007bff; }
+.text-red-500 { color: #dc3545; }
+.text-green-500 { color: #28a745; }
+.text-purple-500 { color: #6f42c1; }
+.text-orange-500 { color: #fd7e14; }
+.text-gray-500 { color: #6c757d; }
+
+/* Adicionar botões de perigo e neutro se não existirem em main.css */
+/* Se já existirem, pode remover esta parte */
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.btn-danger:hover {
+    background-color: #c82333;
+}
+.btn-danger:disabled {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-neutral {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-weight: 600;
+    cursor: pointer;
+    background: #f5f5f5;
+    color: #333;
+    transition: transform .12s, background-color .12s, box-shadow .12s;
+}
+.btn-neutral:hover {
+    background: #e9e9e9;
     transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
