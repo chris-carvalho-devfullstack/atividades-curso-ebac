@@ -6,47 +6,63 @@
     <title>Notificações - Gerenciador de Tarefas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="notifications.css">
-</head>
+    <link rel="stylesheet" href="notifications.css"> </head>
 <body>
     <div id="nav-placeholder"></div>
 
     <header class="task-form-header">
-        <h1>Suas Notificações</h1>
-        <p>Veja aqui todas as suas atualizações e interações.</p>
+        <h1>Central de Notificações</h1>
+        <p>Veja e gerencie suas atualizações e interações.</p>
     </header>
 
     <main class="notifications-container">
-        <div class="notifications-header">
-            <div class="selection-controls">
-                <input type="checkbox" id="select-all-checkbox" title="Selecionar Todas">
-                <button id="delete-selected-btn" class="btn-danger" disabled><i class="fa fa-trash"></i> Apagar Selecionadas</button>
-            </div>
-            <div class="view-controls">
-                 <button id="mark-all-as-read-btn" class="btn-neutral">Marcar todas como lidas</button>
-                 <button id="toggle-log-view-btn" class="btn-neutral">Ver Logs</button>
-             </div>
+
+        <div class="notifications-tabs">
+            <button id="tab-notifications" class="tab-link active" data-tab="notifications-view">
+                <i class="fa-solid fa-inbox"></i> Caixa de Entrada
+            </button>
+            <button id="tab-logs" class="tab-link" data-tab="logs-view">
+                <i class="fa-solid fa-history"></i> Histórico (Logs)
+            </button>
         </div>
 
-        {/* Lista Principal - Sem alterações estruturais */}
-        <ul id="notifications-list">
-            <li class="notification-item placeholder">
-                <i class="fa fa-spinner fa-spin"></i> Carregando notificações...
-            </li>
-        </ul>
+        <div id="notifications-view" class="tab-content active">
+            <div class="notifications-header">
+                {/* Controles de Seleção e Ação */}
+                <div class="notification-actions">
+                    <button id="select-all-btn" class="btn-neutral btn-small" title="Selecionar Todas">
+                        <i class="fa-regular fa-square-check"></i> <span>Selecionar Todas</span>
+                    </button>
+                    <button id="delete-selected-btn" class="btn-danger btn-small" disabled>
+                        <i class="fa fa-trash"></i> Apagar Selecionadas
+                    </button>
+                </div>
+                {/* Botão Marcar como Lidas */}
+                <button id="mark-all-as-read-btn" class="btn-neutral">
+                    <i class="fa-solid fa-check-double"></i> Marcar todas como lidas
+                </button>
+            </div>
+            <ul id="notifications-list">
+                <li class="notification-item placeholder">
+                    <i class="fa fa-spinner fa-spin"></i> Carregando notificações...
+                </li>
+                {/* Notificações renderizadas pelo JS com checkboxes */}
+            </ul>
+        </div>
 
-        {/* Seção de Logs - Adicionado botão Esvaziar */}
-        <div id="notification-log-container" style="display: none; margin-top: 30px;">
-            <div class="log-header"> {/* Novo wrapper para título e botão */}
-                <h2><i class="fa fa-history"></i> Log de Notificações</h2>
-                <button id="empty-logs-btn" class="btn-danger"><i class="fa fa-eraser"></i> Esvaziar Logs</button> {/* NOVO BOTÃO */}
+        <div id="logs-view" class="tab-content">
+            <div class="notifications-header">
+                <h3>Histórico de Notificações</h3>
+                <button id="empty-logs-btn" class="btn-danger">
+                    <i class="fa-solid fa-eraser"></i> Esvaziar Logs
+                </button>
             </div>
             <ul id="notification-log-list">
                  <li class="notification-item placeholder">
                     <i class="fa fa-spinner fa-spin"></i> Carregando logs...
                 </li>
+                {/* Logs renderizados pelo JS (sem checkboxes) */}
             </ul>
-             <button id="close-log-view-btn" class="btn-neutral" style="margin-top: 15px;">Fechar Logs</button>
         </div>
     </main>
 
@@ -54,8 +70,7 @@
         <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
     </footer>
 
-    {/* Modal de confirmação (Usado para Apagar Selecionadas e Esvaziar Logs) */}
-     <div id="confirmModal" class="modal" style="display: none;">
+    <div id="confirmModal" class="modal" style="display: none;">
       <div class="modal-content" style="max-width: 420px;">
         <div class="modal-header">
           <h2 id="confirm-modal-title">Confirmar Ação</h2>
