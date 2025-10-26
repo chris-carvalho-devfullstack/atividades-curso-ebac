@@ -1,0 +1,88 @@
+/* toast-notification.css */
+
+.toast-container {
+  position: fixed;
+  top: 20px; /* Ajuste se colidir com o menu */
+  right: 20px;
+  z-index: 10000; /* Garante que fique acima de outros elementos */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 350px;
+}
+
+.toast-notification {
+  background-color: #fff;
+  color: #333;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  position: relative; /* Para a barra de progresso */
+  overflow: hidden; /* Para a barra de progresso */
+  border-left: 5px solid var(--primary-color, #4CAF50); /* Usa a cor primária do tema */
+}
+
+.toast-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast-notification.fade-out {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.toast-icon {
+  font-size: 1.5rem;
+  color: var(--primary-color, #4CAF50); /* Usa a cor primária do tema */
+  flex-shrink: 0;
+}
+
+.toast-content h4 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.toast-content p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.toast-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background-color: var(--primary-color, #4CAF50); /* Usa a cor primária do tema */
+  width: 100%;
+  animation: progress linear;
+}
+
+/* Define a animação da barra */
+@keyframes progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 5px;
+  margin-left: auto; /* Empurra para a direita */
+  align-self: flex-start; /* Alinha no topo */
+}
+
+.toast-close-btn:hover {
+  color: #555;
+}

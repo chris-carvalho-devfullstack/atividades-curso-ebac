@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="notifications.css">
     <link rel="stylesheet" href="chat.css">
     <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="toast-notification.css">
 </head>
 <body>
     <div id="nav-placeholder"></div>
@@ -320,6 +321,8 @@
 
     <div class="chat-container"></div>
 
+    <div id="toast-notification-container" class="toast-container"></div>
+
     <footer>
         <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
         <p>Desenvolvedor: Christian de Carvalho</p>
@@ -336,5 +339,8 @@
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script type="module" src="main.js"></script>
     <script type="module" src="chat.js"></script>
-</body>
-</html>
+    <script type="module" src="toast-notification.js"></script>
+    <script type="module" src="push-service.js"></script>
+
+    </body>
+    </html>
