@@ -2,8 +2,8 @@
 import { auth, db } from "./firebase-config.js";
 import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-messaging.js";
-// Importa a nova função de toast
-import { showToastNotification } from './toast-notification.js';
+// *** VERIFIQUE SE ESTA LINHA ESTÁ CORRETA E O ARQUIVO NO LUGAR CERTO ***
+import { showToastNotification } from './toast-notification.js'; // Importa a função de toast
 
 // Sua Chave Pública VAPID real (Verifique se esta chave está correta para seu projeto)
 const VAPID_KEY = "BCPsHWj8T0E5kQ-GcKDhXiKLrnQxLPM3tFIoE8SbTac2p1vYCLcdTslaDEAqusDo6JS1p1D2YY91aFHBkoVgxvY"; //
@@ -93,16 +93,19 @@ export async function requestPushNotificationPermission() {
  * @param {object} messaging - A instância do Firebase Messaging.
  */
 function setupForegroundListener(messaging) {
+  console.log("Configurando listener para mensagens em primeiro plano (onMessage)..."); // Log adicional
   onMessage(messaging, (payload) => { //
-    console.log('Mensagem Push de Foreground recebida:', payload); //
+    console.log('Mensagem Push de Foreground recebida (onMessage acionado):', payload); // Log detalhado ao receber
 
     // Usa a nova função de toast em vez do alert()
     if (payload.notification) { //
+      // *** CHAMADA DA FUNÇÃO DE TOAST ***
       showToastNotification( // Chama a função importada
         payload.notification.title || 'Nova Notificação', //
         payload.notification.body || '', //
         payload.data?.type || 'default' // Pega o tipo dos dados da notificação, se houver
       );
+      // **********************************
     }
 
     // Mantém a lógica de atualizar o badge de notificação (se existir no HTML)
@@ -118,21 +121,29 @@ function setupForegroundListener(messaging) {
 // Opcional: Chamar setupForegroundListener se o token já existir ao carregar a página
 // Isso garante que o listener seja ativado mesmo que o usuário não precise reativar as permissões
 (async () => {
-    if (auth.currentUser && "Notification" in window && Notification.permission === 'granted') {
-        try {
-            const registration = await navigator.serviceWorker.ready; // Espera o SW estar pronto
-            const messaging = getMessaging();
-            const currentToken = await getToken(messaging, {
-                vapidKey: VAPID_KEY,
-                serviceWorkerRegistration: registration
-            });
-            if (currentToken) {
-                // Se já temos um token válido, apenas ativamos o listener
-                setupForegroundListener(messaging);
-                console.log("Listener de foreground ativado para token existente.");
+    // Adicionado um pequeno atraso para garantir que o 'auth.currentUser' seja definido
+    setTimeout(async () => {
+        if (auth.currentUser && "Notification" in window && Notification.permission === 'granted') {
+            console.log("Tentando reativar listener de foreground para token existente...");
+            try {
+                const registration = await navigator.serviceWorker.ready; // Espera o SW estar pronto
+                const messaging = getMessaging();
+                const currentToken = await getToken(messaging, {
+                    vapidKey: VAPID_KEY,
+                    serviceWorkerRegistration: registration
+                });
+                if (currentToken) {
+                    // Se já temos um token válido, apenas ativamos o listener
+                    setupForegroundListener(messaging);
+                    console.log("Listener de foreground reativado para token existente.");
+                } else {
+                    console.log("Não foi possível obter token existente para reativar listener.");
+                }
+            } catch (error) {
+                console.error("Erro ao tentar reativar listener de foreground:", error);
             }
-        } catch (error) {
-            console.error("Erro ao tentar reativar listener de foreground:", error);
+        } else {
+            console.log("Não reativando listener de foreground (usuário não logado, permissão não concedida ou notificações não suportadas).");
         }
-    }
+    }, 1000); // Atraso de 1 segundo
 })();

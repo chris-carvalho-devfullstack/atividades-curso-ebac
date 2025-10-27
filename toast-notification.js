@@ -20,6 +20,10 @@ const notificationIcons = {
  * @param {number} duration - Duração em milissegundos que o toast ficará visível.
  */
 export function showToastNotification(title, body, type = 'default', duration = 8000) {
+  // *** ADICIONADO PARA DEBUG ***
+  console.log("showToastNotification chamada com:", title, body, type, duration);
+  // *****************************
+
   const container = document.getElementById('toast-notification-container');
   if (!container) {
     console.error('Elemento #toast-notification-container não encontrado no DOM.');

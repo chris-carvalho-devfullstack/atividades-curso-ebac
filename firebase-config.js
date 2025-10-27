@@ -6,11 +6,11 @@ import { getFirestore, connectFirestoreEmulator } from "https://www.gstatic.com/
 import { getStorage, connectStorageEmulator } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-storage.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBsfGTZ1yypzWE4R_thDARSh61Osc6OUbU", // MANTENHA SUA CHAVE REAL
+  apiKey: "AIzaSyBsfGTZ1yypzWE4R_thDARSh61Osc6OUbU",
   authDomain: "gerenciador-tarefas-fd5be.firebaseapp.com",
   projectId: "gerenciador-tarefas-fd5be",
-  // *** VERIFIQUE ESTE NOME NO SEU FIREBASE CONSOLE > STORAGE ***
-  storageBucket: "gerenciador-tarefas-fd5be.appspot.com",
+  // *** CORRIJA ESTA LINHA EM firebase-config.js SE ESTIVER DIFERENTE ***
+  storageBucket: "gerenciador-tarefas-fd5be.firebasestorage.app",
   messagingSenderId: "831715035671",
   appId: "1:831715035671:web:2836e1701f80fc6f602a52"
 };

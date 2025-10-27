@@ -1352,3 +1352,27 @@ function setupCommonEventListeners() {
         permanentlyDeleteTask(taskId);
     });
 }
+
+// main.js
+// ... (seu código existente em main.js) ...
+
+// *** ADICIONAR ESTE TRECHO PARA O BOTÃO DE TESTE ***
+import { showToastNotification } from './toast-notification.js'; // Importa a função
+
+document.addEventListener('DOMContentLoaded', () => {
+    const testButton = document.getElementById('test-toast-btn');
+    if (testButton) {
+        testButton.addEventListener('click', () => {
+            console.log("Botão de teste do toast clicado!"); // Log para confirmar clique
+            showToastNotification(
+                'Notificação de Teste',
+                'Esta é uma mensagem de teste manual.',
+                'default', // Pode mudar para 'like', 'comment', etc. para testar ícones
+                5000 // Duração de 5 segundos
+            );
+        });
+    } else {
+        console.warn("Botão de teste do toast (#test-toast-btn) não encontrado.");
+    }
+});
+// ****************************************************
