@@ -178,15 +178,25 @@ export function updateProgress() {
     let percent = total ? Math.round((completed / total) * 100) : 0;
     const progressBar = $('.progress-bar');
     if (progressBar.length === 0) return;
-    progressBar.text(percent ? percent + '%' : (total > 0 ? '0%' : ''));
+
+    // *** ALTERAÇÃO AQUI: Mostra o texto apenas se percent > 0 ***
+    progressBar.text(percent > 0 ? percent + '%' : '');
+    // *** FIM DA ALTERAÇÃO ***
+
     let color;
-    if (percent === 0 && total > 0) color = '#f44336';
-    else if (percent === 0 && total === 0) color = '#e0e0e0';
-    else if (percent < 50) color = '#ff9800';
-    else if (percent < 100) color = '#4CAF50';
-    else color = 'linear-gradient(270deg, #4CAF50, #8BC34A, #4CAF50)';
-    if (percent === 100 && total > 0) { progressBar.css({ 'background': color, 'background-size': '600% 100%', 'animation': 'gradientAnimation 3s ease infinite' }); progressBar.addClass('completed high-progress'); }
-    else { progressBar.css({ 'background': color, 'animation': 'none' }); progressBar.removeClass('completed high-progress'); }
+    if (percent === 0 && total > 0) color = '#f44336'; // Mantém a cor vermelha se houver tarefas mas nenhuma completa
+    else if (percent === 0 && total === 0) color = '#e0e0e0'; // Cor cinza se não houver tarefas
+    else if (percent < 50) color = '#ff9800'; // Laranja
+    else if (percent < 100) color = '#4CAF50'; // Verde
+    else color = 'linear-gradient(270deg, #4CAF50, #8BC34A, #4CAF50)'; // Gradiente para 100%
+
+    if (percent === 100 && total > 0) {
+        progressBar.css({ 'background': color, 'background-size': '600% 100%', 'animation': 'gradientAnimation 3s ease infinite' });
+        progressBar.addClass('completed high-progress');
+    } else {
+        progressBar.css({ 'background': color, 'animation': 'none' });
+        progressBar.removeClass('completed high-progress');
+    }
     progressBar.css('width', percent + '%');
 }
 

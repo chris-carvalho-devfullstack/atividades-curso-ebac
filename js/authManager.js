@@ -12,11 +12,13 @@ import {
     stopTaskListeners // <- Importa a função de limpeza
 } from './taskStore.js'; // <<< Importa do taskStore.js
 
-// --- Mantém importações do app.js que ainda não foram movidas ---
+// --- Mantém importações do eventBinder.js ---
 import {
-    initCalendar,
     setupCommonEventListeners
-} from './eventBinder.js'; // <<< Mantém apenas estas por enquanto
+} from './eventBinder.js'; // <<< Importa do eventBinder.js
+
+// --- Importa initCalendar de app.js (temporário) ---
+import { initCalendar } from './app.js'; // Mantém esta importação por enquanto
 
 // ===============================================
 // Variáveis Globais (Exportadas)
@@ -63,14 +65,14 @@ function initializeAuthenticatedSession() {
         migrateLocalTasksToFirestore(); // <- Vem do taskStore.js
         loadTasksRealTime(); // <- Vem do taskStore.js
         loadTrash(); // <- Vem do taskStore.js
-        setupCommonEventListeners(); // <- Vem do app.js (ainda)
+        setupCommonEventListeners(); // <- Vem do eventBinder.js AGORA
     });
 }
 
 function initializeGuestSession() {
     console.log("Sessão de convidado iniciada.");
     loadTasksFromLocalStorage(); // <- Vem do taskStore.js
-    setupCommonEventListeners(); // <- Vem do app.js (ainda)
+    setupCommonEventListeners(); // <- Vem do eventBinder.js AGORA
 }
 
 // ===============================================
@@ -83,21 +85,21 @@ export function initializeAuth() {
         const loginPrompt = document.getElementById('login-prompt');
         const goToLoginBtn = document.getElementById('go-to-login-btn');
 
+        // Limpa listeners antigos de tarefas para evitar duplicação ou erros ao logar/deslogar
+        stopTaskListeners();
+
         if (user) {
             // Usuário está LOGADO
             CURRENT_USER_UID = user.uid;
             if(loginPrompt) loginPrompt.style.display = 'none';
 
-            // Usar $(document).ready pode ser redundante com módulos ES6,
-            // mas mantemos se houver dependência específica do jQuery UI ou similar.
-            $(document).ready(function() {
-                initializeAuthenticatedSession();
-            });
+            // *** CORREÇÃO: Chama diretamente, sem $(document).ready() ***
+            initializeAuthenticatedSession();
 
         } else {
             // Usuário está DESLOGADO
             CURRENT_USER_UID = null;
-            stopTaskListeners(); // <<< CHAMA A FUNÇÃO DE LIMPEZA DO taskStore
+            // stopTaskListeners já foi chamado acima
 
             if(loginPrompt) loginPrompt.style.display = 'block';
             if(goToLoginBtn) {
@@ -109,10 +111,8 @@ export function initializeAuth() {
                 });
             }
 
-            // $(document).ready pode ser redundante aqui também
-            $(document).ready(function() {
-                 initializeGuestSession();
-            });
+            // *** CORREÇÃO: Chama diretamente, sem $(document).ready() ***
+             initializeGuestSession();
         }
     });
 }

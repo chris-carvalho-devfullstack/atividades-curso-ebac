@@ -51,13 +51,72 @@ export function openSubtaskModalForEdit(taskId, subtaskId) {
     $('#subtask-modal-title').text(`Editar Subtarefa: "${subtask.text}"`); $('#subtask-input').val(subtask.text); $('#subtask-priority').val(currentSubtaskData.priority); $('#subtask-category').val(currentSubtaskData.category); $('#subtask-date').val(currentSubtaskData.dueDate); $('#subtask-time').val(currentSubtaskData.dueTime); $('#subtask-add-btn').text('Salvar Edição');
     showModal('#subtask-modal');
 }
+// Função para mostrar/esconder e configurar o menu de opções da subtarefa
 export function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
-    $('.subtask-options-menu').removeClass('active'); const $menu = $button.siblings('.subtask-options-menu').first(); $menu.toggleClass('active');
-    $menu.find('.menu-edit').off('click').on('click', (e) => { e.stopPropagation(); openSubtaskModalForEdit(taskId, subtaskId); $menu.removeClass('active'); });
-    $menu.find('.menu-add-below').off('click').on('click', (e) => { e.stopPropagation(); openSubtaskModalForCreate(taskId, parentId); $menu.removeClass('active'); });
-    $menu.find('.menu-add-child').off('click').on('click', (e) => { e.stopPropagation(); openSubtaskModalForCreate(taskId, subtaskId); $menu.removeClass('active'); });
-    $menu.find('.menu-remove').off('click').on('click', (e) => { e.stopPropagation(); $menu.removeClass('active'); deleteSubtaskViaModal(taskId, subtaskId); });
-    setTimeout(() => { $(document).one('click', (e) => { if (!$menu.is(e.target) && $menu.has(e.target).length === 0 && !$button.is(e.target)) $menu.removeClass('active'); }); }, 0);
+    // <<< Encontra o LI principal da tarefa >>>
+    const $mainTaskLi = $button.closest('#task-list > li');
+
+    // Remove a classe ativa de outros LIs principais
+    $('#task-list > li').removeClass('subtask-menu-parent-active'); // <<< Remove de todos primeiro >>>
+
+    // Esconde outros menus
+    $('.subtask-options-menu.active').not($button.siblings('.subtask-options-menu')).removeClass('active');
+
+    // Pega o menu atual
+    const $menu = $button.siblings('.subtask-options-menu').first();
+    const isActive = $menu.hasClass('active');
+
+    if (!isActive) {
+        // Mostra o menu atual
+        $menu.addClass('active');
+        // <<< Adiciona a classe ao LI principal PAI deste menu >>>
+        $mainTaskLi.addClass('subtask-menu-parent-active');
+
+        // Configura os botões do menu (listeners são reatribuídos a cada abertura)
+        $menu.find('.menu-edit').off('click').on('click', (e) => {
+            e.stopPropagation();
+            openSubtaskModalForEdit(taskId, subtaskId); // Usa a função exportada
+            $menu.removeClass('active');
+            $mainTaskLi.removeClass('subtask-menu-parent-active'); // <<< Remove ao clicar na opção >>>
+        });
+        $menu.find('.menu-add-below').off('click').on('click', (e) => {
+            e.stopPropagation();
+            openSubtaskModalForCreate(taskId, parentId); // Usa a função exportada
+            $menu.removeClass('active');
+            $mainTaskLi.removeClass('subtask-menu-parent-active'); // <<< Remove ao clicar na opção >>>
+        });
+        $menu.find('.menu-add-child').off('click').on('click', (e) => {
+            e.stopPropagation();
+            openSubtaskModalForCreate(taskId, subtaskId); // Adiciona como filho da subtarefa atual
+            $menu.removeClass('active');
+            $mainTaskLi.removeClass('subtask-menu-parent-active'); // <<< Remove ao clicar na opção >>>
+        });
+        $menu.find('.menu-remove').off('click').on('click', (e) => {
+            e.stopPropagation();
+            $menu.removeClass('active');
+            $mainTaskLi.removeClass('subtask-menu-parent-active'); // <<< Remove ao clicar na opção >>>
+            deleteSubtaskViaModal(taskId, subtaskId); // Usa a função exportada
+        });
+
+        // Listener para fechar ao clicar fora (remove a classe do LI pai também)
+        setTimeout(() => {
+            $(document).one('click.closeSubtaskMenu', (e) => {
+                // Verifica se o clique foi fora do menu E fora do botão que o abriu
+                if (!$menu.is(e.target) && $menu.has(e.target).length === 0 && !$button.is(e.target)) {
+                    $menu.removeClass('active');
+                    // <<< Remove a classe de TODOS os LIs principais ao clicar fora >>>
+                    $('#task-list > li').removeClass('subtask-menu-parent-active');
+                }
+            });
+        }, 0); // Timeout 0 para garantir que execute após o evento de clique atual
+    } else {
+        // Esconde o menu se já estiver ativo
+        $menu.removeClass('active');
+        // <<< Remove a classe do LI principal se o menu for fechado clicando no botão novamente >>>
+        $mainTaskLi.removeClass('subtask-menu-parent-active');
+        // <<< Remove o listener de clique fora para evitar acúmulo >>>
+        $(document).off('click.closeSubtaskMenu');
+    }
 }
 export function deleteSubtaskViaModal(taskId, subId) {
     const tasks = getTasks(); const task = tasks.find(t => t.id === taskId); if (!task || !task.subtasks) return;

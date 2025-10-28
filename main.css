@@ -88,16 +88,18 @@ nav {
     display: none;
     position: absolute;
     right: 0;
-    top: 110%;
+    top: 110%; /* Ou a posição correta */
     background: #fff;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 6px; /* Mantém o arredondamento geral */
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     list-style: none;
-    padding: 8px 0;
+    /* Altere esta linha */
+    padding: 0 0 8px 0; /* Remove padding-top, mantém padding-bottom */
     margin: 0;
-    width: 200px;
+    width: 320px; /* Ou a largura que você definiu */
     z-index: 1100;
+    overflow: hidden; /* Adiciona overflow hidden para ajudar com o border-radius */
 }
 
 .profile-submenu.active {
@@ -473,8 +475,10 @@ nav {
 
 .subtask-list {
     list-style: none;
-    padding-left: 0;
+    /* Ajuste este valor para alinhar com o texto principal */
+    padding-left: 45px; /* Experimente valores como 40px, 45px, 50px, 55px */
     margin-top: 5px;
+    /* Mantenha outros estilos que você possa ter aqui */
 }
 
 .subtask-list li {
@@ -1100,8 +1104,11 @@ footer a:hover {
     padding: 15px;
     background-color: var(--primary-color);
     color: #ffffff;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #eee; /* Mantém a borda inferior se desejar */
     transition: background-color 0.3s;
+    /* Adicione estas linhas para arredondar os cantos superiores */
+    border-top-left-radius: 6px; /* Mesmo valor do .profile-submenu */
+    border-top-right-radius: 6px; /* Mesmo valor do .profile-submenu */
 }
 
 .submenu-profile-pic {
@@ -1142,4 +1149,12 @@ footer a:hover {
     font-size: 0.8rem !important;
     color: rgba(255, 255, 255, 0.7) !important;
     margin-top: 4px !important;
+}
+
+
+
+/* Classe para elevar o z-index do LI pai quando o menu de subtarefa está ativo */
+#task-list > li.subtask-menu-parent-active {
+    position: relative; /* Garante que z-index funcione */
+    z-index: 50; /* Um valor menor que o do menu (1000), mas maior que o padrão (0/auto) */
 }
