@@ -1,9 +1,12 @@
 // js/uiRenderer.js
-import { getTasks, getTrash } from './taskStore.js'; // Para obter dados a serem renderizados
-import { getUserSettings } from './authManager.js'; // Para obter configurações (ex: prazo)
-import { generateId } from './utils.js'; // Para IDs de subtarefas locais
-import { openSubtaskModalForCreate, openSubtaskModalForEdit, deleteSubtaskViaModal, toggleSubtaskMenu } from './app.js'; // Temporário: Funções de modal/menu ainda em app.js
-import { exportTaskToGoogleLink } from './app.js'; // Temporário: Função de exportação ainda em app.js
+import { getTasks, getTrash } from './taskStore.js';
+import { getUserSettings } from './authManager.js';
+import { generateId, findNestedSubtask } from './utils.js'; // <<< Importa findNestedSubtask de utils.js
+// Temporário: Funções de modal/menu ainda em app.js (ou serão movidas para eventBinder/app)
+// Estas importações podem ser removidas se os listeners forem movidos para eventBinder.js
+import { openSubtaskModalForEdit } from './app.js';
+import { exportTaskToGoogleLink } from './app.js';
+
 
 // ===============================================
 // Funções de Renderização Principal (Exportadas)
@@ -11,40 +14,33 @@ import { exportTaskToGoogleLink } from './app.js'; // Temporário: Função de e
 
 export function renderAllTasks(tasksArray) {
     const taskList = $('#task-list');
-    taskList.empty(); // Limpa a lista
+    taskList.empty();
     if (tasksArray && tasksArray.length > 0) {
-        tasksArray.forEach(task => addTaskHTML(task)); // Chama a função interna para cada tarefa
-        // Inicializa sortable para subtarefas após renderizar tudo
-        taskList.find('.subtask-list').each(function() {
-             initSubtaskSortable($(this));
-        });
+        tasksArray.forEach(task => addTaskHTML(task));
+        // Inicializa sortable APÓS todos os itens serem adicionados
+        initSortableSubtasks(taskList); // Chama a função auxiliar
     } else {
-        // Opcional: Mostrar mensagem se não houver tarefas
-        taskList.append('<li style="text-align: center; color: #888; padding: 20px;">Nenhuma tarefa encontrada.</li>');
+        taskList.append('<li class="empty-list-message">Nenhuma tarefa encontrada.</li>');
     }
-     // Garante que a barra de progresso seja atualizada após renderizar
-     updateProgress();
-     // Garante que os status de prazo sejam verificados
-     checkAllDueDates();
+    updateProgress();
+    checkAllDueDates(); // Verifica prazos após renderizar
 }
 
 export function renderTrash(trashArray) {
     const trashList = $('#trash-list');
-    trashList.empty(); // Limpa a lista
+    trashList.empty();
     if (!trashArray || trashArray.length === 0) {
-        trashList.append('<li style="justify-content:center; color: #888;">Lixeira vazia.</li>');
+        trashList.append('<li class="empty-list-message" style="justify-content:center;">Lixeira vazia.</li>');
     } else {
         trashArray.forEach(task => {
-            // Verifica se deletedAt é um objeto Timestamp do Firestore
             const deletedAtDate = task.deletedAt?.toDate ? task.deletedAt.toDate() : null;
             const deletedAtString = deletedAtDate ? deletedAtDate.toLocaleDateString() : 'Data inválida';
-
             const li = $(`
                 <li>
-                    <span>${task.text || 'Tarefa sem nome'} (Excluído em: ${deletedAtString})</span>
-                    <div>
-                        <button class="btn-restore" data-id="${task.id}">Restaurar</button>
-                        <button class="btn-delete-permanently" data-id="${task.id}">Excluir Permanentemente</button>
+                    <span class="trash-item-text">${task.text || 'Tarefa sem nome'} (Excluído em: ${deletedAtString})</span>
+                    <div class="trash-item-actions">
+                        <button class="btn-restore" data-id="${task.id}" title="Restaurar Tarefa"><i class="fas fa-undo"></i></button>
+                        <button class="btn-delete-permanently" data-id="${task.id}" title="Excluir Permanentemente"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </li>
             `);
@@ -54,22 +50,22 @@ export function renderTrash(trashArray) {
 }
 
 // ===============================================
-// Funções de Renderização Detalhada (Internas ou Exportadas se necessário)
+// Funções de Renderização Detalhada (Internas/Auxiliares)
 // ===============================================
 
-// Adiciona o HTML de uma tarefa principal à lista
-export function addTaskHTML(task) { // Exportada para ser usada em outros lugares se necessário
+function addTaskHTML(task) {
     const taskPriority = task.priority || 'medium';
     const taskCategory = task.category || 'geral';
+    const taskId = task.id; // Garante que temos o ID
 
-    let li = $('<li></li>')
-        .attr('data-id', task.id)
-        .attr('data-category', taskCategory)
-        .addClass('priority-' + taskPriority);
+    if (!taskId) {
+        console.error("Tentativa de renderizar tarefa sem ID:", task);
+        return; // Não renderiza tarefa sem ID
+    }
 
+    let li = $('<li></li>').attr('data-id', taskId).attr('data-category', taskCategory).addClass('priority-' + taskPriority);
     let taskDiv = $('<div class="task-main"></div>');
     let textDiv = $('<div class="task-text"></div>');
-
     let checkbox = $('<input type="checkbox" class="task-checkbox">').prop('checked', task.completed || false);
     let label = $('<label></label>').text(task.text || 'Tarefa sem nome');
     if (task.completed) label.addClass('completed');
@@ -78,114 +74,76 @@ export function addTaskHTML(task) { // Exportada para ser usada em outros lugare
     if (task.privacy === 'public') privacyIcon.addClass('fa fa-globe').attr('title', 'Pública');
     else if (task.privacy === 'shared') privacyIcon.addClass('fa fa-users').attr('title', 'Compartilhada');
     else privacyIcon.addClass('fa fa-lock').attr('title', 'Privada');
-
     textDiv.append(privacyIcon, checkbox, label);
 
     let prioCatDiv = $('<div class="task-priority-category"></div>');
-    let priorityLabel = $('<span class="priority-label"></span>')
-        .addClass('priority-' + taskPriority)
-        .text(taskPriority.charAt(0).toUpperCase() + taskPriority.slice(1));
-    prioCatDiv.append(priorityLabel);
-
-    let categorySpan = $('<span class="task-category"></span>')
-        .text(taskCategory.charAt(0).toUpperCase() + taskCategory.slice(1))
-        .attr('data-tooltip', 'Categoria: ' + taskCategory.charAt(0).toUpperCase() + taskCategory.slice(1));
-    prioCatDiv.append(categorySpan);
+    let priorityLabel = $('<span class="priority-label"></span>').addClass('priority-' + taskPriority).text(taskPriority.charAt(0).toUpperCase() + taskPriority.slice(1));
+    let categorySpan = $('<span class="task-category"></span>').text(taskCategory.charAt(0).toUpperCase() + taskCategory.slice(1)).attr('data-tooltip', 'Categoria: ' + taskCategory.charAt(0).toUpperCase() + taskCategory.slice(1));
+    prioCatDiv.append(priorityLabel, categorySpan);
     textDiv.append(prioCatDiv);
 
     if (task.dueDate) {
-        // Tenta criar data, tratando possível formato inválido
         let dateText = 'Data inválida';
-        try {
-            dateText = new Date(task.dueDate + 'T00:00:00Z').toLocaleDateString(undefined, { timeZone: 'UTC' }); // Usa UTC para evitar problemas de fuso
-        } catch(e) { console.warn("Data inválida para tarefa:", task.id, task.dueDate); }
-
+        try { dateText = new Date(task.dueDate + 'T00:00:00Z').toLocaleDateString(undefined, { timeZone: 'UTC' }); } catch(e) { /* Ignora data inválida */ }
         let timeText = task.dueTime ? ` ${task.dueTime}` : '';
-        let dateTimeText = `📅 ${dateText}${timeText}`;
-        let dateLabel = $('<span class="task-datetime"></span>').text(dateTimeText);
+        let dateLabel = $('<span class="task-datetime"></span>').text(`📅 ${dateText}${timeText}`);
         textDiv.append(dateLabel);
     }
 
     let btnGroup = $('<div class="button-group"></div>');
     if (task.subtasks && task.subtasks.length > 0) {
-        btnGroup.append($('<button type="button" class="toggle-subtasks-btn">▼</button>'));
+        btnGroup.append($('<button type="button" class="toggle-subtasks-btn" title="Mostrar/Ocultar Subtarefas">▼</button>'));
     }
 
     if (task.dueDate) {
-        let googleBtn = $('<button class="google-calendar-btn" type="button" data-tooltip="Agendar no Google Agenda"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Google_Calendar_icon_%282020%29.svg/512px-Google_Calendar_icon_%282020%29.svg.png" alt="Google Agenda"></button>');
-        // Chama a função exportada de app.js (temporariamente)
-        googleBtn.on('click', function () { exportTaskToGoogleLink(task); });
+        let googleBtn = $('<button class="google-calendar-btn" type="button" title="Agendar no Google Agenda"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Google_Calendar_icon_%282020%29.svg/512px-Google_Calendar_icon_%282020%29.svg.png" alt="Google Agenda"></button>');
+        // O listener será adicionado em eventBinder.js usando delegação
         btnGroup.append(googleBtn);
     }
 
-    let editBtn = $('<button class="edit-btn" type="button">✎</button>'); // Event listener será adicionado em eventBinder.js
-    let removeBtn = $('<button class="remove-btn" type="button">🗑️</button>'); // Event listener será adicionado em eventBinder.js
-    let addSubBtn = $('<button class="add-subtask-btn" type="button">➕ Sub</button>') // Event listener será adicionado em eventBinder.js
-        .attr('data-task-id', task.id);
+    let editBtn = $('<button class="edit-btn" type="button" title="Editar Tarefa">✎</button>');
+    let removeBtn = $('<button class="remove-btn" type="button" title="Mover para Lixeira">🗑️</button>');
+    let addSubBtn = $('<button class="add-subtask-btn" type="button" title="Adicionar Subtarefa">➕ Sub</button>').attr('data-task-id', taskId);
 
     btnGroup.append(editBtn, removeBtn, addSubBtn);
     taskDiv.append(textDiv, btnGroup);
     li.append(taskDiv);
 
     let subtaskList = $('<ul class="subtask-list"></ul>');
-     // Renderiza subtarefas apenas se existirem
     if (task.subtasks && task.subtasks.length > 0) {
-        task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st, task.id)); // Chama addSubtaskHTML interna
+        task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st, taskId));
     } else {
-        subtaskList.hide(); // Garante que a lista esteja escondida se vazia
+        subtaskList.hide();
     }
     li.append(subtaskList);
-    // A inicialização do sortable será feita após renderizar tudo
 
     $('#task-list').append(li);
-    updateTaskDueVisual(li, task); // Chama updateTaskDueVisual interna
+    updateTaskDueVisual(li, task);
 }
 
-
-// Adiciona o HTML de uma subtarefa (pode ser chamada recursivamente)
 function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     const subtaskId = subtask.id || generateId(); // Garante um ID
+    const subtaskPriority = subtask.priority || 'medium';
 
-    let li = $('<li></li>')
-        .attr('data-id', subtaskId)
-        .attr('data-parent-id', parentId || taskId)
-        .addClass('priority-' + (subtask.priority || 'medium'));
-
-    li.css('position', 'relative'); // Para o menu de opções
+    let li = $('<li></li>').attr('data-id', subtaskId).attr('data-parent-id', parentId || taskId).addClass('priority-' + subtaskPriority);
+    li.css('position', 'relative');
 
     let textDiv = $('<div class="task-text"></div>');
     let checkbox = $('<input type="checkbox" class="subtask-checkbox">').prop('checked', subtask.completed || false);
-
-    let label = $('<label class="subtask-label"></label>').text(subtask.text || 'Subtarefa sem nome')
-        .attr('data-task-id', taskId)
-        .attr('data-subtask-id', subtaskId)
-        // O event listener para abrir o modal de edição será adicionado em eventBinder.js
-        // .on('click', function(e) { ... });
-
+    let label = $('<label class="subtask-label"></label>').text(subtask.text || 'Subtarefa sem nome').attr('data-task-id', taskId).attr('data-subtask-id', subtaskId);
     if (subtask.completed) label.addClass('completed');
     textDiv.append(checkbox, label);
 
     if (subtask.dueDate) {
         let dateText = 'Data inválida';
-         try {
-             dateText = new Date(subtask.dueDate + 'T00:00:00Z').toLocaleDateString(undefined, { timeZone: 'UTC' });
-        } catch(e) { console.warn("Data inválida para subtarefa:", subtaskId, subtask.dueDate); }
-
+        try { dateText = new Date(subtask.dueDate + 'T00:00:00Z').toLocaleDateString(undefined, { timeZone: 'UTC' }); } catch(e) { /* Ignora */ }
         let timeText = subtask.dueTime ? ` ${subtask.dueTime}` : '';
-        let dateTimeText = `📅 ${dateText}${timeText}`;
-        let dateLabel = $('<span class="task-datetime"></span>').text(dateTimeText);
+        let dateLabel = $('<span class="task-datetime"></span>').text(`📅 ${dateText}${timeText}`);
         textDiv.append(dateLabel);
     }
 
     let btnGroup = $('<div class="button-group subtask-btn-group"></div>');
-    let optionsBtn = $('<button class="subtask-options-btn" type="button">⋮</button>')
-        .attr('data-task-id', taskId)
-        .attr('data-subtask-id', subtaskId)
-        .attr('data-parent-id', parentId || taskId);
-        // O event listener para o menu será adicionado em eventBinder.js
-        // .on('click', function(e) { ... });
-
-    // O menu em si ainda é criado aqui, mas os listeners dos botões do menu serão movidos
+    let optionsBtn = $('<button class="subtask-options-btn" type="button" title="Opções">⋮</button>').attr('data-task-id', taskId).attr('data-subtask-id', subtaskId).attr('data-parent-id', parentId || taskId);
     let contextMenu = $(`
         <div class="subtask-options-menu">
             <ul>
@@ -196,18 +154,17 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
             </ul>
         </div>
     `);
-
     btnGroup.append(optionsBtn, contextMenu);
     li.append(textDiv, btnGroup);
 
     if (subtask.subtasks && subtask.subtasks.length > 0) {
         let nestedSubtaskList = $('<ul class="subtask-list nested-subtask-list"></ul>');
-        subtask.subtasks.forEach(st => addSubtaskHTML(nestedSubtaskList, st, taskId, subtask.id)); // Chamada recursiva
+        subtask.subtasks.forEach(st => addSubtaskHTML(nestedSubtaskList, st, taskId, subtaskId)); // Passa subtaskId como parentId
         li.append(nestedSubtaskList);
     }
 
     list.append(li);
-    updateTaskDueVisual(li, subtask); // Chama updateTaskDueVisual interna
+    updateTaskDueVisual(li, subtask);
 }
 
 // ===============================================
@@ -215,149 +172,106 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
 // ===============================================
 
 export function updateProgress() {
-    const tasks = getTasks(); // Pega tarefas do taskStore
+    const tasks = getTasks();
     let total = tasks.length;
     let completed = tasks.filter(t => t.completed).length;
     let percent = total ? Math.round((completed / total) * 100) : 0;
-
     const progressBar = $('.progress-bar');
-    if (progressBar.length === 0) return; // Sai se a barra não existir
-
-    progressBar.text(percent ? percent + '%' : (total > 0 ? '0%' : '')); // Mostra 0% se houver tarefas
-
+    if (progressBar.length === 0) return;
+    progressBar.text(percent ? percent + '%' : (total > 0 ? '0%' : ''));
     let color;
     if (percent === 0 && total > 0) color = '#f44336';
     else if (percent === 0 && total === 0) color = '#e0e0e0';
     else if (percent < 50) color = '#ff9800';
     else if (percent < 100) color = '#4CAF50';
     else color = 'linear-gradient(270deg, #4CAF50, #8BC34A, #4CAF50)';
-
-    if (percent === 100 && total > 0) {
-        progressBar.css({ 'background': color, 'background-size': '600% 100%', 'animation': 'gradientAnimation 3s ease infinite' });
-        progressBar.addClass('completed high-progress');
-    } else {
-        progressBar.css({ 'background': color, 'animation': 'none' });
-        progressBar.removeClass('completed high-progress');
-    }
-
+    if (percent === 100 && total > 0) { progressBar.css({ 'background': color, 'background-size': '600% 100%', 'animation': 'gradientAnimation 3s ease infinite' }); progressBar.addClass('completed high-progress'); }
+    else { progressBar.css({ 'background': color, 'animation': 'none' }); progressBar.removeClass('completed high-progress'); }
     progressBar.css('width', percent + '%');
 }
 
-// Atualiza a aparência (cores, classes) de um item de tarefa/subtarefa com base no prazo
-export function updateTaskDueVisual(li, task) { // Exportada para ser chamada por checkAllDueDates
-    if (!li || !task) return; // Verificação
-    li = $(li); // Garante que é um objeto jQuery
-
-    li.removeClass('due-soon overdue'); // Limpa estados antigos
-    // Reaplica a classe de prioridade
+export function updateTaskDueVisual(li, task) {
+    if (!li || !task) return;
+    li = $(li);
+    li.removeClass('due-soon overdue');
     li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
-
-    if (!task.dueDate || task.completed) return; // Sai se não tem prazo ou está completa
-
-    // Constrói a string de data/hora, priorizando UTC para consistência
-    const dateTimeString = task.dueDate + (task.dueTime ? `T${task.dueTime}:00Z` : 'T00:00:00Z');
+    if (!task.dueDate || task.completed) return;
+    const dateTimeString = task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T00:00:00'); // Assume fuso local para cálculo
     let due;
-    try {
-        due = new Date(dateTimeString);
-        // Verifica se a data é válida
-        if (isNaN(due.getTime())) throw new Error("Data inválida");
-    } catch (e) {
-        console.warn(`Data/hora inválida encontrada para ${task.id}: ${dateTimeString}`);
-        return; // Não aplica estilo se a data for inválida
-    }
-
+    try { due = new Date(dateTimeString); if (isNaN(due.getTime())) throw new Error(); }
+    catch (e) { return; } // Não aplica estilo se data inválida
     const now = new Date();
-    const settings = getUserSettings(); // Pega as configurações atuais
+    const settings = getUserSettings();
     const leadTimeMinutes = settings.taskSettings.alertLeadTimeMinutes || 60;
-
     const diffMinutes = (due.getTime() - now.getTime()) / (1000 * 60);
-
-    const isDueSoon = diffMinutes > 0 && diffMinutes <= leadTimeMinutes + 1; // +1 min buffer
-    const isOverdue = diffMinutes <= 0; // Considera 0 minutos como atrasado
-
-    if (isOverdue) {
-        li.addClass('overdue');
-    } else if (isDueSoon) {
-        li.addClass('due-soon');
-    }
-    // A lógica de disparar a *notificação* (createTaskDeadlineNotification)
-    // permanecerá no app.js/eventBinder.js por enquanto,
-    // pois está ligada à *transição* para o estado due-soon, não apenas à renderização.
+    const isDueSoon = diffMinutes > 0 && diffMinutes <= leadTimeMinutes + 1;
+    const isOverdue = diffMinutes <= 0;
+    if (isOverdue) { li.addClass('overdue'); }
+    else if (isDueSoon) { li.addClass('due-soon'); }
+    // A LÓGICA DE DISPARAR A NOTIFICAÇÃO FOI MOVIDA PARA taskStore (na função updateTask)
 }
 
-// Itera sobre todas as tarefas e subtarefas visíveis e atualiza seu estado visual de prazo
 export function checkAllDueDates() {
-    const tasksMap = new Map(getTasks().map(t => [t.id, t])); // Cria um mapa para busca rápida
-
-    $('#task-list>li').each(function () {
+    const tasksMap = new Map(getTasks().map(t => [t.id, t]));
+    $('#task-list>li[data-id]').each(function () { // Adiciona seletor data-id
         const task = tasksMap.get($(this).attr('data-id'));
         if (task) updateTaskDueVisual($(this), task);
     });
-
-    $('.subtask-list li[data-id]').each(function () { // Seleciona apenas LIs com data-id
+    $('.subtask-list li[data-id]').each(function () {
         const $li = $(this);
         const taskId = $li.closest('li[data-id][data-category]').attr('data-id');
         const subId = $li.attr('data-id');
         const task = tasksMap.get(taskId);
-        if (task && task.subtasks) {
-            const subtask = findNestedSubtask(task.subtasks, subId); // findNestedSubtask ainda precisa ser importado ou movido
+        // Usa findNestedSubtask importado de utils.js
+        if (task?.subtasks) { // Optional chaining
+            const subtask = findNestedSubtask(task.subtasks, subId);
             if (subtask) updateTaskDueVisual($li, subtask);
         }
     });
 }
 
-// Filtra as tarefas visíveis na lista principal
 export function applyFilter() {
     let searchVal = $('#search-input').val().toLowerCase();
     let priorityVal = $('#filter-priority').val();
     let categoryVal = $('#filter-category').val();
-
-    $('#task-list>li').each(function () {
+    $('#task-list>li[data-id]').each(function () { // Adiciona seletor data-id
         let taskElement = $(this);
-        // Tenta obter o texto do label; se não encontrar, usa vazio
         let text = taskElement.find('label').first().text()?.toLowerCase() || '';
-        // Prioridade padrão 'medium' se não houver classe
         let priorityClass = taskElement.attr('class')?.match(/priority-(low|medium|high)/)?.[0] || 'priority-medium';
-        // Categoria padrão 'geral' se não houver data attribute
         let taskCategory = taskElement.data('category') || 'geral';
-
-        // Lógica de visibilidade
         const matchesSearch = text.includes(searchVal);
         const matchesPriority = (priorityVal === 'all' || priorityClass.includes(priorityVal));
         const matchesCategory = (categoryVal === 'all' || taskCategory === categoryVal);
-
         taskElement.toggle(matchesSearch && matchesPriority && matchesCategory);
+    });
+     // Mostra/oculta mensagem de lista vazia após filtro
+     const noVisibleTasks = $('#task-list>li[data-id]:visible').length === 0;
+     $('.empty-list-message').toggle(noVisibleTasks);
+}
+
+// ===============================================
+// Funções Auxiliares de UI (Inicialização de Plugins, etc.)
+// ===============================================
+
+// Inicializa o jQuery UI Sortable para listas de subtarefas
+function initSortableSubtasks(container) {
+     // A inicialização do sortable da lista principal (#task-list) fica em eventBinder.js
+    container.find('.subtask-list').each(function() {
+        if ($(this).data('ui-sortable')) {
+           // $(this).sortable('destroy'); // Opcional: destruir antes de recriar
+        }
+        $(this).sortable({
+            connectWith: '.subtask-list', // Permite mover entre listas de mesmo nível
+            placeholder: "ui-state-highlight-subtask",
+            forcePlaceholderSize: true,
+            axis: "y",
+            cursor: "grabbing",
+            opacity: 0.8,
+            // O listener 'update' para salvar a ordem das subtarefas precisaria ser adicionado em eventBinder.js
+            // update: async function(event, ui) { /* ... lógica para salvar ordem das subtarefas ... */ }
+        }).disableSelection(); // Previne seleção de texto ao arrastar
     });
 }
 
-// ===============================================
-// Funções Auxiliares de UI (Ainda aqui, podem ser movidas para app.js/eventBinder)
-// ===============================================
 
-// Inicializa o jQuery UI Sortable (chamada após renderizar a lista)
-function initSubtaskSortable(sublist) {
-    if (sublist && typeof sublist.sortable === 'function') { // Verifica se é um objeto jQuery com sortable
-        sublist.sortable({
-            connectWith: '.subtask-list',
-            // O update handler que salva a ordem está em app.js/eventBinder.js
-        });
-    }
-}
-
-// A função findNestedSubtask precisa estar disponível aqui também,
-// pois é usada por checkAllDueDates e outras funções de renderização/UI.
-// Idealmente, ela iria para utils.js ou taskStore.js e seria importada aqui.
-// Por enquanto, vamos duplicá-la aqui para manter a funcionalidade:
-function findNestedSubtask(subtasks, targetId) {
-    if (!subtasks) return null;
-    for (const subtask of subtasks) {
-        if (subtask.id === targetId) {
-            return subtask;
-        }
-        if (subtask.subtasks && subtask.subtasks.length > 0) {
-            const found = findNestedSubtask(subtask.subtasks, targetId);
-            if (found) return found;
-        }
-    }
-    return null;
-}
+// <<< REMOVIDO: findNestedSubtask foi movido para utils.js >>>
