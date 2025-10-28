@@ -1,19 +1,22 @@
 // js/eventBinder.js
 import { showModal, hideModal } from './modalHandler.js';
 import { addTask, updateTask, deleteTask, updateSubtasks, getTasks, saveTaskOrder, restoreTaskFromTrash, permanentlyDeleteTask, getTrash } from './taskStore.js';
-// *** ATUALIZADO: Importa checkAllDueDates de uiRenderer ***
+// *** CORRIGIDO: Importa funções de UI do uiRenderer ***
 import { applyFilter, findNestedSubtask, checkAllDueDates } from './uiRenderer.js';
 import { generateId } from './utils.js';
 
-// Importa funções de modal/menu/calendário que *ainda* estão em app.js
+// Importa SOMENTE as funções que REALMENTE AINDA ESTÃO em app.js
 import {
     openSubtaskModalForCreate, openSubtaskModalForEdit, deleteSubtaskViaModal, toggleSubtaskMenu,
     exportTaskToGoogleLink, setCurrentTaskLi, setCurrentSubtaskData, getCurrentSubtaskData,
-    initCalendar /* syncAllToCalendar não é chamado diretamente por listeners aqui */
+    initCalendar // Mantém initCalendar aqui
 } from './app.js';
 
 // Importa showToastNotification para o botão de teste
 import { showToastNotification } from './toast-notification.js';
+
+// <<< O RESTANTE DO CÓDIGO DO eventBinder.js (a função setupCommonEventListeners) CONTINUA O MESMO >>>
+// ... (resto do código do eventBinder.js) ...
 
 // Exporta a função principal que será chamada pelo authManager
 export function setupCommonEventListeners() {

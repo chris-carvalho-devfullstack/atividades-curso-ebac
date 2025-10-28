@@ -44,17 +44,6 @@ function updateNestedSubtasks(subtasks, targetId, callbackFn) {
     });
 }
 
-function findNestedSubtask(subtasks, targetId) {
-    if (!subtasks) return null;
-    for (const subtask of subtasks) {
-        if (subtask.id === targetId) { return subtask; }
-        if (subtask.subtasks?.length > 0) { // Optional chaining
-            const found = findNestedSubtask(subtask.subtasks, targetId);
-            if (found) return found;
-        }
-    }
-    return null;
-}
 
 const checkCompletionStatusRecursively = (subtasks) => {
     if (!subtasks || subtasks.length === 0) return true;

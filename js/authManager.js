@@ -16,7 +16,7 @@ import {
 import {
     initCalendar,
     setupCommonEventListeners
-} from './app.js'; // <<< Mantém apenas estas por enquanto
+} from './eventBinder.js'; // <<< Mantém apenas estas por enquanto
 
 // ===============================================
 // Variáveis Globais (Exportadas)
