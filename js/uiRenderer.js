@@ -118,7 +118,8 @@ function addTaskHTML(task) {
 
     // 4. Label (Título da Tarefa)
     const taskText = task.text || 'Tarefa sem nome';
-    let label = $('<label></label>')
+    // *** CORREÇÃO: Adicionada classe 'js-view-label' ***
+    let label = $('<label class="js-view-label"></label>')
         .text(taskText)
         .attr('title', taskText); // **NOVO: Adiciona tooltip para texto cortado**
     if (task.completed) label.addClass('completed');
@@ -207,11 +208,12 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     // task-main é a linha flex principal da subtarefa
     let taskDiv = $('<div class="task-main"></div>');
     
-    // 1. Placeholder (para alinhar com o botão de expandir do pai)
-    taskDiv.append('<span class="toggle-subtasks-placeholder"></span>');
+    // *** CORREÇÃO: Placeholders removidos para permitir que o CSS controle o alinhamento ***
+    // 1. Placeholder (para alinhar com o botão de expandir do pai) - REMOVIDO
+    // taskDiv.append('<span class="toggle-subtasks-placeholder"></span>');
     
-    // 2. Placeholder (para alinhar com o ícone de privacidade do pai)
-    taskDiv.append('<span class="privacy-placeholder"></span>');
+    // 2. Placeholder (para alinhar com o ícone de privacidade do pai) - REMOVIDO
+    // taskDiv.append('<span class="privacy-placeholder"></span>');
 
     // 3. Checkbox
     let checkbox = $('<input type="checkbox" class="subtask-checkbox">').prop('checked', subtask.completed || false);
@@ -219,7 +221,8 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
 
     // 4. Label (Título da Subtarefa)
     const subtaskText = subtask.text || 'Subtarefa sem nome';
-    let label = $('<label></label>')
+    // *** CORREÇÃO: Adicionada classe 'js-view-label' ***
+    let label = $('<label class="js-view-label"></label>')
         .text(subtaskText)
         .attr('title', subtaskText); // **NOVO: Tooltip para texto cortado**
     if (subtask.completed) label.addClass('completed');

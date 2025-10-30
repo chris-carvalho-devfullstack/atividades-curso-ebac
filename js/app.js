@@ -56,8 +56,9 @@ export function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
     // <<< Encontra o LI principal da tarefa >>>
     const $mainTaskLi = $button.closest('#task-list > li');
 
+    // *** CORREÇÃO: Usa a classe '.menu-active' ***
     // Remove a classe ativa de outros LIs principais
-    $('#task-list > li').removeClass('subtask-menu-parent-active'); // <<< Remove de todos primeiro >>>
+    $('#task-list > li').removeClass('menu-active'); // <<< Remove de todos primeiro >>>
 
     // Esconde outros menus
     $('.subtask-options-menu.active').not($button.siblings('.subtask-options-menu')).removeClass('active');
@@ -69,32 +70,34 @@ export function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
     if (!isActive) {
         // Mostra o menu atual
         $menu.addClass('active');
+        
+        // *** CORREÇÃO: Usa a classe '.menu-active' ***
         // <<< Adiciona a classe ao LI principal PAI deste menu >>>
-        $mainTaskLi.addClass('subtask-menu-parent-active');
+        $mainTaskLi.addClass('menu-active');
 
         // Configura os botões do menu (listeners são reatribuídos a cada abertura)
         $menu.find('.menu-edit').off('click').on('click', (e) => {
             e.stopPropagation();
             openSubtaskModalForEdit(taskId, subtaskId); // Usa a função exportada
             $menu.removeClass('active');
-            $mainTaskLi.removeClass('subtask-menu-parent-active'); // <<< Remove ao clicar na opção >>>
+            $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
         });
         $menu.find('.menu-add-below').off('click').on('click', (e) => {
             e.stopPropagation();
             openSubtaskModalForCreate(taskId, parentId); // Usa a função exportada
             $menu.removeClass('active');
-            $mainTaskLi.removeClass('subtask-menu-parent-active'); // <<< Remove ao clicar na opção >>>
+            $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
         });
         $menu.find('.menu-add-child').off('click').on('click', (e) => {
             e.stopPropagation();
             openSubtaskModalForCreate(taskId, subtaskId); // Adiciona como filho da subtarefa atual
             $menu.removeClass('active');
-            $mainTaskLi.removeClass('subtask-menu-parent-active'); // <<< Remove ao clicar na opção >>>
+            $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
         });
         $menu.find('.menu-remove').off('click').on('click', (e) => {
             e.stopPropagation();
             $menu.removeClass('active');
-            $mainTaskLi.removeClass('subtask-menu-parent-active'); // <<< Remove ao clicar na opção >>>
+            $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
             deleteSubtaskViaModal(taskId, subtaskId); // Usa a função exportada
         });
 
@@ -105,7 +108,7 @@ export function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
                 if (!$menu.is(e.target) && $menu.has(e.target).length === 0 && !$button.is(e.target)) {
                     $menu.removeClass('active');
                     // <<< Remove a classe de TODOS os LIs principais ao clicar fora >>>
-                    $('#task-list > li').removeClass('subtask-menu-parent-active');
+                    $('#task-list > li').removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
                 }
             });
         }, 0); // Timeout 0 para garantir que execute após o evento de clique atual
@@ -113,7 +116,7 @@ export function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
         // Esconde o menu se já estiver ativo
         $menu.removeClass('active');
         // <<< Remove a classe do LI principal se o menu for fechado clicando no botão novamente >>>
-        $mainTaskLi.removeClass('subtask-menu-parent-active');
+        $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
         // <<< Remove o listener de clique fora para evitar acúmulo >>>
         $(document).off('click.closeSubtaskMenu');
     }

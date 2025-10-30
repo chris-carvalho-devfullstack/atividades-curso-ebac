@@ -323,6 +323,7 @@ nav {
     overflow: hidden;
     text-overflow: ellipsis;
     margin-right: 8px; /* Espaço antes dos metadados */
+    cursor: pointer; /* Adicionado para indicar que é clicável */
 }
 
 /* **CORREÇÃO DE ALINHAMENTO (2):** Botões e Metadados NÃO encolhem */
@@ -370,10 +371,30 @@ nav {
     font-size: 16px;
 }
 
+
+/* === CORREÇÃO DE HIERARQUIA VISUAL (SUBTAREFAS) - TENTATIVA FINAL === */
+
 .subtask-list {
     list-style: none;
-    padding-left: 24px; /* **CORREÇÃO DE ALINHAMENTO (3):** Indentação da subtarefa */
-    margin-top: 5px;
+    margin-top: 8px;
+    position: relative; /* Necessário para a linha vertical */
+    
+    /* ALINHAMENTO DA LINHA VERTICAL:
+       Alinha a linha vertical com o início do checkbox da tarefa-mãe.
+       Cálculo: 
+       24px (botão toggle) + 8px (gap) + 16px (ícone privacy) + 8px (margin-right do ícone) + 8px (gap) 
+       = 64px de espaço ANTES do checkbox.
+       O li-pai tem 15px de padding-left.
+       TOTAL: 15px + 64px = 79px de offset da borda do <li>.
+       Portanto, o margin-left do <ul> deve ser 79px.
+    */
+    margin-left: 79px; 
+    
+    /* Espaço para a linha horizontal se conectar */
+    padding-left: 20px; 
+    
+    /* A Linha Vertical */
+    border-left: 1px solid #ddd; 
 }
 
 .subtask-list li {
@@ -382,34 +403,49 @@ nav {
     background: #fcfcfc;
     border-radius: 6px;
     display: block;
-    position: relative; /* Crucial para o botão de menu */
+    position: relative; /* Crucial para a linha horizontal */
 }
+
+/* Linha Horizontal (traço) para cada item (LI) */
+.subtask-list li::before {
+    content: '';
+    position: absolute;
+    
+    /* Puxa o traço para conectar na linha vertical (deve ser igual ao padding-left do UL) */
+    left: -20px; 
+    
+    /* Alinhamento vertical (ajuste fino) */
+    top: 20px; 
+    
+    width: 15px; /* Comprimento do traço */
+    border-top: 1px solid #ddd; /* Estilo da linha */
+}
+
 
 .subtask-list li:hover {
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
-/* **CORREÇÃO DE ALINHAMENTO (4):** O .task-main da subtarefa */
+/* Alinhamento do .task-main da subtarefa */
 .subtask-list li > .task-main {
-    padding-right: 40px; /* Reserva espaço para o botão '...' absoluto */
+    padding-right: 0; 
 }
 
 .subtask-list li > .task-main > label {
-    margin-right: 0; /* Subtarefa não tem metadados, pode ir até o fim */
+    margin-right: 0; 
 }
 
-
+/* Sub-sub-lista (UL dentro de um LI) */
 .subtask-list .subtask-list {
-    padding-left: 24px; /* Indentação extra para sub-subtarefas */
-    margin-left: 5px;
-    border-left: 2px solid #ddd;
+    /* Reseta o margin-left pois já está dentro do pai indentado */
+    margin-left: 0; 
+    padding-left: 20px; /* Mantém a mesma indentação para a linha horizontal */
+    border-left: 1px solid #ddd; /* Continua a linha vertical */
     padding-top: 5px;
     margin-top: 10px;
 }
+/* === FIM DA CORREÇÃO DE HIERARQUIA === */
 
-.subtask-list .subtask-list li {
-    border-left: none;
-}
 
 .subtask-options-menu {
     position: absolute;
@@ -445,6 +481,11 @@ nav {
     position: static; 
     padding-right: 0; 
 }
+/* Remove a linha horizontal do <li> que contém o botão */
+.subtask-options-menu li::before {
+    display: none;
+}
+
 
 .subtask-options-menu li button {
     display: flex;
@@ -477,24 +518,23 @@ nav {
     width: 24px; 
     text-align: center;
     flex-shrink: 0;
+    /* *** CORREÇÃO: Remove a transição de 'transform' *** */
     transition: color 0.2s; 
 }
+/* *** CORREÇÃO: Remove a rotação de 90 graus *** */
+/* .toggle-subtasks-btn:not(.collapsed) {
+    transform: rotate(90deg);
+} */
+
 
 .toggle-subtasks-btn:hover {
     color: #000;
 }
 
+/* *** CORREÇÃO: Remove os placeholders do CSS *** */
 .toggle-subtasks-placeholder,
-.privacy-placeholder { /* **NOVO:** Placeholder para alinhar subtarefas */
-    display: inline-block;
-    width: 24px; 
-    height: 10px;
-    flex-shrink: 0;
-}
-/* Alinha o placeholder do ícone de privacidade */
-.privacy-placeholder {
-    width: 16px; /* Tamanho aproximado do .privacy-icon */
-    margin-right: 8px;
+.privacy-placeholder { 
+    display: none;
 }
 
 
@@ -612,6 +652,11 @@ footer a:hover {
     padding: 8px 10px;
     border-bottom: 1px solid #f3f3f3;
 }
+/* Remove a linha de hierarquia do <li> dentro do modal */
+.modal .modal-body li::before {
+    display: none;
+}
+
 
 .modal .modal-footer {
     margin-top: 14px;
