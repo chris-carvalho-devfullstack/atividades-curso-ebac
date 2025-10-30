@@ -53,6 +53,11 @@ export function setupCommonEventListeners() {
     $(document).off('click', '.btn-restore');
     $(document).off('click', '.btn-delete-permanently');
     $('#empty-trash-btn').off('click');
+    
+    // --- NOVO: Listener para o menu de opções da tarefa ---
+    $(document).off('click', '.task-options-btn'); 
+    // ------------------------------------------------------
+    
     // Limpa o botão de teste
     const testButton = document.getElementById('test-toast-btn');
     if (testButton) {
@@ -121,7 +126,7 @@ export function setupCommonEventListeners() {
         await updateSubtasks(taskId, updatedSubtasks);
     });
 
-    // Botão Remover Tarefa
+    // Botão Remover Tarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.remove-btn', function () {
         let li = $(this).closest('li'); let taskId = li.attr('data-id');
         const task = getTasks().find(t => t.id === taskId); if (!task) return;
@@ -130,7 +135,7 @@ export function setupCommonEventListeners() {
         $('#confirm-cancel-btn').off('click').on('click', () => hideModal('#confirmModal'));
     });
 
-    // Botão Editar Tarefa
+    // Botão Editar Tarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.edit-btn', function() {
         let li = $(this).closest('li'); setCurrentTaskLi(li); // Salva a referência do LI
         const task = getTasks().find(t => t.id === li.attr('data-id')); if (!task) return;
@@ -148,7 +153,7 @@ export function setupCommonEventListeners() {
         await updateTask(taskId, updatedData); hideModal('#editTaskModal'); setCurrentTaskLi(null); // Limpa a referência
     });
 
-    // Botão Adicionar Subtarefa
+    // Botão Adicionar Subtarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.add-subtask-btn', function () {
         const taskId = $(this).data('task-id') || $(this).closest('li[data-id]').data('id'); if (!taskId) return;
         openSubtaskModalForCreate(taskId, taskId); // Abre modal para adicionar à tarefa principal
@@ -172,11 +177,38 @@ export function setupCommonEventListeners() {
          $('#subtask-modal-title').text('Adicionar Subtarefa');$('#subtask-input').val('');$('#subtask-priority').val('medium');$('#subtask-category').val('geral');$('#subtask-date').val('');$('#subtask-time').val('');$('#subtask-add-btn').text('Adicionar');
     });
 
-     // Botão de Opções da Subtarefa
+     // Botão de Opções da Subtarefa (Já existia)
     $(document).on('click', '.subtask-options-btn', function(e) {
         e.stopPropagation(); const taskId = $(this).data('task-id'); const subtaskId = $(this).data('subtask-id'); const parentId = $(this).data('parent-id');
         toggleSubtaskMenu($(this), taskId, subtaskId, parentId); // Chama a função que está em app.js
     });
+    
+    // --- **MUDANÇA**: Listener para o botão de Opções da TAREFA PRINCIPAL ---
+    $(document).on('click', '.task-options-btn', function(e) {
+        e.stopPropagation(); // Impede que o clique feche o menu imediatamente
+        
+        const $menu = $(this).siblings('.task-actions-menu');
+        const $li = $(this).closest('li[data-id]');
+        
+        // Fecha todos os *outros* menus (de tarefa e subtarefa)
+        $('.task-actions-menu.active').not($menu).removeClass('active');
+        $('.subtask-options-menu.active').removeClass('active');
+        
+        // **MUDANÇA (Z-index): Remove a classe de todos os LIs**
+        $('#task-list > li').removeClass('menu-active');
+        
+        // Alterna o menu atual
+        $menu.toggleClass('active');
+        
+        // **MUDANÇA (Z-index): Adiciona a classe apenas no LI atual se o menu estiver ativo**
+        if ($menu.hasClass('active')) {
+            $li.addClass('menu-active');
+        } else {
+            $li.removeClass('menu-active');
+        }
+    });
+    // -----------------------------------------------------------------
+
 
     // Label da Subtarefa (para edição rápida - DESATIVADO por abrir modal)
      /*
@@ -200,10 +232,19 @@ export function setupCommonEventListeners() {
         placeholder: "ui-state-highlight", forcePlaceholderSize: true, axis: "y", cursor: "grabbing", opacity: 0.8, items: "> li[data-id]" // Garante que só arraste itens com data-id
     }).disableSelection();
 
-    // --- Botão Expandir/Colapsar Subtarefas ---
+    // --- **MUDANÇA**: Botão Expandir/Colapsar Subtarefas ---
     $(document).on('click', '.toggle-subtasks-btn', function () {
-        $(this).toggleClass('collapsed').attr('title', $(this).hasClass('collapsed') ? 'Mostrar Subtarefas' : 'Ocultar Subtarefas');
-        $(this).html($(this).hasClass('collapsed') ? '►' : '▼');
+        $(this).toggleClass('collapsed');
+        const isCollapsed = $(this).hasClass('collapsed');
+        
+        if (isCollapsed) {
+            $(this).attr('title', 'Mostrar Subtarefas');
+            $(this).html('►');
+        } else {
+            $(this).attr('title', 'Ocultar Subtarefas');
+            $(this).html('▼');
+        }
+        
         $(this).closest('li').children('.subtask-list').slideToggle(200);
     });
 
@@ -221,7 +262,7 @@ export function setupCommonEventListeners() {
         $('#view-delete-btn').off('click').on('click', () => { hideModal('#viewTaskModal'); li.find('.remove-btn').first().trigger('click'); });
     });
 
-    // --- Botão Google Calendar ---
+    // --- Botão Google Calendar (AGORA DENTRO DO MENU) ---
     $(document).on('click', '.google-calendar-btn', function () {
         const taskId = $(this).closest('li[data-id]').data('id'); const task = getTasks().find(t => t.id === taskId);
         if (task) exportTaskToGoogleLink(task); // Chama a função que está em app.js
@@ -254,6 +295,22 @@ export function setupCommonEventListeners() {
              showToastNotification('Notificação de Teste', 'Esta é uma mensagem de teste manual.', 'default', 5000);
          });
      } else { console.warn("Botão de teste do toast (#test-toast-btn) não encontrado para adicionar listener."); }
+
+     // --- **MUDANÇA**: Fechar menus ao clicar fora ---
+    $(document).on('click', function(e) {
+        // Se o clique NÃO for dentro de um botão de menu E NÃO for dentro de um menu...
+        if (!$(e.target).closest('.subtask-options-btn').length && 
+            !$(e.target).closest('.subtask-options-menu').length &&
+            !$(e.target).closest('.task-options-btn').length &&
+            !$(e.target).closest('.task-actions-menu').length) 
+        {
+            // Fecha todos os menus
+            $('.subtask-options-menu.active').removeClass('active');
+            $('.task-actions-menu.active').removeClass('active');
+            // Remove a classe de z-index de todos os LIs
+            $('#task-list > li.menu-active').removeClass('menu-active');
+        }
+    });
 
      console.log("Event Listeners comuns configurados.");
 }

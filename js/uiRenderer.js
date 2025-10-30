@@ -3,9 +3,36 @@ import { getTasks, getTrash } from './taskStore.js';
 import { getUserSettings } from './authManager.js';
 import { generateId, findNestedSubtask } from './utils.js'; // <<< Importa findNestedSubtask de utils.js
 // Temporário: Funções de modal/menu ainda em app.js (ou serão movidas para eventBinder/app)
-// Estas importações podem ser removidas se os listeners forem movidos para eventBinder.js
+// Estas importações podem ser removidas se os listeners forem movidos para eventBinder/app
 import { openSubtaskModalForEdit } from './app.js';
 import { exportTaskToGoogleLink } from './app.js';
+
+// --- Mapeamentos para os novos ícones e tooltips ---
+const priorityMap = {
+    high: 'A',
+    medium: 'M',
+    low: 'B'
+};
+const priorityTooltipMap = {
+    high: 'Prioridade Alta',
+    medium: 'Prioridade Média',
+    low: 'Prioridade Baixa'
+};
+const categoryIconMap = {
+    geral: 'fa-solid fa-tag',
+    trabalho: 'fa-solid fa-briefcase',
+    pessoal: 'fa-solid fa-user',
+    estudo: 'fa-solid fa-book',
+    outros: 'fa-solid fa-list-check'
+};
+const categoryTooltipMap = {
+    geral: 'Categoria: Geral',
+    trabalho: 'Categoria: Trabalho',
+    pessoal: 'Categoria: Pessoal',
+    estudo: 'Categoria: Estudo',
+    outros: 'Categoria: Outros'
+};
+// --------------------------------------------------
 
 
 // ===============================================
@@ -53,97 +80,160 @@ export function renderTrash(trashArray) {
 // Funções de Renderização Detalhada (Internas/Auxiliares)
 // ===============================================
 
+/**
+ * ATUALIZADO (Refinamento Final v2)
+ */
 function addTaskHTML(task) {
     const taskPriority = task.priority || 'medium';
     const taskCategory = task.category || 'geral';
-    const taskId = task.id; // Garante que temos o ID
+    const taskId = task.id; 
 
     if (!taskId) {
         console.error("Tentativa de renderizar tarefa sem ID:", task);
-        return; // Não renderiza tarefa sem ID
+        return; 
     }
 
     let li = $('<li></li>').attr('data-id', taskId).attr('data-category', taskCategory).addClass('priority-' + taskPriority);
+    
+    // task-main é a linha flex principal
     let taskDiv = $('<div class="task-main"></div>');
-    let textDiv = $('<div class="task-text"></div>');
-    let checkbox = $('<input type="checkbox" class="task-checkbox">').prop('checked', task.completed || false);
-    let label = $('<label></label>').text(task.text || 'Tarefa sem nome');
-    if (task.completed) label.addClass('completed');
+    
+    // 1. Botão Expandir/Colapsar
+    if (task.subtasks && task.subtasks.length > 0) {
+        taskDiv.append($('<button type="button" class="toggle-subtasks-btn collapsed" title="Mostrar Subtarefas">►</button>'));
+    } else {
+        taskDiv.append('<span class="toggle-subtasks-placeholder"></span>');
+    }
 
+    // 2. Ícone de Privacidade
     let privacyIcon = $('<i class="privacy-icon"></i>');
     if (task.privacy === 'public') privacyIcon.addClass('fa fa-globe').attr('title', 'Pública');
     else if (task.privacy === 'shared') privacyIcon.addClass('fa fa-users').attr('title', 'Compartilhada');
     else privacyIcon.addClass('fa fa-lock').attr('title', 'Privada');
-    textDiv.append(privacyIcon, checkbox, label);
+    taskDiv.append(privacyIcon);
 
-    let prioCatDiv = $('<div class="task-priority-category"></div>');
-    let priorityLabel = $('<span class="priority-label"></span>').addClass('priority-' + taskPriority).text(taskPriority.charAt(0).toUpperCase() + taskPriority.slice(1));
-    let categorySpan = $('<span class="task-category"></span>').text(taskCategory.charAt(0).toUpperCase() + taskCategory.slice(1)).attr('data-tooltip', 'Categoria: ' + taskCategory.charAt(0).toUpperCase() + taskCategory.slice(1));
-    prioCatDiv.append(priorityLabel, categorySpan);
-    textDiv.append(prioCatDiv);
+    // 3. Checkbox
+    let checkbox = $('<input type="checkbox" class="task-checkbox">').prop('checked', task.completed || false);
+    taskDiv.append(checkbox);
 
+    // 4. Label (Título da Tarefa)
+    const taskText = task.text || 'Tarefa sem nome';
+    let label = $('<label></label>')
+        .text(taskText)
+        .attr('title', taskText); // **NOVO: Adiciona tooltip para texto cortado**
+    if (task.completed) label.addClass('completed');
+    taskDiv.append(label);
+
+    // 5. Div de Metadados (alinhado à direita)
+    let metaIconsDiv = $('<div class="task-meta-icons"></div>');
+    
+    // **MUDANÇA DE ORDEM (1): Data/Hora primeiro**
     if (task.dueDate) {
         let dateText = 'Data inválida';
         try { dateText = new Date(task.dueDate + 'T00:00:00Z').toLocaleDateString(undefined, { timeZone: 'UTC' }); } catch(e) { /* Ignora data inválida */ }
-        let timeText = task.dueTime ? ` ${task.dueTime}` : '';
-        let dateLabel = $('<span class="task-datetime"></span>').text(`📅 ${dateText}${timeText}`);
-        textDiv.append(dateLabel);
+        
+        let timeText = task.dueTime ? ` ${task.dueTime}` : ''; 
+        
+        let dateLabel = $('<span class="task-datetime"></span>')
+            .html(`📅 ${dateText}${timeText}`) // Mostra data e hora
+            .attr('data-tooltip', `Prazo: ${dateText}${timeText}`);
+        metaIconsDiv.append(dateLabel);
     }
 
+    // **MUDANÇA DE ORDEM (2): Prioridade**
+    let priorityLabel = $('<span class="priority-label priority-circle"></span>')
+        .addClass('priority-' + taskPriority)
+        .text(priorityMap[taskPriority] || 'M')
+        .attr('data-tooltip', priorityTooltipMap[taskPriority] || 'Prioridade Média');
+    metaIconsDiv.append(priorityLabel);
+
+    // **MUDANÇA DE ORDEM (3): Categoria**
+    let categorySpan = $('<span class="task-category category-icon"></span>')
+        .html(`<i class="${categoryIconMap[taskCategory] || 'fa-solid fa-tag'}"></i>`)
+        .attr('data-tooltip', categoryTooltipMap[taskCategory] || 'Categoria: Geral');
+    metaIconsDiv.append(categorySpan);
+    
+    taskDiv.append(metaIconsDiv); // Adiciona o grupo de ícones ao task-main
+
+    // 6. Botões de Ação (Grupo de menu)
     let btnGroup = $('<div class="button-group"></div>');
-    if (task.subtasks && task.subtasks.length > 0) {
-        btnGroup.append($('<button type="button" class="toggle-subtasks-btn" title="Mostrar/Ocultar Subtarefas">▼</button>'));
-    }
+    
+    // **MUDANÇA DE ÍCONE: 'fa-ellipsis-h' (horizontal)**
+    let optionsBtn = $('<button class="task-options-btn" type="button" title="Opções"><i class="fa-solid fa-ellipsis-h"></i></button>');
+    
+    let actionsMenu = $('<div class="task-actions-menu"></div>');
 
+    // **MUDANÇA ÍCONE GOOGLE:**
     if (task.dueDate) {
-        let googleBtn = $('<button class="google-calendar-btn" type="button" title="Agendar no Google Agenda"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Google_Calendar_icon_%282020%29.svg/512px-Google_Calendar_icon_%282020%29.svg.png" alt="Google Agenda"></button>');
-        // O listener será adicionado em eventBinder.js usando delegação
-        btnGroup.append(googleBtn);
+        let googleBtn = $(`
+            <button class="google-calendar-btn" type="button" data-tooltip="Agendar no Google Agenda">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Google_Calendar_icon_%282020%29.svg/512px-Google_Calendar_icon_%282020%29.svg.png" alt="G">
+                Agendar
+            </button>
+        `);
+        actionsMenu.append(googleBtn);
     }
+    
+    let editBtn = $('<button class="edit-btn" type="button"><i class="fa fa-pencil"></i> Editar</button>');
+    let addSubBtn = $('<button class="add-subtask-btn" type="button" data-task-id="' + taskId + '"><i class="fa fa-plus"></i> Add Subtarefa</button>');
+    let removeBtn = $('<button class="remove-btn" type="button"><i class="fa fa-trash"></i> Apagar</button>');
 
-    let editBtn = $('<button class="edit-btn" type="button" title="Editar Tarefa">✎</button>');
-    let removeBtn = $('<button class="remove-btn" type="button" title="Mover para Lixeira">🗑️</button>');
-    let addSubBtn = $('<button class="add-subtask-btn" type="button" title="Adicionar Subtarefa">➕ Sub</button>').attr('data-task-id', taskId);
+    actionsMenu.append(editBtn, addSubBtn, removeBtn);
+    btnGroup.append(optionsBtn, actionsMenu);
+    
+    taskDiv.append(btnGroup); // Adiciona o grupo de menu ao task-main
+    
+    li.append(taskDiv); // Adiciona a linha principal (task-main) ao li
 
-    btnGroup.append(editBtn, removeBtn, addSubBtn);
-    taskDiv.append(textDiv, btnGroup);
-    li.append(taskDiv);
-
-    let subtaskList = $('<ul class="subtask-list"></ul>');
+    // Lista de Subtarefas (escondida por padrão)
+    let subtaskList = $('<ul class="subtask-list"></ul>').hide();
     if (task.subtasks && task.subtasks.length > 0) {
         task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st, taskId));
-    } else {
-        subtaskList.hide();
     }
     li.append(subtaskList);
 
     $('#task-list').append(li);
-    updateTaskDueVisual(li, task);
+    updateTaskDueVisual(li, task); // Atualiza cor da borda (due-soon/overdue)
 }
 
+/**
+ * ATUALIZADO (Refinamento Final v2)
+ */
 function addSubtaskHTML(list, subtask, taskId, parentId = null) {
-    const subtaskId = subtask.id || generateId(); // Garante um ID
-    const subtaskPriority = subtask.priority || 'medium';
+    const subtaskId = subtask.id || generateId(); 
 
-    let li = $('<li></li>').attr('data-id', subtaskId).attr('data-parent-id', parentId || taskId).addClass('priority-' + subtaskPriority);
-    li.css('position', 'relative');
+    let li = $('<li></li>').attr('data-id', subtaskId).attr('data-parent-id', parentId || taskId);
+    
+    // task-main é a linha flex principal da subtarefa
+    let taskDiv = $('<div class="task-main"></div>');
+    
+    // 1. Placeholder (para alinhar com o botão de expandir do pai)
+    taskDiv.append('<span class="toggle-subtasks-placeholder"></span>');
+    
+    // 2. Placeholder (para alinhar com o ícone de privacidade do pai)
+    taskDiv.append('<span class="privacy-placeholder"></span>');
 
-    let textDiv = $('<div class="task-text"></div>');
+    // 3. Checkbox
     let checkbox = $('<input type="checkbox" class="subtask-checkbox">').prop('checked', subtask.completed || false);
-    let label = $('<label class="subtask-label"></label>').text(subtask.text || 'Subtarefa sem nome').attr('data-task-id', taskId).attr('data-subtask-id', subtaskId);
+    taskDiv.append(checkbox);
+
+    // 4. Label (Título da Subtarefa)
+    const subtaskText = subtask.text || 'Subtarefa sem nome';
+    let label = $('<label></label>')
+        .text(subtaskText)
+        .attr('title', subtaskText); // **NOVO: Tooltip para texto cortado**
     if (subtask.completed) label.addClass('completed');
-    textDiv.append(checkbox, label);
+    taskDiv.append(label);
 
-    if (subtask.dueDate) {
-        let dateText = 'Data inválida';
-        try { dateText = new Date(subtask.dueDate + 'T00:00:00Z').toLocaleDateString(undefined, { timeZone: 'UTC' }); } catch(e) { /* Ignora */ }
-        let timeText = subtask.dueTime ? ` ${subtask.dueTime}` : '';
-        let dateLabel = $('<span class="task-datetime"></span>').text(`📅 ${dateText}${timeText}`);
-        textDiv.append(dateLabel);
-    }
+    // 5. Metadados (NÃO SÃO RENDERIZADOS, conforme solicitado)
+    // O 'margin-left: auto' no 'label' (via CSS) vai empurrá-lo
 
-    let btnGroup = $('<div class="button-group subtask-btn-group"></div>');
-    let optionsBtn = $('<button class="subtask-options-btn" type="button" title="Opções">⋮</button>').attr('data-task-id', taskId).attr('data-subtask-id', subtaskId).attr('data-parent-id', parentId || taskId);
+    // 6. Botão de Opções da Subtarefa
+    let btnGroup = $('<div class="button-group"></div>');
+    
+    // **MUDANÇA DE ÍCONE: 'fa-ellipsis-h' (horizontal)**
+    let optionsBtn = $('<button class="subtask-options-btn" type="button" title="Opções"><i class="fa-solid fa-ellipsis-h"></i></button>').attr('data-task-id', taskId).attr('data-subtask-id', subtaskId).attr('data-parent-id', parentId || taskId);
+    
     let contextMenu = $(`
         <div class="subtask-options-menu">
             <ul>
@@ -155,16 +245,19 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
         </div>
     `);
     btnGroup.append(optionsBtn, contextMenu);
-    li.append(textDiv, btnGroup);
+    
+    taskDiv.append(btnGroup); // Adiciona o grupo de menu ao task-main
+    
+    li.append(taskDiv); // Adiciona a linha principal (task-main) ao li
 
     if (subtask.subtasks && subtask.subtasks.length > 0) {
         let nestedSubtaskList = $('<ul class="subtask-list nested-subtask-list"></ul>');
-        subtask.subtasks.forEach(st => addSubtaskHTML(nestedSubtaskList, st, taskId, subtaskId)); // Passa subtaskId como parentId
+        subtask.subtasks.forEach(st => addSubtaskHTML(nestedSubtaskList, st, taskId, subtaskId));
         li.append(nestedSubtaskList);
     }
 
     list.append(li);
-    updateTaskDueVisual(li, subtask);
+    // Não chama updateTaskDueVisual, pois subtarefas não têm metadados visuais
 }
 
 // ===============================================
@@ -179,16 +272,14 @@ export function updateProgress() {
     const progressBar = $('.progress-bar');
     if (progressBar.length === 0) return;
 
-    // *** ALTERAÇÃO AQUI: Mostra o texto apenas se percent > 0 ***
     progressBar.text(percent > 0 ? percent + '%' : '');
-    // *** FIM DA ALTERAÇÃO ***
 
     let color;
-    if (percent === 0 && total > 0) color = '#f44336'; // Mantém a cor vermelha se houver tarefas mas nenhuma completa
-    else if (percent === 0 && total === 0) color = '#e0e0e0'; // Cor cinza se não houver tarefas
-    else if (percent < 50) color = '#ff9800'; // Laranja
-    else if (percent < 100) color = '#4CAF50'; // Verde
-    else color = 'linear-gradient(270deg, #4CAF50, #8BC34A, #4CAF50)'; // Gradiente para 100%
+    if (percent === 0 && total > 0) color = '#f44336'; 
+    else if (percent === 0 && total === 0) color = '#e0e0e0';
+    else if (percent < 50) color = '#ff9800';
+    else if (percent < 100) color = '#4CAF50';
+    else color = 'linear-gradient(270deg, #4CAF50, #8BC34A, #4CAF50)';
 
     if (percent === 100 && total > 0) {
         progressBar.css({ 'background': color, 'background-size': '600% 100%', 'animation': 'gradientAnimation 3s ease infinite' });
@@ -206,10 +297,10 @@ export function updateTaskDueVisual(li, task) {
     li.removeClass('due-soon overdue');
     li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
     if (!task.dueDate || task.completed) return;
-    const dateTimeString = task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T00:00:00'); // Assume fuso local para cálculo
+    const dateTimeString = task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T00:00:00'); 
     let due;
     try { due = new Date(dateTimeString); if (isNaN(due.getTime())) throw new Error(); }
-    catch (e) { return; } // Não aplica estilo se data inválida
+    catch (e) { return; } 
     const now = new Date();
     const settings = getUserSettings();
     const leadTimeMinutes = settings.taskSettings.alertLeadTimeMinutes || 60;
@@ -218,33 +309,22 @@ export function updateTaskDueVisual(li, task) {
     const isOverdue = diffMinutes <= 0;
     if (isOverdue) { li.addClass('overdue'); }
     else if (isDueSoon) { li.addClass('due-soon'); }
-    // A LÓGICA DE DISPARAR A NOTIFICAÇÃO FOI MOVIDA PARA taskStore (na função updateTask)
 }
 
 export function checkAllDueDates() {
     const tasksMap = new Map(getTasks().map(t => [t.id, t]));
-    $('#task-list>li[data-id]').each(function () { // Adiciona seletor data-id
+    $('#task-list>li[data-id]').each(function () { 
         const task = tasksMap.get($(this).attr('data-id'));
         if (task) updateTaskDueVisual($(this), task);
     });
-    $('.subtask-list li[data-id]').each(function () {
-        const $li = $(this);
-        const taskId = $li.closest('li[data-id][data-category]').attr('data-id');
-        const subId = $li.attr('data-id');
-        const task = tasksMap.get(taskId);
-        // Usa findNestedSubtask importado de utils.js
-        if (task?.subtasks) { // Optional chaining
-            const subtask = findNestedSubtask(task.subtasks, subId);
-            if (subtask) updateTaskDueVisual($li, subtask);
-        }
-    });
+    // Não é mais necessário iterar sobre subtarefas, pois elas não têm data visual
 }
 
 export function applyFilter() {
     let searchVal = $('#search-input').val().toLowerCase();
     let priorityVal = $('#filter-priority').val();
     let categoryVal = $('#filter-category').val();
-    $('#task-list>li[data-id]').each(function () { // Adiciona seletor data-id
+    $('#task-list>li[data-id]').each(function () { 
         let taskElement = $(this);
         let text = taskElement.find('label').first().text()?.toLowerCase() || '';
         let priorityClass = taskElement.attr('class')?.match(/priority-(low|medium|high)/)?.[0] || 'priority-medium';
@@ -254,7 +334,6 @@ export function applyFilter() {
         const matchesCategory = (categoryVal === 'all' || taskCategory === categoryVal);
         taskElement.toggle(matchesSearch && matchesPriority && matchesCategory);
     });
-     // Mostra/oculta mensagem de lista vazia após filtro
      const noVisibleTasks = $('#task-list>li[data-id]:visible').length === 0;
      $('.empty-list-message').toggle(noVisibleTasks);
 }
@@ -265,23 +344,17 @@ export function applyFilter() {
 
 // Inicializa o jQuery UI Sortable para listas de subtarefas
 function initSortableSubtasks(container) {
-     // A inicialização do sortable da lista principal (#task-list) fica em eventBinder.js
     container.find('.subtask-list').each(function() {
         if ($(this).data('ui-sortable')) {
-           // $(this).sortable('destroy'); // Opcional: destruir antes de recriar
+           // $(this).sortable('destroy'); 
         }
         $(this).sortable({
-            connectWith: '.subtask-list', // Permite mover entre listas de mesmo nível
+            connectWith: '.subtask-list', 
             placeholder: "ui-state-highlight-subtask",
             forcePlaceholderSize: true,
             axis: "y",
             cursor: "grabbing",
             opacity: 0.8,
-            // O listener 'update' para salvar a ordem das subtarefas precisaria ser adicionado em eventBinder.js
-            // update: async function(event, ui) { /* ... lógica para salvar ordem das subtarefas ... */ }
-        }).disableSelection(); // Previne seleção de texto ao arrastar
+        }).disableSelection();
     });
 }
-
-
-// <<< REMOVIDO: findNestedSubtask foi movido para utils.js >>>

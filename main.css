@@ -291,6 +291,7 @@ nav {
     gap: 5px;
     transition: transform 0.2s, box-shadow 0.2s;
     border-radius: 8px;
+    position: relative; /* Mantém relative para o menu dropdown */
 }
 
 #task-list .ui-sortable-helper {
@@ -308,138 +309,39 @@ nav {
 .task-main {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
+    flex-wrap: nowrap; 
+    gap: 8px; /* Espaçamento entre os filhos diretos */
+    width: 100%;
+    position: relative;
 }
 
-.task-text {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    flex-wrap: wrap;
+/* **CORREÇÃO DE ALINHAMENTO (1):** O texto é o único que cresce */
+.task-main > label {
+    flex-grow: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px; /* Espaço antes dos metadados */
+}
+
+/* **CORREÇÃO DE ALINHAMENTO (2):** Botões e Metadados NÃO encolhem */
+.task-meta-icons,
+.button-group,
+.toggle-subtasks-btn,
+.toggle-subtasks-placeholder,
+.privacy-icon,
+.task-checkbox {
+    flex-shrink: 0;
 }
 
 .button-group {
     display: flex;
     gap: 5px;
-    flex-shrink: 0;
-}
-
-.task-priority-category {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.priority-label {
-    font-size: 0.85rem;
-    font-weight: bold;
-    padding: 2px 6px;
-    border-radius: 999px;
-    color: white;
-}
-
-.priority-high { background: #f44336; }
-.priority-medium { background: #FFEB3B; color: #000; }
-.priority-low { background: var(--primary-color); }
-
-.task-category {
-    font-size: 0.75rem;
-    font-weight: bold;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: #81d4fa;
-    color: #01579b;
-    position: relative;
-    cursor: default;
-}
-
-.task-category:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    opacity: 0.95;
-    pointer-events: none;
-    z-index: 1000;
-}
-
-.remove-btn, .edit-btn, .add-subtask-btn, .remove-subtask-btn, .google-calendar-btn {
-    font-weight: bold;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 8px;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-}
-
-.remove-btn { background: #e57373; color: #fff; }
-.remove-btn:hover { background: #d32f2f; }
-.edit-btn { background: #64b5f6; color: #fff; }
-.edit-btn:hover { background: #1976d2; }
-.add-subtask-btn { background: #ffb74d; color: #111; }
-.add-subtask-btn:hover { background: #f57c00; }
-
-.subtask-options-btn {
-    background: none;
-    color: #666;
-    font-size: 1.2rem;
-    padding: 2px 6px;
-    cursor: pointer;
-    border: none;
-    line-height: 1;
-    border-radius: 4px;
-    font-weight: 900;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.subtask-options-btn:hover {
-    color: #333;
-    background-color: #eee;
-}
-
-.google-calendar-btn {
-    background: none;
-    padding: 0 5px;
-    display: flex;
-    align-items: center;
-    position: relative;
-    line-height: 1;
-}
-
-.google-calendar-btn img {
-    width: 20px;
-    height: 20px;
-    display: block;
-}
-
-.google-calendar-btn:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 1000;
+    position: relative; /* Para o menu de opções */
 }
 
 .task-datetime {
-    margin-left: 8px;
     font-size: 0.75rem;
     padding: 2px 6px;
     border-radius: 4px;
@@ -448,19 +350,14 @@ nav {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    cursor: default; 
+    white-space: nowrap; /* Impede que a data quebre a linha */
 }
 
 .due-soon .task-datetime { background: #ff9800; }
 .overdue .task-datetime { background: #f44336; }
 .due-soon { border-left-color: #ff9800 !important; }
 .overdue { border-left-color: #f44336 !important; }
-
-.completed::before {
-    content: "✔";
-    color: var(--primary-color);
-    margin-right: 10px;
-    font-weight: bold;
-}
 
 .completed {
     text-decoration: line-through;
@@ -475,10 +372,8 @@ nav {
 
 .subtask-list {
     list-style: none;
-    /* Ajuste este valor para alinhar com o texto principal */
-    padding-left: 45px; /* Experimente valores como 40px, 45px, 50px, 55px */
+    padding-left: 24px; /* **CORREÇÃO DE ALINHAMENTO (3):** Indentação da subtarefa */
     margin-top: 5px;
-    /* Mantenha outros estilos que você possa ter aqui */
 }
 
 .subtask-list li {
@@ -486,37 +381,26 @@ nav {
     margin-bottom: 5px;
     background: #fcfcfc;
     border-radius: 6px;
-    border-left: 3px solid transparent;
     display: block;
-    transition: transform 0.2s, box-shadow 0.2s;
-    position: relative;
-    box-shadow: none;
+    position: relative; /* Crucial para o botão de menu */
 }
 
 .subtask-list li:hover {
-    transform: none;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
-.subtask-list li > .task-text {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
+/* **CORREÇÃO DE ALINHAMENTO (4):** O .task-main da subtarefa */
+.subtask-list li > .task-main {
+    padding-right: 40px; /* Reserva espaço para o botão '...' absoluto */
 }
 
-.subtask-list li .button-group {
-    display: flex;
-    gap: 5px;
-    flex-shrink: 0;
-    position: absolute;
-    right: 12px;
-    top: 8px;
-    z-index: 10;
+.subtask-list li > .task-main > label {
+    margin-right: 0; /* Subtarefa não tem metadados, pode ir até o fim */
 }
+
 
 .subtask-list .subtask-list {
-    padding-left: 15px;
+    padding-left: 24px; /* Indentação extra para sub-subtarefas */
     margin-left: 5px;
     border-left: 2px solid #ddd;
     padding-top: 5px;
@@ -535,7 +419,7 @@ nav {
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    z-index: 100;
+    z-index: 100; /* Alto z-index para o menu */
     list-style: none;
     padding: 5px 0;
     display: none;
@@ -558,6 +442,8 @@ nav {
     border: none;
     background: none;
     display: block;
+    position: static; 
+    padding-right: 0; 
 }
 
 .subtask-options-menu li button {
@@ -585,19 +471,32 @@ nav {
     border: none;
     background: none;
     cursor: pointer;
-    transition: transform 0.3s ease;
     padding: 0 5px;
-    font-size: 1rem;
-}
-
-.toggle-subtasks-btn.collapsed {
-    transform: rotate(-90deg);
+    font-size: 0.9rem; 
+    color: #555;
+    width: 24px; 
+    text-align: center;
+    flex-shrink: 0;
+    transition: color 0.2s; 
 }
 
 .toggle-subtasks-btn:hover {
-    background: #1976d2;
-    transform: scale(1.1);
+    color: #000;
 }
+
+.toggle-subtasks-placeholder,
+.privacy-placeholder { /* **NOVO:** Placeholder para alinhar subtarefas */
+    display: inline-block;
+    width: 24px; 
+    height: 10px;
+    flex-shrink: 0;
+}
+/* Alinha o placeholder do ícone de privacidade */
+.privacy-placeholder {
+    width: 16px; /* Tamanho aproximado do .privacy-icon */
+    margin-right: 8px;
+}
+
 
 footer {
     text-align: center;
@@ -1013,6 +912,7 @@ footer a:hover {
     margin-right: 8px;
     color: #6c757d;
     font-size: 0.9em;
+    flex-shrink: 0; /* Impede que o ícone encolha */
 }
 
 /* === ESTILOS DE NOTIFICAÇÃO NA NAV === */
@@ -1153,8 +1053,199 @@ footer a:hover {
 
 
 
-/* Classe para elevar o z-index do LI pai quando o menu de subtarefa está ativo */
-#task-list > li.subtask-menu-parent-active {
+
+/* ======================================================== */
+/* === NOVOS ESTILOS PARA A UI REFINADA (ADICIONAR NO FIM) === */
+/* ======================================================== */
+
+/* 1. Estilo genérico para Tooltip */
+[data-tooltip] {
+    position: relative;
+    cursor: default;
+}
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%; 
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 10000; 
+    opacity: 0.9;
+    pointer-events: none; 
+}
+
+/* 2. Estilos para os novos ícones de meta (Alinhados à direita) */
+.task-meta-icons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto; /* **MÁGICA (1): Isso alinha os ícones à direita! */
+    flex-shrink: 0; /* Impede que encolham */
+    padding-left: 10px; /* Espaçamento do título */
+}
+
+.priority-label.priority-circle {
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+/* Cores da prioridade (fundo) */
+.priority-high { background: #f44336; }
+.priority-medium { background: #FFEB3B; color: #000; }
+.priority-low { background: #757575; }
+
+.task-category.category-icon {
+    font-size: 0.9rem; /* Tamanho do ícone */
+    padding: 0;
+    background: none;
+    color: #01579b; /* Cor do ícone */
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 3. Estilos para o novo menu de Opções (Principal e Subtarefa) */
+
+/* Botão de Opções da Tarefa Principal (⋮) */
+.task-options-btn {
+    background: none;
+    color: #666;
+    font-size: 1.1rem; /* Tamanho do ícone */
+    padding: 0 8px;
+    cursor: pointer;
+    border: none;
+    line-height: 1;
+    border-radius: 4px;
+    font-weight: 900;
+    transition: background-color 0.2s, color 0.2s;
+    /* **MÁGICA (2): Não é mais absoluto, é parte do flex-flow */
+    flex-shrink: 0;
+}
+
+.task-options-btn:hover {
+    color: #333;
+    background-color: #eee;
+}
+
+/* Botão de Opções da Subtarefa (⋮) */
+.subtask-options-btn {
+    /* **MÁGICA (3): Não é mais absoluto, é parte do flex-flow */
+    flex-shrink: 0;
+    
+    /* Copia o estilo do botão principal para consistência */
+    background: none;
+    color: #666;
+    font-size: 1.1rem;
+    padding: 0 8px;
+    cursor: pointer;
+    border: none;
+    line-height: 1;
+    border-radius: 4px;
+    font-weight: 900;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.subtask-options-btn:hover {
+    color: #333;
+    background-color: #eee;
+}
+
+
+/* Menu Dropdown da Tarefa Principal */
+.task-actions-menu {
+    display: none; /* Escondido por padrão */
+    position: absolute;
+    top: 30px; /* Ajuste para aparecer abaixo do botão */ 
+    right: 15px; /* Alinha com a direita do LI */
+    width: 170px; 
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 100; /* Acima dos outros itens */
+    list-style: none;
+    padding: 5px;
+    overflow: hidden;
+    border: 1px solid #eee;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.task-actions-menu.active {
+    display: flex; /* Mostra o menu */
+}
+
+/* Estilo dos botões DENTRO do menu */
+.task-actions-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+    transition: background 0.2s, color 0.2s;
+    border-radius: 6px;
+}
+
+/* **NOVO: Estilo para ícone Google Agenda** */
+.task-actions-menu button.google-calendar-btn img {
+    width: 15px;
+    height: 15px;
+    margin-left: -1px; /* Ajuste fino */
+}
+
+.task-actions-menu button i {
+    width: 15px; /* Alinha os ícones */
+    text-align: center;
+    color: #555;
+}
+
+.task-actions-menu button:hover {
+    background-color: #f0f0f0;
+    color: var(--primary-color);
+}
+.task-actions-menu button:hover i {
+    color: var(--primary-color);
+}
+
+/* Cor específica para o botão apagar */
+.task-actions-menu .remove-btn {
+    color: #dc3545;
+}
+.task-actions-menu .remove-btn i {
+    color: #dc3545;
+}
+.task-actions-menu .remove-btn:hover {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+.task-actions-menu .remove-btn:hover i {
+    color: #721c24;
+}
+
+/* Lógica de Z-index para sobreposição */
+#task-list > li.menu-active {
     position: relative; /* Garante que z-index funcione */
-    z-index: 50; /* Um valor menor que o do menu (1000), mas maior que o padrão (0/auto) */
+    z-index: 50; /* Um valor maior que o padrão (0/auto) */
 }

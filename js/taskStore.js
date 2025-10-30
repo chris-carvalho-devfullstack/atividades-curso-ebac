@@ -146,6 +146,11 @@ export async function saveSubtasksToFirestore(taskId, subtasks) { await updateTa
 // Listeners e Migração (Exportados)
 // ===============================================
 
+/**
+ * **CORREÇÃO DO BUG 2 (Recolhimento)**
+ * Esta função agora salva e restaura o estado de expansão das tarefas
+ * para evitar que elas se fechem sozinhas ao marcar um checkbox.
+ */
 export function loadTasksRealTime() {
     const uid = getCurrentUserUID();
     if (!uid) return;
@@ -157,6 +162,20 @@ export function loadTasksRealTime() {
     console.log("Iniciando listener para Tarefas...");
     unsubscribeTasks = onSnapshot(q, (snapshot) => {
         console.log("Snapshot de Tarefas recebido:", snapshot.docs.length, "documentos");
+
+        // *** INÍCIO DA CORREÇÃO (BUG 2) ***
+
+        // 1. Salva o estado de expansão atual ANTES de redesenhar
+        const expandedTasks = new Set();
+        $('#task-list > li').each(function() {
+            // Se o botão NÃO tem a classe 'collapsed', a tarefa está expandida
+            if (!$(this).find('.toggle-subtasks-btn').hasClass('collapsed')) {
+                expandedTasks.add($(this).data('id'));
+            }
+        });
+        console.log("Estado de expansão salvo:", expandedTasks);
+
+        // 2. Reconstrói o array local e renderiza (como antes)
         tasks = [];
         snapshot.forEach((doc) => {
             const task = doc.data();
@@ -166,8 +185,21 @@ export function loadTasksRealTime() {
             tasks.push(task);
         });
 
-        // *** ATUALIZADO: Chama funções de UI importadas ***
-        renderAllTasks(tasks);
+        renderAllTasks(tasks); // Esta é a chamada que "recolhe" tudo
+
+        // 3. Restaura o estado de expansão
+        expandedTasks.forEach(id => {
+            const $li = $(`#task-list > li[data-id="${id}"]`);
+            if ($li.length) {
+                $li.find('.toggle-subtasks-btn').removeClass('collapsed').html('▼');
+                $li.children('.subtask-list').show();
+            }
+        });
+        console.log("Estado de expansão restaurado.");
+
+        // *** FIM DA CORREÇÃO ***
+
+        // Atualiza o resto da UI (como antes)
         updateProgress();
         checkAllDueDates();
         applyFilter();
