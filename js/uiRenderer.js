@@ -6,6 +6,9 @@ import { generateId, findNestedSubtask } from './utils.js'; // <<< Importa findN
 // Estas importações podem ser removidas se os listeners forem movidos para eventBinder/app
 import { openSubtaskModalForEdit } from './app.js';
 import { exportTaskToGoogleLink } from './app.js';
+// *** MUDANÇA: Importa a função de criar notificação de prazo ***
+import { createTaskDeadlineNotification } from './app.js';
+
 
 // --- Mapeamentos para os novos ícones e tooltips ---
 const priorityMap = {
@@ -50,7 +53,7 @@ export function renderAllTasks(tasksArray) {
         taskList.append('<li class="empty-list-message">Nenhuma tarefa encontrada.</li>');
     }
     updateProgress();
-    checkAllDueDates(); // Verifica prazos após renderizar
+    checkAllDueDates(); // Verifica prazos após renderizar (ESTA É A CHAMADA CORRETA E ÚNICA)
 }
 
 export function renderTrash(trashArray) {
@@ -194,7 +197,9 @@ function addTaskHTML(task) {
     li.append(subtaskList);
 
     $('#task-list').append(li);
-    updateTaskDueVisual(li, task); // Atualiza cor da borda (due-soon/overdue)
+    
+    // *** CORREÇÃO: Esta chamada foi removida daqui para evitar a primeira chamada duplicada ***
+    // updateTaskDueVisual(li, task); 
 }
 
 /**
@@ -294,25 +299,52 @@ export function updateProgress() {
     progressBar.css('width', percent + '%');
 }
 
+/**
+ * *** FUNÇÃO CORRIGIDA ***
+ * Atualiza o visual (cores) e agora também dispara a notificação de prazo.
+ */
 export function updateTaskDueVisual(li, task) {
     if (!li || !task) return;
     li = $(li);
     li.removeClass('due-soon overdue');
     li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
-    if (!task.dueDate || task.completed) return;
+    
+    // Se não tiver data ou já estiver completa, remove classes e sai
+    if (!task.dueDate || task.completed) return; 
+    
     const dateTimeString = task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T00:00:00'); 
     let due;
     try { due = new Date(dateTimeString); if (isNaN(due.getTime())) throw new Error(); }
-    catch (e) { return; } 
+    catch (e) { return; } // Data inválida, sai
+    
     const now = new Date();
     const settings = getUserSettings();
     const leadTimeMinutes = settings.taskSettings.alertLeadTimeMinutes || 60;
     const diffMinutes = (due.getTime() - now.getTime()) / (1000 * 60);
-    const isDueSoon = diffMinutes > 0 && diffMinutes <= leadTimeMinutes + 1;
+    
+    // +1 minuto de buffer para garantir que a verificação capture
+    const isDueSoon = diffMinutes > 0 && diffMinutes <= leadTimeMinutes + 1; 
     const isOverdue = diffMinutes <= 0;
-    if (isOverdue) { li.addClass('overdue'); }
-    else if (isDueSoon) { li.addClass('due-soon'); }
+
+    if (isOverdue) {
+        li.addClass('overdue');
+    } else if (isDueSoon) {
+        li.addClass('due-soon');
+        
+        // *** MUDANÇA: Dispara a notificação ***
+        // Se está vencendo em breve E AINDA NÃO FOI NOTIFICADA
+        if (!task.deadlineNotified) {
+            console.log(`Disparando notificação de prazo para: ${task.text}`);
+            // Passa a data formatada para a notificação
+            const simpleDateTime = due.toLocaleString('pt-BR', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'short' });
+            createTaskDeadlineNotification(task.id, task.text, simpleDateTime);
+            // A função 'createTaskDeadlineNotification' agora é responsável por
+            // criar a notificação E marcar 'deadlineNotified: true' no Firestore.
+        }
+    }
+    // Se não for 'overdue' nem 'due-soon', nenhuma classe de prazo é adicionada.
 }
+
 
 export function checkAllDueDates() {
     const tasksMap = new Map(getTasks().map(t => [t.id, t]));

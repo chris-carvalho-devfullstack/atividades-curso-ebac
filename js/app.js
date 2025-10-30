@@ -8,7 +8,8 @@ import { db } from "./firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 import { initializeAuth, getCurrentUserUID, getUserSettings } from './authManager.js';
 import { showModal, hideModal } from './modalHandler.js';
-import { getTasks, updateSubtasks } from './taskStore.js';
+// *** MUDANÇA: Importa 'updateTaskInFirestore' de taskStore ***
+import { getTasks, updateSubtasks, updateTaskInFirestore } from './taskStore.js';
 // *** CORRIGIDO: Importa findNestedSubtask de utils.js ***
 import { findNestedSubtask } from './utils.js';
 import { showToastNotification } from './toast-notification.js'; // Mantido para createTaskDeadlineNotification (se mover, remover)
@@ -152,8 +153,36 @@ function syncAllToCalendar() {
 export function exportTaskToGoogleLink(task) {
     if (!task.dueDate) { alert("A tarefa precisa ter uma data para exportar!"); return; } let startDateTime = task.dueDate + (task.dueTime ? `T${task.dueTime}:00Z` : 'T00:00:00Z'); let startDate = new Date(startDateTime); let endDate = new Date(startDate.getTime() + 60 * 60 * 1000); let formatForGoogle = (date) => date.toISOString().replace(/-|:|\.\d+/g, ''); let details = task.subtasks ? task.subtasks.map(st => st.text).join('\n') : ''; let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.text)}&dates=${formatForGoogle(startDate)}/${formatForGoogle(endDate)}&details=${encodeURIComponent(details)}`; window.open(url, '_blank');
 }
-async function createTaskDeadlineNotification(taskId, taskText, dueDateTime) {
-     const uid = getCurrentUserUID(); if (!uid) return; try { const settings = getUserSettings(); const notificationsRef = collection(db, 'users', uid, 'notifications'); const leadingTime = settings.taskSettings.alertLeadTimeMinutes || 60; await addDoc(notificationsRef, { type: 'task_deadline', message: `Atenção: A tarefa "${taskText}" vence em menos de ${leadingTime} minutos (${dueDateTime}).`, url: `/index.html#task-${taskId}`, read: false, timestamp: serverTimestamp() }); console.log(`Notificação de prazo criada para a tarefa: ${taskId}`); } catch (error) { console.error("Erro ao criar notificação de prazo:", error); }
+
+/**
+ * *** FUNÇÃO CORRIGIDA ***
+ * Cria uma notificação de prazo no Firestore E
+ * marca a tarefa como 'deadlineNotified: true' para evitar duplicatas.
+ */
+export async function createTaskDeadlineNotification(taskId, taskText, dueDateTime) {
+     const uid = getCurrentUserUID(); if (!uid) return;
+     try {
+         const settings = getUserSettings();
+         const notificationsRef = collection(db, 'users', uid, 'notifications');
+         const leadingTime = settings.taskSettings.alertLeadTimeMinutes || 60;
+         
+         // 1. Cria a notificação
+         await addDoc(notificationsRef, {
+             type: 'task_deadline',
+             message: `Atenção: A tarefa "${taskText}" vence em menos de ${leadingTime} minutos (${dueDateTime}).`,
+             url: `/index.html#task-${taskId}`, // (URL é hipotética por enquanto)
+             read: false,
+             timestamp: serverTimestamp()
+         });
+         
+         // 2. Marca a tarefa como notificada para evitar spam
+         await updateTaskInFirestore(taskId, { deadlineNotified: true });
+         
+         console.log(`Notificação de prazo CRIADA e task marcada como notificada: ${taskId}`);
+         
+     } catch (error) {
+         console.error("Erro ao criar notificação de prazo:", error);
+     }
 }
 
 // ===============================================

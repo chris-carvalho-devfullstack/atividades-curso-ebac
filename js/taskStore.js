@@ -81,7 +81,7 @@ export function loadTasksFromLocalStorage() {
     // *** ATUALIZADO: Chama funções de UI importadas ***
     renderAllTasks(tasks);
     updateProgress();
-    checkAllDueDates();
+    // checkAllDueDates(); // Esta chamada foi movida para dentro de renderAllTasks
 }
 
 // ===============================================
@@ -147,9 +147,9 @@ export async function saveSubtasksToFirestore(taskId, subtasks) { await updateTa
 // ===============================================
 
 /**
- * **CORREÇÃO DO BUG 2 (Recolhimento)**
- * Esta função agora salva e restaura o estado de expansão das tarefas
- * para evitar que elas se fechem sozinhas ao marcar um checkbox.
+ * **CORREÇÃO DO BUG (Notificação triplicada)**
+ * A chamada redundante para checkAllDueDates() foi removida.
+ * A função renderAllTasks() já chama checkAllDueDates() internamente.
  */
 export function loadTasksRealTime() {
     const uid = getCurrentUserUID();
@@ -163,19 +163,16 @@ export function loadTasksRealTime() {
     unsubscribeTasks = onSnapshot(q, (snapshot) => {
         console.log("Snapshot de Tarefas recebido:", snapshot.docs.length, "documentos");
 
-        // *** INÍCIO DA CORREÇÃO (BUG 2) ***
-
         // 1. Salva o estado de expansão atual ANTES de redesenhar
         const expandedTasks = new Set();
         $('#task-list > li').each(function() {
-            // Se o botão NÃO tem a classe 'collapsed', a tarefa está expandida
             if (!$(this).find('.toggle-subtasks-btn').hasClass('collapsed')) {
                 expandedTasks.add($(this).data('id'));
             }
         });
         console.log("Estado de expansão salvo:", expandedTasks);
 
-        // 2. Reconstrói o array local e renderiza (como antes)
+        // 2. Reconstrói o array local e renderiza
         tasks = [];
         snapshot.forEach((doc) => {
             const task = doc.data();
@@ -185,7 +182,7 @@ export function loadTasksRealTime() {
             tasks.push(task);
         });
 
-        renderAllTasks(tasks); // Esta é a chamada que "recolhe" tudo
+        renderAllTasks(tasks); // Esta é a chamada principal que renderiza E verifica as datas
 
         // 3. Restaura o estado de expansão
         expandedTasks.forEach(id => {
@@ -197,13 +194,13 @@ export function loadTasksRealTime() {
         });
         console.log("Estado de expansão restaurado.");
 
-        // *** FIM DA CORREÇÃO ***
-
-        // Atualiza o resto da UI (como antes)
+        // Atualiza o resto da UI
         updateProgress();
-        checkAllDueDates();
+        
+        // *** CORREÇÃO: Esta chamada foi removida para evitar a triplicação ***
+        // checkAllDueDates(); 
+        
         applyFilter();
-        // syncAllToCalendar(); // Chamada movida para app.js/initCalendar
 
     }, (error) => { console.error("Erro ao escutar tarefas em tempo real:", error); });
 }
@@ -304,8 +301,8 @@ export async function updateTask(taskId, updatedData) {
             saveLocalTasks(tasks);
             // *** ATUALIZADO: Chama funções de UI importadas ***
             renderAllTasks(tasks);
-            updateProgress();
-            checkAllDueDates();
+            // updateProgress(); // Já é chamado por renderAllTasks
+            // checkAllDueDates(); // Já é chamado por renderAllTasks
         }
     }
 }

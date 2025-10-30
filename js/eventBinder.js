@@ -65,13 +65,16 @@ export function setupCommonEventListeners() {
         const newTestButton = testButton.cloneNode(true); // Cria um clone sem listeners
         if(testButton.parentNode) testButton.parentNode.replaceChild(newTestButton, testButton);
     }
-    // Limpa o intervalo antigo, se existir
-    if (window.checkDatesIntervalId) { clearInterval(window.checkDatesIntervalId); }
+    
+    // *** CORREÇÃO: Limpa o intervalo antigo, se existir (e não o recria) ***
+    if (window.checkDatesIntervalId) {
+        clearInterval(window.checkDatesIntervalId);
+        window.checkDatesIntervalId = null; // Garante que foi limpo
+        console.log("Intervalo de verificação de datas (60s) removido para evitar duplicatas.");
+    }
+    // *** FIM DA CORREÇÃO ***
 
     // --- Adiciona Novos Listeners ---
-
-    // Verifica prazos periodicamente
-    window.checkDatesIntervalId = setInterval(checkAllDueDates, 60 * 1000);
 
     // Abertura de Modais
     $(document).on('click', '#toggle-form-btn', () => { showModal('#addTaskModal'); setTimeout(() => $('#task-text').focus(), 150); });
