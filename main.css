@@ -1289,23 +1289,6 @@ footer a:hover {
     color: #721c24;
 }
 
-/* *** NOVO: Estilo para o Botão Exportar PDF *** */
-.task-actions-menu .export-pdf-btn {
-    color: #D32F2F; /* Vermelho escuro para PDF */
-}
-.task-actions-menu .export-pdf-btn i {
-    color: #D32F2F;
-}
-.task-actions-menu .export-pdf-btn:hover {
-    background-color: #FFEBEE; /* Um rosa bem claro no hover */
-    color: #B71C1C; /* Vermelho mais escuro no hover */
-}
-.task-actions-menu .export-pdf-btn:hover i {
-    color: #B71C1C;
-}
-/* ******************************************* */
-
-
 /* Lógica de Z-index para sobreposição */
 #task-list > li.menu-active {
     position: relative; /* Garante que z-index funcione */

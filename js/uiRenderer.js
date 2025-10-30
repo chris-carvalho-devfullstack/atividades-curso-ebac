@@ -178,18 +178,11 @@ function addTaskHTML(task) {
         actionsMenu.append(googleBtn);
     }
     
-    // ******************************************************
-    // *** AQUI ESTÁ A ADIÇÃO QUE FALTAVA ***
-    // ******************************************************
-    let pdfBtn = $('<button class="export-pdf-btn" type="button"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>');
-    // ******************************************************
-
     let editBtn = $('<button class="edit-btn" type="button"><i class="fa fa-pencil"></i> Editar</button>');
     let addSubBtn = $('<button class="add-subtask-btn" type="button" data-task-id="' + taskId + '"><i class="fa fa-plus"></i> Add Subtarefa</button>');
     let removeBtn = $('<button class="remove-btn" type="button"><i class="fa fa-trash"></i> Apagar</button>');
 
-    // *** Adiciona o pdfBtn ao menu ***
-    actionsMenu.append(pdfBtn, editBtn, addSubBtn, removeBtn);
+    actionsMenu.append(editBtn, addSubBtn, removeBtn);
     btnGroup.append(optionsBtn, actionsMenu);
     
     taskDiv.append(btnGroup); // Adiciona o grupo de menu ao task-main
