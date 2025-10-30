@@ -1,19 +1,20 @@
 // js/eventBinder.js
 import { showModal, hideModal } from './modalHandler.js';
-// A importação de getTasks ainda é necessária
 import { addTask, updateTask, deleteTask, updateSubtasks, getTasks, saveTaskOrder, restoreTaskFromTrash, permanentlyDeleteTask, getTrash } from './taskStore.js';
+// *** CORRIGIDO: Importa funções de UI do uiRenderer ***
 import { applyFilter, checkAllDueDates } from './uiRenderer.js';
+// *** CORRIGIDO: Importa findNestedSubtask de utils ***
 import { findNestedSubtask } from './utils.js';
 import { generateId } from './utils.js';
 
 // *** IMPORTAÇÃO ATUALIZADA DO PDF EXPORTER ***
-import { exportTaskToPDF } from './pdfExporter.js'; // <- Apenas a função de exportar
+import { loadPdfLibraries, exportTaskToPDF } from './pdfExporter.js';
 
 // Importa funções que AINDA ESTÃO em app.js
 import {
     openSubtaskModalForCreate, openSubtaskModalForEdit, deleteSubtaskViaModal, toggleSubtaskMenu,
     exportTaskToGoogleLink, setCurrentTaskLi, setCurrentSubtaskData, getCurrentSubtaskData,
-    initCalendar, currentTaskLi
+    initCalendar, currentTaskLi // Importa a variável exportada currentTaskLi
 } from './app.js';
 
 // Importa showToastNotification para o botão de teste
@@ -48,16 +49,19 @@ export function setupCommonEventListeners() {
     $(document).off('click', '.edit-btn');
     $(document).off('click', '.add-subtask-btn');
     $(document).off('click', '.subtask-options-btn');
-    $(document).off('click', '.subtask-label');
-    $(document).off('click', '#task-list > li > .task-main > .task-text > label');
-    $(document).off('click', '.js-view-label');
+    $(document).off('click', '.subtask-label'); // Remove listener antigo/comentado
+    $(document).off('click', '#task-list > li > .task-main > .task-text > label'); // Remove listener quebrado
+    $(document).off('click', '.js-view-label'); // Remove listener corrigido (para readicionar)
     $(document).off('click', '.toggle-subtasks-btn');
     $(document).off('click', '.google-calendar-btn');
     $(document).off('click', '.export-pdf-btn'); // <-- Limpa o novo listener
     $(document).off('click', '.btn-restore');
     $(document).off('click', '.btn-delete-permanently');
     $('#empty-trash-btn').off('click');
+    
+    // --- NOVO: Listener para o menu de opções da tarefa ---
     $(document).off('click', '.task-options-btn'); 
+    // ------------------------------------------------------
     
     // Limpa o botão de teste
     const testButton = document.getElementById('test-toast-btn');
@@ -66,16 +70,16 @@ export function setupCommonEventListeners() {
         if(testButton.parentNode) testButton.parentNode.replaceChild(newTestButton, testButton);
     }
     
+    // *** CORREÇÃO: Limpa o intervalo antigo, se existir (e não o recria) ***
     if (window.checkDatesIntervalId) {
         clearInterval(window.checkDatesIntervalId);
-        window.checkDatesIntervalId = null; 
+        window.checkDatesIntervalId = null; // Garante que foi limpo
         console.log("Intervalo de verificação de datas (60s) removido para evitar duplicatas.");
     }
+    // *** FIM DA CORREÇÃO ***
 
     // --- Adiciona Novos Listeners ---
 
-    // (Todos os outros listeners de Abertura/Fechamento de Modal, Forms, etc. permanecem aqui)
-    // ...
     // Abertura de Modais
     $(document).on('click', '#toggle-form-btn', () => { showModal('#addTaskModal'); setTimeout(() => $('#task-text').focus(), 150); });
     $(document).on('click', '#toggle-filter-btn', () => { showModal('#filterModal'); setTimeout(() => $('#search-input').focus(), 150); });
@@ -84,10 +88,10 @@ export function setupCommonEventListeners() {
         const $container = $('#calendar-container');
         if ($container.is(':visible')) {
              $container.slideUp(180);
-             $('#toggle-calendar-btn').html('📅 Mostrar calendário');
+             $('#toggle-calendar-btn').html('📅 Mostrar calendário'); // Atualiza texto
         } else {
-             $container.slideDown(180, () => { initCalendar(); });
-             $('#toggle-calendar-btn').html('📅 Ocultar calendário');
+             $container.slideDown(180, () => { initCalendar(); }); // initCalendar só ao mostrar
+             $('#toggle-calendar-btn').html('📅 Ocultar calendário'); // Atualiza texto
         }
     });
 
@@ -110,8 +114,8 @@ export function setupCommonEventListeners() {
     });
 
     // --- Listeners Delegados ---
-    // (Checkboxes, Remover, Editar, Adicionar Subtarefa, Salvar Edição, Salvar Subtarefa, Opções de Subtarefa, Opções de Tarefa, Filtros, Sortable, Toggle Subtasks, View Label, Google Calendar...)
-    // ...
+
+    // Checkboxes de Tarefa Principal
     $(document).on('change', '.task-checkbox', async function () {
         let li = $(this).closest('li'); let taskId = li.attr('data-id'); let isCompleted = $(this).prop('checked');
         const task = getTasks().find(t => t.id === taskId); if (!task) return;
@@ -119,6 +123,8 @@ export function setupCommonEventListeners() {
         const updatedSubtasks = recursiveCheck(task.subtasks, isCompleted);
         await updateTask(taskId, { completed: isCompleted, subtasks: updatedSubtasks });
     });
+
+    // Checkboxes de Subtarefa
     $(document).on('change', '.subtask-checkbox', async function () {
         let subLi = $(this).closest('li'); let subId = subLi.attr('data-id'); let taskLi = subLi.closest('li[data-id][data-category]'); let taskId = taskLi.attr('data-id');
         const task = getTasks().find(t => t.id === taskId); if (!task || !task.subtasks) return;
@@ -127,76 +133,109 @@ export function setupCommonEventListeners() {
         let updatedSubtasks = updateTargetAndChildren([...task.subtasks]);
         await updateSubtasks(taskId, updatedSubtasks);
     });
+
+    // Botão Remover Tarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.remove-btn', function () {
-        let li = $(this).closest('li[data-id][data-category]');
+        let li = $(this).closest('li[data-id][data-category]'); // Garante que pegue o LI principal
         let taskId = li.attr('data-id');
         const task = getTasks().find(t => t.id === taskId); if (!task) return;
         $('#confirm-title').text('Mover para a Lixeira'); $('#confirm-text').text(`Deseja realmente mover a tarefa "${task.text}" para a lixeira?`); showModal('#confirmModal');
         $('#confirm-ok-btn').off('click').on('click', async () => { await deleteTask(taskId); hideModal('#confirmModal'); });
         $('#confirm-cancel-btn').off('click').on('click', () => hideModal('#confirmModal'));
     });
+
+    // Botão Editar Tarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.edit-btn', function() {
-        let li = $(this).closest('li[data-id][data-category]');
-        setCurrentTaskLi(li);
+        let li = $(this).closest('li[data-id][data-category]'); // Garante que pegue o LI principal
+        setCurrentTaskLi(li); // Salva a referência do LI
         const task = getTasks().find(t => t.id === li.attr('data-id')); if (!task) return;
         $('#edit-task-name').val(task.text); $('#edit-task-priority').val(task.priority || 'medium'); $('#edit-task-category').val(task.category || 'geral');
         $('#edit-task-date').val(task.dueDate || ''); $('#edit-task-time').val(task.dueTime || ''); $('#edit-task-privacy').val(task.privacy || 'private');
         showModal('#editTaskModal');
     });
+
+     // Botão Salvar Edição
      $('#edit-save-btn').on('click', async function() {
-        const currentLiRef = currentTaskLi;
+        const currentLiRef = currentTaskLi; // Usa a variável importada/salva de app.js
         if (!currentLiRef) return; let taskId = currentLiRef.attr('data-id');
         const updatedData = { text: $('#edit-task-name').val()?.trim() || 'Tarefa', priority: $('#edit-task-priority').val(), category: $('#edit-task-category').val(), dueDate: $('#edit-task-date').val() || null, dueTime: $('#edit-task-time').val() || null, privacy: $('#edit-task-privacy').val(), };
         if (!updatedData.dueDate) delete updatedData.dueDate; if (!updatedData.dueTime) delete updatedData.dueTime;
-        await updateTask(taskId, updatedData); hideModal('#editTaskModal'); setCurrentTaskLi(null);
+        await updateTask(taskId, updatedData); hideModal('#editTaskModal'); setCurrentTaskLi(null); // Limpa a referência
     });
+
+    // Botão Adicionar Subtarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.add-subtask-btn', function () {
         const taskId = $(this).data('task-id') || $(this).closest('li[data-id]').data('id'); if (!taskId) return;
-        openSubtaskModalForCreate(taskId, taskId);
+        openSubtaskModalForCreate(taskId, taskId); // Abre modal para adicionar à tarefa principal
     });
+
+    // Botão Salvar/Adicionar Subtarefa
     $('#subtask-add-btn').on('click', async function () {
          const { taskId, subtaskId, isEdit, parentId } = getCurrentSubtaskData(); const subtaskText = $('#subtask-input').val()?.trim(); if (!subtaskText || !taskId) return;
          const task = getTasks().find(t => t.id === taskId); if (!task) return;
          const newSubtaskData = { text: subtaskText, priority: $('#subtask-priority').val() || 'medium', category: $('#subtask-category').val() || 'geral', dueDate: $('#subtask-date').val() || null, dueTime: $('#subtask-time').val() || null, };
          if (!newSubtaskData.dueDate) delete newSubtaskData.dueDate; if (!newSubtaskData.dueTime) delete newSubtaskData.dueTime;
          let updatedSubtasks; let originalSubtasks = task.subtasks ? [...task.subtasks] : [];
+         // Funções auxiliares para encontrar e modificar/adicionar
          const findAndUpdate = (subs, id, data) => { if (!subs) return []; return subs.map(sub => { if (sub.id === id) return { ...sub, ...data }; if (sub.subtasks?.length > 0) sub.subtasks = findAndUpdate(sub.subtasks, id, data); return sub; }); };
          const findAndAdd = (subs, pId, newSub) => { if (!subs) return pId === taskId ? [newSub] : []; if (pId === taskId) return [...subs, newSub]; return subs.map(sub => { if (sub.id === pId) sub.subtasks = sub.subtasks ? [...sub.subtasks, newSub] : [newSub]; else if (sub.subtasks?.length > 0) sub.subtasks = findAndAdd(sub.subtasks, pId, newSub); return sub; }); };
 
          if (isEdit) { updatedSubtasks = findAndUpdate(originalSubtasks, subtaskId, newSubtaskData); } else { const newSubtask = { id: generateId(), completed: false, subtasks: [], ...newSubtaskData }; updatedSubtasks = findAndAdd(originalSubtasks, parentId, newSubtask); }
          await updateSubtasks(taskId, updatedSubtasks); hideModal('#subtask-modal');
+         // Reset modal state after adding/editing
          setCurrentSubtaskData({ taskId: null, subtaskId: null, isEdit: false, parentId: null, priority: 'medium', category: 'geral', dueDate: '', dueTime: '' });
          $('#subtask-modal-title').text('Adicionar Subtarefa');$('#subtask-input').val('');$('#subtask-priority').val('medium');$('#subtask-category').val('geral');$('#subtask-date').val('');$('#subtask-time').val('');$('#subtask-add-btn').text('Adicionar');
     });
+
+     // Botão de Opções da Subtarefa (Já existia)
     $(document).on('click', '.subtask-options-btn', function(e) {
         e.stopPropagation(); const taskId = $(this).data('task-id'); const subtaskId = $(this).data('subtask-id'); const parentId = $(this).data('parent-id');
-        toggleSubtaskMenu($(this), taskId, subtaskId, parentId);
+        toggleSubtaskMenu($(this), taskId, subtaskId, parentId); // Chama a função que está em app.js
     });
+    
+    // --- **MUDANÇA**: Listener para o botão de Opções da TAREFA PRINCIPAL ---
     $(document).on('click', '.task-options-btn', function(e) {
-        e.stopPropagation();
+        e.stopPropagation(); // Impede que o clique feche o menu imediatamente
+        
         const $menu = $(this).siblings('.task-actions-menu');
         const $li = $(this).closest('li[data-id]');
+        
+        // Fecha todos os *outros* menus (de tarefa e subtarefa)
         $('.task-actions-menu.active').not($menu).removeClass('active');
         $('.subtask-options-menu.active').removeClass('active');
+        
+        // **MUDANÇA (Z-index): Remove a classe de todos os LIs**
         $('#task-list > li').removeClass('menu-active');
+        
+        // Alterna o menu atual
         $menu.toggleClass('active');
+        
+        // **MUDANÇA (Z-index): Adiciona a classe apenas no LI atual se o menu estiver ativo**
         if ($menu.hasClass('active')) {
             $li.addClass('menu-active');
         } else {
             $li.removeClass('menu-active');
         }
     });
+    // -----------------------------------------------------------------
+
+    // --- Filtros ---
     $('#search-input').on('input', applyFilter);
     $('#filter-priority').on('change', applyFilter);
     $('#filter-category').on('change', applyFilter);
+
+    // --- Sortable ---
     $('#task-list').sortable({
-        handle: '.task-main',
+        handle: '.task-main', // Permite arrastar apenas pelo cabeçalho da tarefa principal
         update: async function (event, ui) { if (ui.sender) return; const orderedIds = $(this).children('li').map(function() { return $(this).attr('data-id'); }).get(); await saveTaskOrder(orderedIds); },
-        placeholder: "ui-state-highlight", forcePlaceholderSize: true, axis: "y", cursor: "grabbing", opacity: 0.8, items: "> li[data-id]"
+        placeholder: "ui-state-highlight", forcePlaceholderSize: true, axis: "y", cursor: "grabbing", opacity: 0.8, items: "> li[data-id]" // Garante que só arraste itens com data-id
     }).disableSelection();
+
+    // --- **MUDANÇA**: Botão Expandir/Colapsar Subtarefas ---
     $(document).on('click', '.toggle-subtasks-btn', function () {
         $(this).toggleClass('collapsed');
         const isCollapsed = $(this).hasClass('collapsed');
+        
         if (isCollapsed) {
             $(this).attr('title', 'Mostrar Subtarefas');
             $(this).html('►');
@@ -204,14 +243,21 @@ export function setupCommonEventListeners() {
             $(this).attr('title', 'Ocultar Subtarefas');
             $(this).html('▼');
         }
+        
         $(this).closest('li').children('.subtask-list').slideToggle(200);
     });
+
+    // --- CORREÇÃO: Listener unificado para abrir Modal de Visualização (Label Principal E Subtarefa) ---
     $(document).on('click', '.js-view-label', function() {
+        // Encontra o LI da tarefa principal (o que tem 'data-category')
         let li = $(this).closest('li[data-id][data-category]');
-        if (!li || li.length === 0) return;
+        if (!li || li.length === 0) return; // Sai se não achar o pai principal
+
         const taskId = li.attr('data-id');
         const task = getTasks().find(t => t.id === taskId);
         if (!task) return;
+
+        // Função recursiva para renderizar subtarefas aninhadas
         const renderNestedSubtasksForView = (subtasks, $list) => {
             if (!subtasks || subtasks.length === 0) return;
             subtasks.forEach(st => {
@@ -222,6 +268,7 @@ export function setupCommonEventListeners() {
                 }
             });
         };
+
         $('#view-task-name').text(task.text);
         $('#view-task-priority').text((task.priority || 'medium').charAt(0).toUpperCase()+(task.priority || 'medium').slice(1));
         $('#view-task-category').text((task.category || 'geral').charAt(0).toUpperCase()+(task.category || 'geral').slice(1));
@@ -235,39 +282,42 @@ export function setupCommonEventListeners() {
             $subtasks.append('<li>Nenhuma subtarefa</li>');
         }
         showModal('#viewTaskModal');
+
+        // Reatribui os listeners dos botões do modal de visualização
         $('#view-edit-btn').off('click').on('click', () => { hideModal('#viewTaskModal'); li.find('.edit-btn').first().trigger('click'); });
         $('#view-delete-btn').off('click').on('click', () => { hideModal('#viewTaskModal'); li.find('.remove-btn').first().trigger('click'); });
     });
+
+
+    // --- Botão Google Calendar (AGORA DENTRO DO MENU) ---
     $(document).on('click', '.google-calendar-btn', function () {
         const taskId = $(this).closest('li[data-id]').data('id'); const task = getTasks().find(t => t.id === taskId);
-        if (task) exportTaskToGoogleLink(task);
+        if (task) exportTaskToGoogleLink(task); // Chama a função que está em app.js
     });
 
-    // *** LISTENER ATUALIZADO: Botão Exportar PDF (Síncrono) ***
-    $(document).on('click', '.export-pdf-btn', function () {
-        // 1. VERIFICAÇÃO DE SEGURANÇA PRIMEIRO
-        // (Esta é a verificação que falhava antes)
-        if (typeof window.jspdf === 'undefined' || 
-            typeof window.jspdf.jsPDF === 'undefined' || 
-            typeof window.jspdf.jsPDF.autoTable === 'undefined') {
-            
-            alert('A biblioteca de PDF (jsPDF) ainda está carregando ou falhou. Verifique se os arquivos jspdf.umd.min.js e jspdf.plugin.autotable.min.js estão na pasta /js/lib/ e tente recarregar a página (Ctrl+Shift+R).');
-            console.error("Tentativa de exportar PDF, mas 'window.jspdf.jsPDF.autoTable' não está definido.");
-            return;
-        }
-
-        // 2. Se a verificação passar, executa a exportação
+    // *** LISTENER ATUALIZADO: Botão Exportar PDF ***
+    $(document).on('click', '.export-pdf-btn', async function () {
         const $button = $(this);
         const originalHtml = $button.html();
-
+        
         try {
-            $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Gerando...');
+            // 1. Mostrar estado de carregamento no botão
+            $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Carregando...');
+
+            // 2. Carregar as bibliotecas dinamicamente
+            const librariesLoaded = await loadPdfLibraries(); // Espera o carregador
             
+            if (!librariesLoaded) {
+                // Se o carregador falhar
+                throw new Error('As bibliotecas de PDF não puderam ser carregadas. Verifique sua conexão.');
+            }
+
+            // 3. Obter dados da tarefa
             const taskId = $button.closest('li[data-id]').data('id');
             const task = getTasks().find(t => t.id === taskId);
             
             if (task) {
-                // 3. Chama a função de exportação (que agora é síncrona)
+                // 4. Gerar o PDF (agora é seguro)
                 exportTaskToPDF(task);
             } else {
                 throw new Error(`Tarefa com ID ${taskId} não encontrada.`);
@@ -277,10 +327,8 @@ export function setupCommonEventListeners() {
             console.error("Erro ao gerar PDF:", error);
             alert(`Ocorreu um erro: ${error.message}`);
         } finally {
-            // 4. Restaura o botão (com um pequeno delay para o usuário perceber)
-            setTimeout(() => {
-                $button.prop('disabled', false).html(originalHtml);
-            }, 500);
+            // 5. Restaurar o botão ao estado original
+            $button.prop('disabled', false).html(originalHtml);
         }
     });
     // ***************************************
@@ -313,15 +361,18 @@ export function setupCommonEventListeners() {
          });
      } else { console.warn("Botão de teste do toast (#test-toast-btn) não encontrado para adicionar listener."); }
 
-     // --- Fechar menus ao clicar fora ---
+     // --- **MUDANÇA**: Fechar menus ao clicar fora ---
     $(document).on('click', function(e) {
+        // Se o clique NÃO for dentro de um botão de menu E NÃO for dentro de um menu...
         if (!$(e.target).closest('.subtask-options-btn').length && 
             !$(e.target).closest('.subtask-options-menu').length &&
             !$(e.target).closest('.task-options-btn').length &&
             !$(e.target).closest('.task-actions-menu').length) 
         {
+            // Fecha todos os menus
             $('.subtask-options-menu.active').removeClass('active');
             $('.task-actions-menu.active').removeClass('active');
+            // Remove a classe de z-index de todos os LIs
             $('#task-list > li.menu-active').removeClass('menu-active');
         }
     });
