@@ -7,6 +7,9 @@ import { applyFilter, checkAllDueDates } from './uiRenderer.js';
 import { findNestedSubtask } from './utils.js';
 import { generateId } from './utils.js';
 
+// *** IMPORTAÇÃO ATUALIZADA DO PDF EXPORTER ***
+import { loadPdfLibraries, exportTaskToPDF } from './pdfExporter.js';
+
 // Importa funções que AINDA ESTÃO em app.js
 import {
     openSubtaskModalForCreate, openSubtaskModalForEdit, deleteSubtaskViaModal, toggleSubtaskMenu,
@@ -51,6 +54,7 @@ export function setupCommonEventListeners() {
     $(document).off('click', '.js-view-label'); // Remove listener corrigido (para readicionar)
     $(document).off('click', '.toggle-subtasks-btn');
     $(document).off('click', '.google-calendar-btn');
+    $(document).off('click', '.export-pdf-btn'); // <-- Limpa o novo listener
     $(document).off('click', '.btn-restore');
     $(document).off('click', '.btn-delete-permanently');
     $('#empty-trash-btn').off('click');
@@ -290,6 +294,44 @@ export function setupCommonEventListeners() {
         const taskId = $(this).closest('li[data-id]').data('id'); const task = getTasks().find(t => t.id === taskId);
         if (task) exportTaskToGoogleLink(task); // Chama a função que está em app.js
     });
+
+    // *** LISTENER ATUALIZADO: Botão Exportar PDF ***
+    $(document).on('click', '.export-pdf-btn', async function () {
+        const $button = $(this);
+        const originalHtml = $button.html();
+        
+        try {
+            // 1. Mostrar estado de carregamento no botão
+            $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Carregando...');
+
+            // 2. Carregar as bibliotecas dinamicamente
+            const librariesLoaded = await loadPdfLibraries(); // Espera o carregador
+            
+            if (!librariesLoaded) {
+                // Se o carregador falhar
+                throw new Error('As bibliotecas de PDF não puderam ser carregadas. Verifique sua conexão.');
+            }
+
+            // 3. Obter dados da tarefa
+            const taskId = $button.closest('li[data-id]').data('id');
+            const task = getTasks().find(t => t.id === taskId);
+            
+            if (task) {
+                // 4. Gerar o PDF (agora é seguro)
+                exportTaskToPDF(task);
+            } else {
+                throw new Error(`Tarefa com ID ${taskId} não encontrada.`);
+            }
+
+        } catch (error) {
+            console.error("Erro ao gerar PDF:", error);
+            alert(`Ocorreu um erro: ${error.message}`);
+        } finally {
+            // 5. Restaurar o botão ao estado original
+            $button.prop('disabled', false).html(originalHtml);
+        }
+    });
+    // ***************************************
 
     // --- Lixeira ---
      $(document).on('click', '.btn-restore', function() { restoreTaskFromTrash($(this).data('id')); });

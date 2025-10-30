@@ -1,0 +1,25 @@
+/*
+ * style/pdf-export.css
+ *
+ * Este arquivo foi criado para organizar futuros estilos de exportação.
+ * No momento, a biblioteca jsPDF-AutoTable define os estilos do PDF
+ * programaticamente (via JavaScript) para garantir a consistência
+ * do documento final.
+*/
+
+/* Estilos de exemplo (não usados diretamente pelo jsPDF, mas bons para referência) */
+.pdf-title {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.pdf-header-table {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 12px;
+}
+
+.pdf-task-table {
+    font-family: Helvetica, Arial, sans-serif;
+}
