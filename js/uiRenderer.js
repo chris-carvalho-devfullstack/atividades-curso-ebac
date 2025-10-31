@@ -92,6 +92,39 @@ export function renderAllTasks(tasksArray) {
     // para garantir a ordem correta após a renderização do HTML.
 }
 
+/**
+ * Renderiza todas as tarefas no quadro Kanban, separadas por status.
+ */
+export function renderKanbanBoard(tasksArray) {
+    // 1. Limpa todas as colunas
+    $('.kanban-list').empty();
+
+    // 2. Agrupa as tarefas por status
+    const tasksByStatus = { todo: [], in_progress: [], done: [] };
+    tasksArray.forEach(task => {
+        // CORREÇÃO: Garante que 'completed: true' force o status para 'done'
+        const status = task.completed ? 'done' : (task.status || 'todo');
+        if (tasksByStatus[status]) {
+            tasksByStatus[status].push(task);
+        } else {
+            // Garante que a tarefa vá para 'todo' se o status for inválido
+            tasksByStatus.todo.push(task);
+        }
+    });
+
+    // 3. Renderiza os cartões em cada coluna
+    for (const status in tasksByStatus) {
+        const $list = $(`.kanban-column[data-status="${status}"] .kanban-list`);
+        tasksByStatus[status].forEach(task => {
+            const $card = createKanbanCard(task);
+            $list.append($card);
+        });
+    }
+    
+    // 4. A inicialização do Sortable foi movida para o app.js
+}
+
+
 export function renderTrash(trashArray) {
     const trashList = $('#trash-list');
     trashList.empty();
@@ -118,6 +151,89 @@ export function renderTrash(trashArray) {
 // ===============================================
 // Funções de Renderização Detalhada (Internas/Auxiliares)
 // ===============================================
+
+/**
+ * Cria o HTML para um cartão Kanban.
+ */
+function createKanbanCard(task) {
+    const taskPriority = task.priority || 'medium';
+    const taskId = task.id;
+    const isCompleted = task.completed;
+    
+    let cardColor;
+    if (isCompleted) {
+        cardColor = '#4CAF50'; // Verde para concluída
+    } else if (task.status === 'in_progress') {
+         cardColor = '#ff9800'; // Laranja para em progresso
+    } else if (taskPriority === 'high') {
+        cardColor = '#f44336'; // Vermelho para alta prioridade (e todo)
+    } else {
+        cardColor = '#2196F3'; // Azul para baixa/media (e todo)
+    }
+
+    // Lógica de Data
+    let dateText = '';
+    let timeText = '';
+    if (task.dueDate) {
+        try { 
+            const due = new Date(task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T00:00:00'));
+            const now = new Date();
+            const isOverdue = due.getTime() < now.getTime() && !isCompleted;
+
+            dateText = due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            timeText = task.dueTime ? due.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+            
+            if (isOverdue) {
+                dateText = `<i class="fa fa-exclamation-circle" style="color:#f44336;"></i> ${dateText}`;
+            }
+        } catch(e) { /* Ignora */ }
+    }
+
+    // Corrigido para incluir o botão de opções no card kanban para edição/remoção
+    const $card = $(`
+        <li class="kanban-card" data-id="${taskId}" data-priority="${taskPriority}" style="--card-color: ${cardColor};">
+            <span class="kanban-card-text js-view-label" title="${task.text || 'Tarefa sem nome'}">${task.text || 'Tarefa sem nome'}</span>
+            <div class="kanban-card-meta">
+                <div>
+                    <span class="priority-label priority-${taskPriority}">${priorityTooltipMap[taskPriority]}</span>
+                </div>
+                ${task.dueDate ? 
+                    `<span class="task-datetime">${dateText} ${timeText}</span>` : 
+                    ''
+                }
+            </div>
+            
+            <button class="task-options-btn" type="button" data-tooltip="Opções"><i class="fa-solid fa-ellipsis-h"></i></button>
+            <div class="task-actions-menu" style="right: 5px; top: 35px; width: 170px;">
+                <button class="edit-btn" type="button" data-id="${taskId}"><i class="fa fa-pencil"></i> Editar</button>
+                <button class="remove-btn" type="button" data-id="${taskId}"><i class="fa fa-trash"></i> Apagar</button>
+            </div>
+        </li>
+    `);
+    
+    // Adiciona listener para o menu de opções do cartão
+    $card.find('.task-options-btn').on('click', function(e) {
+        e.stopPropagation();
+        const $menu = $(this).siblings('.task-actions-menu');
+        $('.task-actions-menu.active').not($menu).removeClass('active');
+        $menu.toggleClass('active');
+    });
+
+    // Adiciona listener para o botão de edição no Kanban (usa o listener delegado do eventBinder)
+    $card.find('.edit-btn').on('click', function() {
+        const id = $(this).data('id');
+        $(`#task-list > li[data-id="${id}"]`).find('.edit-btn').trigger('click');
+    });
+    
+    // Adiciona listener para o botão de apagar no Kanban (usa o listener delegado do eventBinder)
+    $card.find('.remove-btn').on('click', function() {
+        const id = $(this).data('id');
+        $(`#task-list > li[data-id="${id}"]`).find('.remove-btn').trigger('click');
+    });
+    
+    return $card;
+}
+
 
 function addTaskHTML(task) {
     const taskPriority = task.priority || 'medium';
@@ -177,7 +293,7 @@ function addTaskHTML(task) {
 
     let categorySpan = $('<span class="task-category category-icon"></span>')
         .html(`<i class="${categoryIconMap[taskCategory] || 'fa-solid fa-tag'}"></i>`)
-        .attr('data-tooltip', categoryTooltipMap[taskCategory] || 'Categoria: Geral');
+        .attr('data-tooltip', categoryTooltipMap[taskCategory] || 'Categoria: Outros');
     metaIconsDiv.append(categorySpan);
     
     taskDiv.append(metaIconsDiv); 
@@ -283,7 +399,7 @@ export function updateProgress() {
     else if (percent === 0 && total === 0) color = '#e0e0e0';
     else if (percent < 50) color = '#ff9800';
     else if (percent < 100) color = '#4CAF50';
-    else color = 'linear-gradient(270deg, #4CAF50, #8BC34A, #4CAF50)';
+    else color = 'linear-gradient(270deg, #4CAF50, #81C784, #4CAF50)';
 
     if (percent === 100 && total > 0) {
         progressBar.css({ 'background': color, 'background-size': '600% 100%', 'animation': 'gradientAnimation 3s ease infinite' });
@@ -410,7 +526,10 @@ function initSortableSubtasks(container) {
 document.addEventListener('tasksUpdated', () => {
     console.log("uiRenderer ouviu 'tasksUpdated'. A renderizar...");
     
-    // 1. Salva o estado de expansão antes de renderizar
+    const tasks = getTasks();
+    
+    // 1. Renderiza a Lista (sempre)
+    // 1a. Salva o estado de expansão antes de renderizar
     const expandedTasks = new Set();
     $('#task-list > li').each(function() {
         if (!$(this).find('.toggle-subtasks-btn').hasClass('collapsed')) {
@@ -418,16 +537,10 @@ document.addEventListener('tasksUpdated', () => {
         }
     });
 
-    // 2. Renderiza
-    const tasks = getTasks();
+    // 1b. Renderiza
     renderAllTasks(tasks); 
     
-    // 3. Aplica atualizações e filtros
-    updateProgress();
-    applyFilter();
-    checkAllDueDates(); // Verifica prazos APÓS a UI estar no DOM
-    
-    // 4. Restaura o estado de expansão
+    // 1c. Restaura o estado de expansão
     expandedTasks.forEach(id => {
         const $li = $(`#task-list > li[data-id="${id}"]`);
         if ($li.length) {
@@ -435,6 +548,17 @@ document.addEventListener('tasksUpdated', () => {
             $li.children('.subtask-list').show();
         }
     });
+
+    // 2. Renderiza o Kanban (se estiver na view correta)
+    if (sessionStorage.getItem('activeView') === 'board') {
+        renderKanbanBoard(tasks);
+        // O Sortable é inicializado no app.js após a renderização do board
+    }
+    
+    // 3. Aplica atualizações e filtros
+    updateProgress();
+    applyFilter();
+    checkAllDueDates(); // Verifica prazos APÓS a UI estar no DOM
 });
 
 document.addEventListener('trashUpdated', () => {

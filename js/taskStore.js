@@ -88,6 +88,11 @@ export async function addTaskToFirestore(task) {
         return;
     }
     
+    // *** NOVO: Define o status inicial como 'todo' ***
+    if (!task.status) {
+        task.status = 'todo';
+    }
+    
     try {
         const tasksRef = collection(db, "workspaces", workspaceId, "tasks"); 
         const newOrderIndex = getNewTaskOrderIndex();
@@ -113,6 +118,27 @@ export async function updateTaskInFirestore(taskId, data) {
         await updateDoc(taskRef, data); 
     }
     catch (error) { console.error("Erro ao atualizar tarefa:", error); }
+}
+
+/**
+ * Atualiza o status de Kanban de uma tarefa.
+ * @param {string} taskId - O ID da tarefa.
+ * @param {string} newStatus - O novo status ('todo', 'in_progress', 'done').
+ */
+export async function updateTaskStatus(taskId, newStatus) {
+    const data = { status: newStatus };
+
+    if (newStatus === 'done') {
+        data.completed = true;
+    } else {
+        // Se a tarefa sair de 'done', ela deve ser marcada como não concluída.
+        // A lógica do checkbox no modo lista também define 'completed'.
+        // Aqui, garantimos que se não for 'done', ela não estará concluída.
+        data.completed = false; 
+    }
+    
+    console.log(`Atualizando status da tarefa ${taskId} para: ${newStatus}, completed: ${data.completed}`);
+    await updateTask(taskId, data);
 }
 
 export async function moveTaskToTrash(taskId) {
@@ -193,6 +219,10 @@ export function loadTasksRealTime(workspaceId) {
             task.id = doc.id;
             if (!task.category) task.category = 'geral';
             if (!task.subtasks) task.subtasks = [];
+            // *** NOVO: Define status padrão se estiver faltando ***
+            if (!task.status) {
+                task.status = task.completed ? 'done' : 'todo';
+            }
             tasks.push(task);
         });
 
@@ -258,6 +288,12 @@ export async function migrateLocalTasksToFirestore() {
     localTasks.forEach(task => {
         const { id, ...taskData } = task; 
         const newTaskRef = doc(tasksRef); 
+        
+        // *** NOVO: Define status padrão para tarefas locais migradas ***
+        if (!taskData.status) {
+            taskData.status = taskData.completed ? 'done' : 'todo';
+        }
+        
         batch.set(newTaskRef, { 
             ...taskData, 
             authorId: uid, 
@@ -283,9 +319,16 @@ export async function migrateLocalTasksToFirestore() {
 export async function addTask(taskData) {
     const uid = getCurrentUserUID();
     if (uid && getActiveWorkspaceId()) { 
+        // Define o status padrão para 'todo' se não estiver definido
+        if (!taskData.status) {
+            taskData.status = 'todo';
+        }
         await addTaskToFirestore(taskData);
     } else if (!uid) { // Modo Convidado (local)
         const newTask = { ...taskData, id: generateId() };
+        if (!newTask.status) {
+            newTask.status = 'todo';
+        }
         tasks.push(newTask);
         saveLocalTasks(tasks);
         // *** CORREÇÃO: Dispara evento em vez de renderizar ***
@@ -300,11 +343,24 @@ export async function updateTask(taskId, updatedData) {
          if (originalTask && (originalTask.dueDate !== updatedData.dueDate || originalTask.dueTime !== updatedData.dueTime)) {
             updatedData.deadlineNotified = false;
         }
+        
+        // *** NOVO: Lógica para manter o status consistente com 'completed' ***
+        if (updatedData.completed !== undefined) {
+             updatedData.status = updatedData.completed ? 'done' : 'todo';
+        }
+        
         await updateTaskInFirestore(taskId, updatedData);
     } else if (!uid) { // Modo Convidado
         const taskIndex = tasks.findIndex(t => t.id === taskId);
         if (taskIndex > -1) {
-            tasks[taskIndex] = { ...tasks[taskIndex], ...updatedData };
+            const originalTask = tasks[taskIndex];
+            tasks[taskIndex] = { ...originalTask, ...updatedData };
+            
+            // *** NOVO: Lógica para manter o status consistente com 'completed' ***
+            if (updatedData.completed !== undefined) {
+                 tasks[taskIndex].status = updatedData.completed ? 'done' : 'todo';
+            }
+            
             saveLocalTasks(tasks);
             // *** CORREÇÃO: Dispara evento em vez de renderizar ***
             document.dispatchEvent(new CustomEvent('tasksUpdated'));
@@ -319,13 +375,17 @@ export async function updateSubtasks(taskId, updatedSubtasks) {
     if (uid && getActiveWorkspaceId()) {
         await updateTaskInFirestore(taskId, { 
             subtasks: updatedSubtasks,
-            completed: isMainTaskCompleted
+            completed: isMainTaskCompleted,
+            // *** NOVO: Atualiza status da tarefa-mãe se for concluída ***
+            status: isMainTaskCompleted ? 'done' : 'todo'
         });
     } else if (!uid) { // Modo Convidado
          const task = tasks.find(t => t.id === taskId);
          if(task){
             task.subtasks = updatedSubtasks;
             task.completed = isMainTaskCompleted;
+            // *** NOVO: Atualiza status da tarefa-mãe se for concluída ***
+            task.status = isMainTaskCompleted ? 'done' : 'todo';
             saveLocalTasks(tasks);
             // *** CORREÇÃO: Dispara evento em vez de renderizar ***
             document.dispatchEvent(new CustomEvent('tasksUpdated'));

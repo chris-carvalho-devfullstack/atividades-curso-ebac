@@ -4,6 +4,12 @@ import { getTasks } from './taskStore.js';
 import { db } from "./firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
+// Importa a nova função de renderização do Kanban
+import { renderKanbanBoard } from './uiRenderer.js'; 
+
+// *** NOVO: Importa a função de inicialização do Sortable do Kanban ***
+import { initKanbanSortable } from './eventBinder.js';
+
 // --- Variáveis de Estado de UI ---
 let currentView = sessionStorage.getItem('activeView') || 'list'; // Carrega o último estado
 const taskViewElements = {
@@ -110,9 +116,6 @@ export function switchView(viewId) {
         return;
     }
     
-    // Se não for a primeira vez e for a mesma view, não faz nada
-    if (currentView === viewId && viewId !== 'calendar') return;
-
     // 1. Oculta todas as visualizações e remove a classe 'active'
     $('.view-list .view-link').removeClass('active');
     Object.values(taskViewElements).forEach($el => $el.hide());
@@ -140,7 +143,14 @@ export function switchView(viewId) {
             }
         }, 0); // Atraso de 0ms garante o recalculamento do layout
     } else if (viewId === 'board') {
-        console.warn("Visualização Kanban selecionada. A implementação de renderização está pendente.");
+        // *** NOVO: Renderiza o Kanban ao selecionar a view 'board' ***
+        renderKanbanBoard(getTasks());
+        // *** NOVO: Inicializa o Sortable APÓS a renderização do Kanban ***
+        // Adicionando um pequeno delay para garantir que o DOM esteja renderizado antes de inicializar o Sortable
+        setTimeout(() => {
+             initKanbanSortable(); 
+             console.log("Visualização Kanban selecionada. Renderizando tarefas e inicializando Sortable.");
+        }, 50); 
     }
     
     // Força o reajuste de layout após a troca

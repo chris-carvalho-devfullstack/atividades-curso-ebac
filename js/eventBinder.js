@@ -1,6 +1,6 @@
 // js/eventBinder.js
 import { showModal, hideModal } from './modalHandler.js';
-import { addTask, updateTask, deleteTask, updateSubtasks, getTasks, saveTaskOrder, restoreTaskFromTrash, permanentlyDeleteTask, getTrash } from './taskStore.js';
+import { addTask, updateTask, deleteTask, updateSubtasks, getTasks, saveTaskOrder, restoreTaskFromTrash, permanentlyDeleteTask, getTrash, updateTaskStatus } from './taskStore.js';
 import { applyFilter, checkAllDueDates } from './uiRenderer.js';
 import { findNestedSubtask, generateId } from './utils.js';
 
@@ -11,12 +11,45 @@ import {
 } from './uiActions.js'; 
 
 // Importa funções do app.js
-import { initCalendar, switchView } from './app.js'; // <-- CORREÇÃO: Importa switchView
+import { initCalendar, switchView } from './app.js'; 
 
 // Importa showToastNotification para o botão de teste
 import { showToastNotification } from './toast-notification.js';
 
-// Exporta a função principal que será chamada pelo authManager
+// --- Funções Auxiliares de Inicialização (NOVO/ATUALIZADO) ---
+
+/**
+ * Inicializa a funcionalidade Sortable (arrastar e soltar) para as colunas Kanban.
+ * Deve ser chamado APÓS a renderização da view 'board'.
+ */
+export function initKanbanSortable() {
+    console.log("Inicializando Sortable para o Kanban.");
+    
+    // Destrói Sortable anterior nos elementos kanban-list
+    $('.kanban-list').sortable('destroy');
+    
+    $('.kanban-list').sortable({
+        connectWith: '.kanban-list', // Permite arrastar entre as colunas
+        placeholder: "ui-sortable-placeholder", 
+        forcePlaceholderSize: true,
+        axis: "y",
+        cursor: "grabbing",
+        opacity: 0.8,
+        items: "> .kanban-card",
+        // Ao soltar, atualiza o status no Firestore
+        stop: function(event, ui) {
+            const $item = ui.item;
+            const taskId = $item.data('id');
+            const newStatus = $item.closest('.kanban-column').data('status');
+            
+            if (taskId && newStatus) {
+                updateTaskStatus(taskId, newStatus);
+            }
+        }
+    }).disableSelection();
+}
+
+
 export function setupCommonEventListeners() {
     console.log("Configurando Event Listeners comuns (eventBinder.js)...");
 
@@ -51,9 +84,9 @@ export function setupCommonEventListeners() {
     $(document).off('click', '.btn-delete-permanently');
     $('#empty-trash-btn').off('click');
     $(document).off('click', '.task-options-btn');
-    
-    // --- NOVO: Listener para o seletor de visualização ---
     $(document).off('click', '.view-list .view-link');
+    $(document).off('click', '.kanban-card .edit-btn'); 
+    $(document).off('click', '.kanban-card .remove-btn'); 
     
     // Limpa o botão de teste
     const testButton = document.getElementById('test-toast-btn');
@@ -77,7 +110,7 @@ export function setupCommonEventListeners() {
     $(document).on('click', '#toggle-filter-btn', () => { showModal('#filterModal'); setTimeout(() => $('#search-input').focus(), 150); });
     $(document).on('click', '#toggle-trash-btn', () => showModal('#trashModal'));
     
-    // ** LÓGICA DO SELETOR DE VISUALIZAÇÃO (NOVO) **
+    // ** LÓGICA DO SELETOR DE VISUALIZAÇÃO (CORRIGIDO) **
     $(document).on('click', '.view-list .view-link', function(e) {
         e.preventDefault();
         const viewId = $(this).data('view');
@@ -97,20 +130,33 @@ export function setupCommonEventListeners() {
     // Formulário Principal (Adicionar Tarefa)
     $('#task-form').on('submit', async function (e) {
         e.preventDefault(); let text = $('#task-text').val()?.trim(); if (!text) return;
-        let task = { text, completed: false, priority: $('#task-priority').val() || 'medium', dueDate: $('#task-date').val() || null, dueTime: $('#task-time').val() || null, category: $('#task-category').val() || 'geral', privacy: $('#task-privacy').val() || 'private', subtasks: [] };
+        let task = { text, completed: false, priority: $('#task-priority').val() || 'medium', dueDate: $('#task-date').val() || null, dueTime: $('#task-time').val() || null, category: $('#task-category').val() || 'geral', privacy: $('#task-privacy').val() || 'private', status: 'todo', subtasks: [] };
         if (!task.dueDate) delete task.dueDate; if (!task.dueTime) delete task.dueTime;
         await addTask(task); $(this).trigger('reset'); $('#task-priority').val(''); $('#task-category').val(''); $('#task-privacy').val('private'); $('#task-date').val(''); $('#task-time').val(''); hideModal('#addTaskModal');
     });
 
     // --- Listeners Delegados ---
+    
+    // Botões de Ação para Kanban Cards (usam o mesmo seletor para reaproveitar a lógica)
+     $(document).on('click', '.kanban-card .edit-btn', function() {
+        const taskId = $(this).data('id');
+        $(`#task-list > li[data-id="${taskId}"]`).find('.edit-btn').trigger('click');
+     });
+     
+     $(document).on('click', '.kanban-card .remove-btn', function() {
+        const taskId = $(this).data('id');
+        $(`#task-list > li[data-id="${taskId}"]`).find('.remove-btn').trigger('click');
+     });
+
 
     // Checkboxes de Tarefa Principal
     $(document).on('change', '.task-checkbox', async function () {
         let li = $(this).closest('li'); let taskId = li.attr('data-id'); let isCompleted = $(this).prop('checked');
         const task = getTasks().find(t => t.id === taskId); if (!task) return;
+        const newStatus = isCompleted ? 'done' : 'todo';
         const recursiveCheck = (subtasks, completedStatus) => (!subtasks ? [] : subtasks.map(st => ({ ...st, completed: completedStatus, subtasks: recursiveCheck(st.subtasks, completedStatus) })));
         const updatedSubtasks = recursiveCheck(task.subtasks, isCompleted);
-        await updateTask(taskId, { completed: isCompleted, subtasks: updatedSubtasks });
+        await updateTask(taskId, { completed: isCompleted, status: newStatus, subtasks: updatedSubtasks });
     });
 
     // Checkboxes de Subtarefa
@@ -118,14 +164,14 @@ export function setupCommonEventListeners() {
         let subLi = $(this).closest('li'); let subId = subLi.attr('data-id'); let taskLi = subLi.closest('li[data-id][data-category]'); let taskId = taskLi.attr('data-id');
         const task = getTasks().find(t => t.id === taskId); if (!task || !task.subtasks) return;
         const isCompleted = $(this).prop('checked');
-        const updateTargetAndChildren = (subtasks) => { if (!subtasks) return []; return subtasks.map(st => { if (st.id === subId) { st.completed = isCompleted; const updateChildren = (children) => (!children ? [] : children.map(child => ({ ...child, completed: isCompleted, subtasks: updateChildren(child.subtasks) }))); st.subtasks = updateChildren(st.subtasks); } else if (st.subtasks?.length > 0) { st.subtasks = updateTargetAndChildren(st.subtasks); } return st; }); };
+        const updateTargetAndChildren = (subtasks) => { if (!subtasks) return []; return subtasks.map(st => { if (st.id === subId) { st.completed = isCompleted; const updateChildren = (children) => (!children ? [] : children.map(child => ({ ...child, completed: isCompleted, subtasks: updateChildren(child.subtasks) }))); st.subtasks = updateChildren(child.subtasks); } else if (st.subtasks?.length > 0) { st.subtasks = updateTargetAndChildren(st.subtasks); } return st; }); };
         let updatedSubtasks = updateTargetAndChildren([...task.subtasks]);
         await updateSubtasks(taskId, updatedSubtasks);
     });
 
     // Botão Remover Tarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.remove-btn', function () {
-        let li = $(this).closest('li[data-id][data-category]'); // Garante que pegue o LI principal
+        let li = $(this).closest('li[data-id][data-category]') || $(this).closest('.kanban-card'); 
         let taskId = li.attr('data-id');
         const task = getTasks().find(t => t.id === taskId); if (!task) return;
         $('#confirm-title').text('Mover para a Lixeira'); $('#confirm-text').text(`Deseja realmente mover a tarefa "${task.text}" para a lixeira?`); showModal('#confirmModal');
@@ -135,21 +181,34 @@ export function setupCommonEventListeners() {
 
     // Botão Editar Tarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.edit-btn', function() {
-        let li = $(this).closest('li[data-id][data-category]'); // Garante que pegue o LI principal
+        let li = $(this).closest('li[data-id][data-category]') || $(this).closest('.kanban-card'); 
         setCurrentTaskLi(li); // Salva a referência do LI
         const task = getTasks().find(t => t.id === li.attr('data-id')); if (!task) return;
-        $('#edit-task-name').val(task.text); $('#edit-task-priority').val(task.priority || 'medium'); $('#edit-task-category').val(task.category || 'geral');
-        $('#edit-task-date').val(task.dueDate || ''); $('#edit-task-time').val(task.dueTime || ''); $('#edit-task-privacy').val(task.privacy || 'private');
+        $('#edit-task-name').val(task.text); 
+        $('#edit-task-priority').val(task.priority || 'medium'); 
+        $('#edit-task-category').val(task.category || 'geral');
+        $('#edit-task-date').val(task.dueDate || ''); 
+        $('#edit-task-time').val(task.dueTime || ''); 
+        $('#edit-task-privacy').val(task.privacy || 'private');
         showModal('#editTaskModal');
     });
 
      // Botão Salvar Edição
      $('#edit-save-btn').on('click', async function() {
-        const currentLiRef = currentTaskLi; // Usa a variável importada/salva
+        const currentLiRef = currentTaskLi; 
         if (!currentLiRef) return; let taskId = currentLiRef.attr('data-id');
-        const updatedData = { text: $('#edit-task-name').val()?.trim() || 'Tarefa', priority: $('#edit-task-priority').val(), category: $('#edit-task-category').val(), dueDate: $('#edit-task-date').val() || null, dueTime: $('#edit-task-time').val() || null, privacy: $('#edit-task-privacy').val(), };
+        const updatedData = { 
+            text: $('#edit-task-name').val()?.trim() || 'Tarefa', 
+            priority: $('#edit-task-priority').val(), 
+            category: $('#edit-task-category').val(), 
+            dueDate: $('#edit-task-date').val() || null, 
+            dueTime: $('#edit-task-time').val() || null, 
+            privacy: $('#edit-task-privacy').val(), 
+        };
         if (!updatedData.dueDate) delete updatedData.dueDate; if (!updatedData.dueTime) delete updatedData.dueTime;
-        await updateTask(taskId, updatedData); hideModal('#editTaskModal'); setCurrentTaskLi(null); // Limpa a referência
+        await updateTask(taskId, updatedData); 
+        hideModal('#editTaskModal'); 
+        setCurrentTaskLi(null); // Limpa a referência
      });
 
     // Botão Adicionar Subtarefa (AGORA DENTRO DO MENU)
@@ -187,7 +246,7 @@ export function setupCommonEventListeners() {
         e.stopPropagation(); 
         
         const $menu = $(this).siblings('.task-actions-menu');
-        const $li = $(this).closest('li[data-id]');
+        const $li = $(this).closest('li[data-id]') || $(this).closest('.kanban-card'); 
         
         $('.task-actions-menu.active').not($menu).removeClass('active');
         $('.subtask-options-menu.active').removeClass('active');
@@ -209,7 +268,8 @@ export function setupCommonEventListeners() {
     $('#filter-priority').on('change', applyFilter);
     $('#filter-category').on('change', applyFilter);
 
-    // --- Sortable ---
+    // --- Sortable (Lista) ---
+    // ATUALIZADO: Inicializa Sortable da Lista Principal (para funcionar o arrastar)
     $('#task-list').sortable({
         handle: '.task-main', 
         update: async function (event, ui) { if (ui.sender) return; const orderedIds = $(this).children('li').map(function() { return $(this).attr('data-id'); }).get(); await saveTaskOrder(orderedIds); },
@@ -233,11 +293,17 @@ export function setupCommonEventListeners() {
     });
 
     // --- Listener unificado para abrir Modal de Visualização (Label Principal E Subtarefa) ---
+    // CORREÇÃO: Usamos o seletor mais específico e genérico para pegar o elemento que contém o ID da tarefa
     $(document).on('click', '.js-view-label', function() {
-        let li = $(this).closest('li[data-id][data-category]');
-        if (!li || li.length === 0) return; 
+        // Encontra o item raiz (LI ou kanban-card) que possui o data-id
+        let itemRoot = $(this).closest('li[data-id][data-category]') || $(this).closest('.kanban-card');
+        
+        if (!itemRoot || itemRoot.length === 0) {
+             console.error("Não foi possível encontrar o elemento raiz da tarefa para abrir o modal de visualização.");
+             return; 
+        } 
 
-        const taskId = li.attr('data-id');
+        const taskId = itemRoot.attr('data-id');
         const task = getTasks().find(t => t.id === taskId);
         if (!task) return;
 
@@ -265,9 +331,12 @@ export function setupCommonEventListeners() {
             $subtasks.append('<li>Nenhuma subtarefa</li>');
         }
         showModal('#viewTaskModal');
+        
+        // CORREÇÃO: Acha o LI original da lista para acionar os botões de ação
+        const originalLi = $(`#task-list > li[data-id="${taskId}"]`);
 
-        $('#view-edit-btn').off('click').on('click', () => { hideModal('#viewTaskModal'); li.find('.edit-btn').first().trigger('click'); });
-        $('#view-delete-btn').off('click').on('click', () => { hideModal('#viewTaskModal'); li.find('.remove-btn').first().trigger('click'); });
+        $('#view-edit-btn').off('click').on('click', () => { hideModal('#viewTaskModal'); originalLi.find('.edit-btn').first().trigger('click'); });
+        $('#view-delete-btn').off('click').on('click', () => { hideModal('#viewTaskModal'); originalLi.find('.remove-btn').first().trigger('click'); });
     });
 
 
@@ -289,7 +358,7 @@ export function setupCommonEventListeners() {
          const trash = getTrash(); if (trash.length === 0) { alert("A lixeira já está vazia."); return; }
         $('#confirm-title').text('Esvaziar Lixeira'); $('#confirm-text').html(`Tem certeza que deseja excluir permanentemente TODOS os ${trash.length} itens da lixeira? <br><strong style='color:red;'>Esta ação NÃO pode ser desfeita.</strong>`); showModal('#confirmModal');
         $('#confirm-modal-ok-btn').off('click').on('click', async () => {
-             $('#confirm-modal-ok-btn').prop('disabled', true).text('Esvaziando...'); const deletePromises = trash.map(item => permanentlyDeleteTask(item.id)); try { await Promise.all(deletePromises); } catch (error) { console.error("Erro ao esvaziar a lixeira:", error); alert("Ocorreu um erro ao esvaziar a lixeira."); } finally { hideModal('#confirmModal'); $('#confirm-modal-ok-btn').prop('disabled', false).text('Confirmar'); } });
+             $('#confirm-modal-ok-btn').prop('disabled', true).text('Esvaziando...'); const deletePromises = trash.map(item => permanentlyDeleteTask(item.id)); try { await Promise.all(deletePromises); } catch (error) { console.error("Erro ao esvaziar a lixeira:", error); alert("Ocorreu um erro ao esvaziar a lixeira."); } finally { hideModal('#confirmModal'); $('#confirm-modal-ok-btn').prop('disabled', false).html('Confirmar'); } });
         $('#confirm-modal-cancel-btn').off('click').on('click', () => hideModal('#confirmModal'));
      });
 
@@ -318,6 +387,7 @@ export function setupCommonEventListeners() {
             $('.task-actions-menu.active').removeClass('active');
             // Remove a classe de z-index de todos os LIs
             $('#task-list > li.menu-active').removeClass('menu-active');
+            $('.kanban-card.menu-active').removeClass('menu-active');
         }
     });
 

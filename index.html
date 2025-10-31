@@ -74,10 +74,22 @@
                 
             </main>
             
-            <main class="kanban-board-view" id="task-view-board" style="display: none; padding: 20px;">
-                <h2>Quadro Kanban</h2>
-                <div id="kanban-container" style="display: flex; gap: 15px; overflow-x: auto; min-height: 60vh;">
-                    <div class="sidebar-loading">Visualização de Quadro em breve...</div>
+            <main class="kanban-board-view" id="task-view-board" style="display: none;">
+                <div class="kanban-container">
+                    <div class="kanban-column" data-status="todo">
+                        <div class="column-header column-header-todo">A Fazer</div>
+                        <ul class="kanban-list"></ul>
+                    </div>
+                    
+                    <div class="kanban-column" data-status="in_progress">
+                        <div class="column-header column-header-progress">Em Progresso</div>
+                        <ul class="kanban-list"></ul>
+                    </div>
+                    
+                    <div class="kanban-column" data-status="done">
+                        <div class="column-header column-header-done">Concluída</div>
+                        <ul class="kanban-list"></ul>
+                    </div>
                 </div>
             </main>
             

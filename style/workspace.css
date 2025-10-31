@@ -1,5 +1,4 @@
-/* style/workspace.css (VERSÃO CORRIGIDA 2.0) */
-
+/* style/workspace.css (VERSÃO CORRIGIDA 2.0 COM KANBAN) */
 
 
 /* 2. O Layout de 2 Colunas (Abaixo do Header)
@@ -164,4 +163,122 @@
     color: #6c757d;
     font-style: italic;
     font-size: 0.9rem;
+}
+
+/* ============================================= */
+/* KANBAN BOARD STYLES (NOVO)                    */
+/* ============================================= */
+
+.kanban-board-view {
+    padding: 20px;
+    height: 100%;
+}
+
+.kanban-container {
+    display: flex;
+    gap: 20px;
+    height: 100%; /* Ocupa a altura total do workspace-content */
+    overflow-x: auto;
+    padding-bottom: 20px; /* Espaço para o scroll horizontal */
+    align-items: flex-start; /* Alinha as colunas no topo */
+}
+
+.kanban-column {
+    min-width: 300px;
+    max-width: 300px;
+    background-color: #f4f5f7;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 200px); /* Limita a altura para scrollar */
+}
+
+.column-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid transparent;
+}
+
+.column-header-todo { border-bottom-color: #007bff; color: #007bff; }
+.column-header-progress { border-bottom-color: #ff9800; color: #ff9800; }
+.column-header-done { border-bottom-color: #4CAF50; color: #4CAF50; }
+
+
+.kanban-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-grow: 1;
+    min-height: 10px; /* Permite arrastar para colunas vazias */
+    overflow-y: auto; /* Scroll dentro da coluna */
+}
+
+/* Estilo do Card Kanban */
+.kanban-card {
+    background-color: #fff;
+    padding: 12px;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    cursor: grab;
+    transition: all 0.1s ease-in-out;
+    border-left: 4px solid var(--card-color, #ccc); /* Cor dinâmica */
+    position: relative;
+    white-space: normal; /* Permite quebra de linha no texto */
+}
+
+.kanban-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+}
+
+.kanban-card.ui-sortable-helper {
+    transform: rotate(2deg);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.kanban-card-text {
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.kanban-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.kanban-card-meta .priority-label {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    color: white;
+}
+
+.kanban-card .priority-high { background: #f44336; }
+.kanban-card .priority-medium { background: #ff9800; }
+.kanban-card .priority-low { background: #4CAF50; }
+
+.kanban-card .task-datetime {
+    font-size: 0.8rem;
+    color: #007bff;
+}
+
+/* Estilo para placeholder do sortable */
+.ui-sortable-placeholder {
+    visibility: visible !important;
+    background: #e0e0e0 !important;
+    border: 1px dashed #999 !important;
+    height: 40px; /* Altura do placeholder */
+    border-radius: 6px;
 }

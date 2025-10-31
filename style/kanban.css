@@ -1,0 +1,151 @@
+/* Arquivo: chris-carvalho-devfullstack/atividades-curso-ebac/atividades-curso-ebac-feature-workspace/style/kanban.css */
+
+/* Container Principal (já existe no HTML com display: flex) */
+#kanban-container {
+    padding: 0;
+    margin: 0;
+    align-items: flex-start; /* Colunas alinhadas no topo */
+    min-height: 60vh;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.kanban-column {
+    background-color: #f4f5f7;
+    border-radius: 8px;
+    padding: 10px;
+    flex-shrink: 0;
+    width: 300px; /* Largura fixa das colunas */
+    max-height: calc(100vh - 200px); /* Limita a altura da coluna */
+    display: flex;
+    flex-direction: column;
+}
+
+.column-header {
+    padding: 5px 0 10px 5px;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.column-header h3 {
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+}
+
+.column-header .task-count {
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Lista de Cards */
+.kanban-card-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto; /* Permite rolar apenas a lista de cards */
+    max-height: 100%; /* Ocupa o espaço restante da coluna */
+}
+
+/* Card Individual */
+.kanban-card {
+    background-color: #fff;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 4px solid #ddd;
+    min-height: 70px;
+}
+
+.kanban-card:hover {
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.kanban-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.kanban-card .card-content .task-text {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    max-height: 38px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; 
+    -webkit-box-orient: vertical;
+}
+
+.kanban-card .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: #666;
+    gap: 8px;
+}
+
+.kanban-card .meta-info {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kanban-card .subtask-count i {
+    color: var(--primary-color);
+}
+
+.kanban-card .card-options-btn {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: #aaa;
+    cursor: pointer;
+    padding: 0 5px;
+    margin-left: auto;
+}
+
+/* Destaques de Prazo (Reutilizados) */
+.kanban-card.overdue {
+    border-left-color: #f44336;
+}
+
+.kanban-card.due-soon {
+    border-left-color: #ff9800;
+}
+
+.kanban-placeholder {
+    margin-bottom: 8px;
+    padding: 12px;
+    border-radius: 6px;
+    background-color: #c7c8c9;
+    border: 1px dashed #666;
+    opacity: 0.4;
+}
+
+.kanban-card-list .empty-list-message {
+    font-style: italic;
+    color: #888;
+    text-align: center;
+    padding: 20px 10px;
+}
