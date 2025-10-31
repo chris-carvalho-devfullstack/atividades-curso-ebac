@@ -10,317 +10,352 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    
     <link rel="stylesheet" href="style/main.css">
     <link rel="stylesheet" href="style/notifications.css">
     <link rel="stylesheet" href="style/chat.css">
-    <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="style/toast-notification.css">
+
+    <link rel="stylesheet" href="style/workspace.css">
+    
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
     <div id="nav-placeholder"></div>
+
     <header class="task-form-header">
-        <h1>Gerenciador de Tarefas</h1>
-        <p>Organize suas tarefas diárias de forma eficiente!</p>
+        <h1 id="workspace-title">Carregando...</h1>
+        <p>Organize as tarefas da sua equipa de forma eficiente!</p>
     </header>
 
-    <main class="task-form-body">
-        <h1>LISTA DE TAREFAS</h1>
+    <div class="workspace-layout">
 
-        <div class="progress-container">
-            <div class="progress-bar">0%</div>
-        </div>
-
-        <div class="main-actions">
-            <button id="toggle-form-btn" class="btn-action-primary"><i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa</button>
-            <button id="toggle-filter-btn" class="btn-action-secondary"><i class="fa-solid fa-search"></i> Pesquisar e Filtrar</button>
-            <button id="toggle-trash-btn" class="btn-action-secondary"><i class="fa-solid fa-trash"></i> Lixeira</button>
-        </div>
+        <aside class="workspace-sidebar" id="workspace-sidebar">
+            <div class="workspace-sidebar-section">
+                <h3>Visualizações</h3>
+                <ul class="view-list" id="view-list">
+                    <li><a href="#" class="view-link active" data-view="list"><i class="fa-solid fa-list-check"></i> Lista</a></li>
+                    <li><a href="#" class="view-link" data-view="board"><i class="fa-solid fa-columns"></i> Quadro (Kanban)</a></li>
+                    <li><a href="#" class="view-link" data-view="calendar"><i class="fa-solid fa-calendar-days"></i> Calendário</a></li>
+                </ul>
+            </div>
+            
+            <div class="workspace-sidebar-section">
+                <h3>Workspaces</h3>
+                <ul class="workspace-list" id="workspace-list-container">
+                    <div class="sidebar-loading">Carregando...</div>
+                </ul>
+                <button id="create-workspace-btn" style="margin-top: 10px;"><i class="fa-solid fa-plus"></i> Novo Workspace</button>
+            </div>
+        </aside>
         
-        <div id="login-prompt" style="display: none;">
-            <h3>Salve suas tarefas e progresso na nuvem!</h3>
-            <p>Acesse suas listas de qualquer lugar. Crie uma conta ou faça login para manter seus dados seguros.</p>
-            <button id="go-to-login-btn"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar na Nuvem</button>
+        <div class="workspace-content" id="workspace-content">
+            
+            <main class="task-form-body" id="task-view-list">
+                
+                <div class="progress-container">
+                    <div class="progress-bar">0%</div>
+                </div>
+
+                <div class="main-actions">
+                    <button id="toggle-form-btn" class="btn-action-primary"><i class="fa-solid fa-plus"></i> Adicionar Nova Tarefa</button>
+                    <button id="toggle-filter-btn" class="btn-action-secondary"><i class="fa-solid fa-search"></i> Pesquisar e Filtrar</button>
+                    <button id="toggle-trash-btn" class="btn-action-secondary"><i class="fa-solid fa-trash"></i> Lixeira</button>
+                </div>
+                
+                <div id="login-prompt" style="display: none;">
+                    <h3>Salve suas tarefas e progresso na nuvem!</h3>
+                    <p>Acesse suas listas de qualquer lugar. Crie uma conta ou faça login para manter seus dados seguros.</p>
+                    <button id="go-to-login-btn"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar na Nuvem</button>
+                </div>
+
+                <ul id="task-list">
+                    </ul>
+                
+            </main>
+            
+            <main class="kanban-board-view" id="task-view-board" style="display: none; padding: 20px;">
+                <h2>Quadro Kanban</h2>
+                <div id="kanban-container" style="display: flex; gap: 15px; overflow-x: auto; min-height: 60vh;">
+                    <div class="sidebar-loading">Visualização de Quadro em breve...</div>
+                </div>
+            </main>
+            
+            <main class="calendar-view" id="task-view-calendar" style="display: none; padding: 20px;">
+                <div id="calendar-container">
+                    <div id="calendar"></div>
+                </div>
+            </main>
+            
+        </div> </div> <div id="addTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" aria-hidden="true" style="display: none;">
+      <div class="modal-content" style="max-width: 450px;">
+        <button class="close close-top-right" aria-label="Fechar" data-dismiss-modal="">&times;</button>
+        <div class="modal-header">
+          <h2 id="add-modal-title">Adicionar Nova Tarefa</h2>
         </div>
+        <div class="modal-body">
+            <form id="task-form" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 0;">
+                
+                <div class="input-group-modal">
+                    <label for="task-text">Título da Tarefa</label>
+                    <div class="input-with-icon">
+                        <i class="fa fa-pen"></i>
+                        <input type="text" id="task-text" placeholder="Ex: Terminar o relatório de vendas" required="">
+                    </div>
+                </div>
 
-        <ul id="task-list"></ul>
+                <div class="input-group-modal">
+                    <label for="task-priority">Prioridade</label>
+                    <div class="select-with-icon">
+                        <i class="fa fa-filter"></i>
+                        <select id="task-priority">
+                            <option value="" disabled="" selected="">Prioridade da tarefa</option>
+                            <option value="low">Baixa</option>
+                            <option value="medium">Média</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                </div>
 
-        <button id="toggle-calendar-btn">📅 Mostrar calendário</button>
+                <div class="input-group-modal">
+                    <label for="task-category">Categoria</label>
+                    <div class="select-with-icon">
+                        <i class="fa fa-tag"></i>
+                        <select id="task-category">
+                            <option value="" disabled="" selected="">Categoria da tarefa</option>
+                            <option value="geral">Geral</option>
+                            <option value="trabalho">Trabalho</option>
+                            <option value="pessoal">Pessoal</option>
+                            <option value="estudo">Estudo</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
 
-        <div id="calendar-container">
-            <div id="calendar"></div>
+                <div class="input-group-modal">
+                    <label for="task-date">Data e Hora de Vencimento</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="date" id="task-date" title="Data de Vencimento" style="flex: 1;">
+                        <input type="time" id="task-time" title="Hora de Vencimento" style="flex: 1;">
+                    </div>
+                </div>
+                
+                <div class="input-group-modal">
+                    <label for="task-privacy">Visibilidade</label>
+                    <div class="select-with-icon">
+                        <i class="fa fa-lock"></i>
+                        <select id="task-privacy">
+                            <option value="private" selected="">Privada</option>
+                            <option value="public">Pública</option>
+                            <option value="shared">Compartilhada</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
         </div>
-        
-        <div id="addTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" aria-hidden="true">
-          <div class="modal-content" style="max-width: 450px;">
-            <button class="close close-top-right" aria-label="Fechar" data-dismiss-modal>&times;</button>
-            <div class="modal-header">
-              <h2 id="add-modal-title">Adicionar Nova Tarefa</h2>
-            </div>
-            <div class="modal-body">
-                <form id="task-form" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 0;">
-                    
-                    <div class="input-group-modal">
-                        <label for="task-text">Título da Tarefa</label>
-                        <div class="input-with-icon">
-                            <i class="fa fa-pen"></i>
-                            <input type="text" id="task-text" placeholder="Ex: Terminar o relatório de vendas" required>
-                        </div>
-                    </div>
-
-                    <div class="input-group-modal">
-                        <label for="task-priority">Prioridade</label>
-                        <div class="select-with-icon">
-                            <i class="fa fa-filter"></i>
-                            <select id="task-priority">
-                                <option value="" disabled selected>Prioridade da tarefa</option>
-                                <option value="low">Baixa</option>
-                                <option value="medium">Média</option>
-                                <option value="high">Alta</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="input-group-modal">
-                        <label for="task-category">Categoria</label>
-                        <div class="select-with-icon">
-                            <i class="fa fa-tag"></i>
-                            <select id="task-category">
-                                <option value="" disabled selected>Categoria da tarefa</option>
-                                <option value="geral">Geral</option>
-                                <option value="trabalho">Trabalho</option>
-                                <option value="pessoal">Pessoal</option>
-                                <option value="estudo">Estudo</option>
-                                <option value="outros">Outros</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="input-group-modal">
-                        <label for="task-date">Data e Hora de Vencimento</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="date" id="task-date" title="Data de Vencimento" style="flex: 1;">
-                            <input type="time" id="task-time" title="Hora de Vencimento" style="flex: 1;">
-                        </div>
-                    </div>
-                    
-                    <div class="input-group-modal">
-                        <label for="task-privacy">Visibilidade</label>
-                        <div class="select-with-icon">
-                            <i class="fa fa-lock"></i>
-                            <select id="task-privacy">
-                                <option value="private" selected>Privada</option>
-                                <option value="public">Pública</option>
-                                <option value="shared">Compartilhada</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button id="add-task-btn-submit" type="submit" form="task-form" class="btn-primary">Adicionar Tarefa</button>
-                <button id="add-task-cancel-btn" class="btn-neutral">Cancelar</button>
-            </div>
-          </div>
+        <div class="modal-footer">
+            <button id="add-task-btn-submit" type="submit" form="task-form" class="btn-primary">Adicionar Tarefa</button>
+            <button id="add-task-cancel-btn" class="btn-neutral">Cancelar</button>
         </div>
-        
-        <div id="filterModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" aria-hidden="true">
-          <div class="modal-content" style="max-width: 450px;">
-            <button class="close close-top-right" aria-label="Fechar" data-dismiss-modal>&times;</button>
-            <div class="modal-header">
-              <h2 id="filter-modal-title">Pesquisar e Filtrar</h2>
-            </div>
-            <div class="modal-body">
-                <div class="search-box" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 0;">
-                    <div class="input-group-modal">
-                        <label for="search-input">Pesquisar por texto</label>
-                        <div class="input-with-icon">
-                            <i class="fa fa-search"></i>
-                            <input type="text" id="search-input" placeholder="Pesquisar tarefa...">
-                        </div>
+      </div>
+    </div>
+    
+    <div id="filterModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" aria-hidden="true" style="display: none;">
+      <div class="modal-content" style="max-width: 450px;">
+        <button class="close close-top-right" aria-label="Fechar" data-dismiss-modal="">&times;</button>
+        <div class="modal-header">
+          <h2 id="filter-modal-title">Pesquisar e Filtrar</h2>
+        </div>
+        <div class="modal-body">
+            <div class="search-box" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 0;">
+                <div class="input-group-modal">
+                    <label for="search-input">Pesquisar por texto</label>
+                    <div class="input-with-icon">
+                        <i class="fa fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Pesquisar tarefa...">
                     </div>
-                    
-                    <div class="input-group-modal">
-                        <label for="filter-priority">Prioridade</label>
-                        <div class="select-with-icon">
-                            <i class="fa fa-filter"></i>
-                            <select id="filter-priority">
-                                <option value="all">Todas as prioridades</option>
-                                <option value="high">Alta</option>
-                                <option value="medium">Média</option>
-                                <option value="low">Baixa</option>
-                            </select>
-                        </div>
+                </div>
+                
+                <div class="input-group-modal">
+                    <label for="filter-priority">Prioridade</label>
+                    <div class="select-with-icon">
+                        <i class="fa fa-filter"></i>
+                        <select id="filter-priority">
+                            <option value="all">Todas as prioridades</option>
+                            <option value="high">Alta</option>
+                            <option value="medium">Média</option>
+                            <option value="low">Baixa</option>
+                        </select>
                     </div>
-                    
-                    <div class="input-group-modal">
-                        <label for="filter-category">Categoria</label>
-                        <div class="select-with-icon">
-                            <i class="fa fa-tags"></i>
-                            <select id="filter-category">
-                                <option value="all">Todas as categorias</option>
-                                <option value="geral">Geral</option>
-                                <option value="trabalho">Trabalho</option>
-                                <option value="pessoal">Pessoal</option>
-                                <option value="estudo">Estudo</option>
-                                <option value="outros">Outros</option>
-                            </select>
-                        </div>
+                </div>
+                
+                <div class="input-group-modal">
+                    <label for="filter-category">Categoria</label>
+                    <div class="select-with-icon">
+                        <i class="fa fa-tags"></i>
+                        <select id="filter-category">
+                            <option value="all">Todas as categorias</option>
+                            <option value="geral">Geral</option>
+                            <option value="trabalho">Trabalho</option>
+                            <option value="pessoal">Pessoal</option>
+                            <option value="estudo">Estudo</option>
+                            <option value="outros">Outros</option>
+                        </select>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button id="filter-apply-btn" class="btn-primary">Aplicar Filtros</button>
-                <button id="filter-cancel-btn" class="btn-neutral">Fechar</button>
-            </div>
-          </div>
         </div>
-
-        <div id="viewTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="view-modal-title" aria-hidden="true">
-          <div class="modal-content">
-            <button class="close-view close-top-right" aria-label="Fechar">&times;</button>
-            <div class="modal-header">
-              <h2 id="view-modal-title">Visualizar Tarefa</h2>
-            </div>
-            <div class="modal-body">
-              <h3 id="view-task-name">Nome da tarefa</h3>
-              <div class="meta">
-                <span id="view-task-priority">Prioridade</span>
-                <span id="view-task-category">Categoria</span>
-                <span id="view-task-date">Sem data</span>
-              </div>
-              <h4>Subtarefas</h4>
-              <ul id="view-task-subtasks" class="subtasks-list">
-                <li>Nenhuma subtarefa</li>
-              </ul>
-            </div>
-            <div class="modal-footer">
-              <button id="view-edit-btn" class="btn-neutral">Editar</button>
-              <button id="view-delete-btn" class="btn-danger">Apagar</button>
-              <button id="view-close-btn" class="btn-neutral">Fechar</button>
-            </div>
-          </div>
+        <div class="modal-footer">
+            <button id="filter-apply-btn" class="btn-primary">Aplicar Filtros</button>
+            <button id="filter-cancel-btn" class="btn-neutral">Fechar</button>
         </div>
+      </div>
+    </div>
 
-        <div id="editTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" aria-hidden="true">
-          <div class="modal-content">
-            <button class="close-edit close-top-right" aria-label="Fechar">&times;</button>
-            <div class="modal-header">
-              <h2 id="edit-modal-title">Editar Tarefa</h2>
-            </div>
-            <div class="modal-body">
-              <label for="edit-task-name">Nome</label>
-              <input id="edit-task-name" type="text" placeholder="Nome da tarefa">
-
-              <label for="edit-task-priority">Prioridade</label>
-              <select id="edit-task-priority">
-                <option value="low">Baixa</option>
-                <option value="medium">Média</option>
-                <option value="high">Alta</option>
-              </select>
-
-              <label for="edit-task-category">Categoria</label>
-              <select id="edit-task-category">
-                <option value="geral">Geral</option>
-                <option value="trabalho">Trabalho</option>
-                <option value="pessoal">Pessoal</option>
-                <option value="estudo">Estudo</option>
-                <option value="outros">Outros</option>
-              </select>
-
-              <label for="edit-task-date">Data e Hora</label>
-              <div style="display: flex; gap: 10px;">
-                <input id="edit-task-date" type="date" style="flex: 1;">
-                <input id="edit-task-time" type="time" style="flex: 1;">
-              </div>
-                
-              <label for="edit-task-privacy">Visibilidade</label>
-                <select id="edit-task-privacy">
-                    <option value="private">Privada</option>
-                    <option value="public">Pública</option>
-                    <option value="shared">Compartilhada</option>
-                </select>
-            </div>
-            <div class="modal-footer">
-              <button id="edit-save-btn" class="btn-primary">Salvar</button>
-              <button id="edit-cancel-btn" class="btn-neutral">Cancelar</button>
-            </div>
-          </div>
+    <div id="viewTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="view-modal-title" aria-hidden="true" style="display: none;">
+      <div class="modal-content">
+        <button class="close-view close-top-right" aria-label="Fechar">&times;</button>
+        <div class="modal-header">
+          <h2 id="view-modal-title">Visualizar Tarefa</h2>
         </div>
+        <div class="modal-body">
+          <h3 id="view-task-name">Nome da tarefa</h3>
+          <div class="meta">
+            <span id="view-task-priority">Prioridade</span>
+            <span id="view-task-category">Categoria</span>
+            <span id="view-task-date">Sem data</span>
+          </div>
+          <h4>Subtarefas</h4>
+          <ul id="view-task-subtasks" class="subtasks-list">
+            <li>Nenhuma subtarefa</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button id="view-edit-btn" class="btn-neutral">Editar</button>
+          <button id="view-delete-btn" class="btn-danger">Apagar</button>
+          <button id="view-close-btn" class="btn-neutral">Fechar</button>
+        </div>
+      </div>
+    </div>
 
-        <div id="subtask-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subtask-modal-title" aria-hidden="true">
-          <div class="modal-content" style="max-width: 520px;">
+    <div id="editTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" aria-hidden="true" style="display: none;">
+      <div class="modal-content">
+        <button class="close-edit close-top-right" aria-label="Fechar">&times;</button>
+        <div class="modal-header">
+          <h2 id="edit-modal-title">Editar Tarefa</h2>
+        </div>
+        <div class="modal-body">
+          <label for="edit-task-name">Nome</label>
+          <input id="edit-task-name" type="text" placeholder="Nome da tarefa">
+
+          <label for="edit-task-priority">Prioridade</label>
+          <select id="edit-task-priority">
+            <option value="low">Baixa</option>
+            <option value="medium">Média</option>
+            <option value="high">Alta</option>
+          </select>
+
+          <label for="edit-task-category">Categoria</label>
+          <select id="edit-task-category">
+            <option value="geral">Geral</option>
+            <option value="trabalho">Trabalho</option>
+            <option value="pessoal">Pessoal</option>
+            <option value="estudo">Estudo</option>
+            <option value="outros">Outros</option>
+          </select>
+
+          <label for="edit-task-date">Data e Hora</label>
+          <div style="display: flex; gap: 10px;">
+            <input id="edit-task-date" type="date" style="flex: 1;">
+            <input id="edit-task-time" type="time" style="flex: 1;">
+          </div>
+            
+          <label for="edit-task-privacy">Visibilidade</label>
+            <select id="edit-task-privacy">
+                <option value="private">Privada</option>
+                <option value="public">Pública</option>
+                <option value="shared">Compartilhada</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+          <button id="edit-save-btn" class="btn-primary">Salvar</button>
+          <button id="edit-cancel-btn" class="btn-neutral">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="subtask-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subtask-modal-title" aria-hidden="true" style="display: none;">
+      <div class="modal-content" style="max-width: 520px;">
+        <button class="close close-top-right" aria-label="Fechar">&times;</button>
+        <div class="modal-header">
+          <h2 id="subtask-modal-title">Adicionar Subtarefa</h2>
+        </div>
+        <div class="modal-body">
+          <label for="subtask-input">Nome</label>
+          <input type="text" id="subtask-input" placeholder="Digite a subtarefa" required="">
+
+          <label for="subtask-priority">Prioridade</label>
+          <select id="subtask-priority">
+            <option value="low">Baixa</option>
+            <option value="medium" selected="">Média</option>
+            <option value="high">Alta</option>
+          </select>
+
+          <label for="subtask-category">Categoria</label>
+          <select id="subtask-category">
+            <option value="geral" selected="">Geral</option>
+            <option value="trabalho">Trabalho</option>
+            <option value="pessoal">Pessoal</option>
+            <option value="estudo">Estudo</option>
+            <option value="outros">Outros</option>
+          </select>
+
+          <label for="subtask-date">Data e Hora</label>
+          <div style="display: flex; gap: 10px;">
+            <input id="subtask-date" type="date" style="flex: 1;">
+            <input id="subtask-time" type="time" style="flex: 1;">
+          </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button id="subtask-add-btn" class="btn-primary">Adicionar</button>
+          <button id="subtask-cancel-btn" class="btn-neutral">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true" style="display: none;">
+      <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header">
+          <h2 id="confirm-title">Confirmar Ação</h2>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-text">Você tem certeza?</p>
+        </div>
+        <div class="modal-footer">
+          <button id="confirm-modal-ok-btn" class="btn-danger">Confirmar</button>
+          <button id="confirm-modal-cancel-btn" class="btn-neutral">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="trashModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="trash-modal-title" aria-hidden="true" style="display: none;">
+        <div class="modal-content">
             <button class="close close-top-right" aria-label="Fechar">&times;</button>
             <div class="modal-header">
-              <h2 id="subtask-modal-title">Adicionar Subtarefa</h2>
+                <h2 id="trash-modal-title">Lixeira</h2>
             </div>
             <div class="modal-body">
-              <label for="subtask-input">Nome</label>
-              <input type="text" id="subtask-input" placeholder='Digite a subtarefa' required>
-
-              <label for="subtask-priority">Prioridade</label>
-              <select id="subtask-priority">
-                <option value="low">Baixa</option>
-                <option value="medium" selected>Média</option>
-                <option value="high">Alta</option>
-              </select>
-
-              <label for="subtask-category">Categoria</label>
-              <select id="subtask-category">
-                <option value="geral" selected>Geral</option>
-                <option value="trabalho">Trabalho</option>
-                <option value="pessoal">Pessoal</option>
-                <option value="estudo">Estudo</option>
-                <option value="outros">Outros</option>
-              </select>
-
-              <label for="subtask-date">Data e Hora</label>
-              <div style="display: flex; gap: 10px;">
-                <input id="subtask-date" type="date" style="flex: 1;">
-                <input id="subtask-time" type="time" style="flex: 1;">
-              </div>
-              
+                <ul id="trash-list"></ul>
             </div>
             <div class="modal-footer">
-              <button id="subtask-add-btn" class="btn-primary">Adicionar</button>
-              <button id="subtask-cancel-btn" class="btn-neutral">Cancelar</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true">
-          <div class="modal-content" style="max-width: 420px;">
-            <div class="modal-header">
-              <h2 id="confirm-title">Confirmar Ação</h2>
-            </div>
-            <div class="modal-body">
-              <p id="confirm-text">Você tem certeza?</p>
-            </div>
-            <div class="modal-footer">
-              <button id="confirm-ok-btn" class="btn-danger">Confirmar</button>
-              <button id="confirm-cancel-btn" class="btn-neutral">Cancelar</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="trashModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="trash-modal-title" aria-hidden="true">
-            <div class="modal-content">
-                <button class="close close-top-right" aria-label="Fechar">&times;</button>
-                <div class="modal-header">
-                    <h2 id="trash-modal-title">Lixeira</h2>
-                </div>
-                <div class="modal-body">
-                    <ul id="trash-list"></ul>
-                </div>
-                <div class="modal-footer">
-                    <button id="empty-trash-btn" class="btn-danger">Esvaziar Lixeira</button>
-                    <button class="btn-neutral close">Fechar</button>
-                </div>
+                <button id="empty-trash-btn" class="btn-danger">Esvaziar Lixeira</button>
+                <button class="btn-neutral close">Fechar</button>
             </div>
         </div>
-    </main>
+    </div>
 
     <div class="chat-container"></div>
-
     <div id="toast-notification-container" class="toast-container"></div>
 
     <div style="text-align: center; margin: 20px;">
@@ -328,17 +363,12 @@
             Testar Notificação Toast
         </button>
     </div>
-    <div class="chat-container"></div>
 
-    <div id="toast-notification-container" class="toast-container"></div>
-
-    
-
-    <footer>
+    <footer style="position: relative; z-index: 10;">
         <p>Desenvolvido como atividade do Curso de Programação Full Stack Python da EBAC</p>
         <p>Desenvolvedor: Christian de Carvalho</p>
         <p>GitHub: <a href="https://github.com/chris-carvalho-devfullstack" target="_blank">chris-carvalho-devfullstack</a></p>
-        <p>&copy;2025</p>
+        <p>©2025</p>
         <a href="pomodoro.html" class="pomodoro-link"><i class="fa fa-clock"></i> Ir para Pomodoro Timer</a>
         <a href="admin.html" class="admin-link"><i class="fa fa-user-shield"></i> Ir para Admin Dashboard</a>
     </footer>
@@ -347,12 +377,16 @@
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/auth-listener.js"></script>
     <script type="module" src="js/nav.js"></script>
+    
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script> 
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script> 
+    
     <script type="module" src="js/app.js"></script> 
     <script type="module" src="js/chat.js"></script>
     <script type="module" src="js/toast-notification.js"></script>
     <script type="module" src="js/push-service.js"></script>
 
-    </body>
-    </html>
+    <script type="module" src="js/workspaceManager.js"></script>
+
+</body>
+</html>

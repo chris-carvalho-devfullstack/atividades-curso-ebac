@@ -1,0 +1,167 @@
+/* style/workspace.css (VERSÃO CORRIGIDA 2.0) */
+
+
+
+/* 2. O Layout de 2 Colunas (Abaixo do Header)
+*/
+.workspace-layout {
+    display: flex;
+    /* Define uma altura que preenche a tela, exceto o nav e o header */
+    /* Altura da Janela - 60px (nav) - 91px (altura do seu header) */
+    min-height: calc(100vh - 151px);
+    
+    /* Adiciona o "espaço" nas bordas esquerda/direita que você pediu */
+    max-width: 1600px; /* Limita a largura máxima */
+    margin: 0 auto; /* Centraliza o layout */
+    padding: 0 20px; /* Adiciona o espaço nas laterais */
+}
+
+/* 3. O Menu Lateral (Sidebar)
+*/
+.workspace-sidebar {
+    width: 260px;
+    padding: 16px;
+    flex-shrink: 0; /* Impede que o sidebar encolha */
+    
+    /* O ESPAÇO QUE VOCÊ PEDIU:
+      Adiciona 20px de espaço no topo, para não ficar "colado" no header.
+    */
+    padding-top: 20px; 
+}
+
+/* 4. A Área de Conteúdo (Scrollável)
+*/
+.workspace-content {
+    flex-grow: 1; /* Ocupa todo o espaço restante */
+    overflow-y: auto; /* Permite scroll apenas no conteúdo */
+    
+    /* Define o fundo da área de conteúdo (o cinza claro do seu tema) */
+    background-color: var(--secondary-color);
+    background-image: var(--background-image);
+    background-size: var(--background-size);
+    background-repeat: var(--background-repeat);
+    background-position: var(--background-position);
+    background-attachment: var(--background-attachment);
+    
+    /* Adiciona um padding para o .task-form-body não colar no sidebar */
+    padding-left: 20px;
+}
+
+/* 5. O Container da Lista de Tarefas (Alinhado à esquerda)
+*/
+.workspace-content .task-form-body {
+    /* MANTEMOS a largura máxima para que a lista não
+      fique demasiado larga em telas gigantes.
+    */
+    max-width: 900px;
+    
+    /* A MUDANÇA ESTÁ AQUI:
+      Removemos 'margin: 20px auto;'
+      e colocamos 'margin: 20px 0;'
+      
+      Isto alinha o container à esquerda (dentro da sua coluna)
+      e move-o para perto do menu lateral.
+    */
+    margin: 20px 0; /* 20px no topo/fundo, 0 nas laterais */
+    
+    /* (Estilos restantes inalterados) */
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* 6. Estilos das Listas do Sidebar 
+   (O mesmo de antes, sem alterações)
+*/
+.workspace-sidebar-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.workspace-sidebar-section h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    margin-bottom: 8px;
+    padding: 0 8px;
+}
+
+.workspace-list,
+.view-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.workspace-list li a,
+.view-list li a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #343a40;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, color 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.workspace-list li a:hover,
+.view-list li a:hover {
+    background-color: #e9ecef;
+}
+
+.workspace-list li a.active,
+.view-list li a.active {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+.workspace-list li a.active i,
+.view-list li a.active i {
+    color: white !important;
+}
+
+.workspace-list li a i,
+.view-list li a i {
+    width: 18px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+#create-workspace-btn {
+    background: none;
+    border: 1px dashed #adb5bd;
+    color: #495057;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+#create-workspace-btn:hover {
+    background-color: #e9ecef;
+    border-color: #6c757d;
+}
+
+.sidebar-loading {
+    padding: 10px 12px;
+    text-align: left;
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9rem;
+}

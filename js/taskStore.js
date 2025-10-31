@@ -4,47 +4,46 @@ import {
     collection, query, orderBy, onSnapshot, doc, addDoc, updateDoc,
     deleteDoc, serverTimestamp, writeBatch, setDoc, getDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import { getCurrentUserUID } from './authManager.js';
+
+import { getCurrentUserUID, getUserSettings } from './authManager.js';
+import { getActiveWorkspaceId } from './workspaceManager.js';
 import { generateId } from './utils.js';
 
-// *** ATUALIZADO: Importações reais do uiRenderer.js ***
-import {
-    renderAllTasks, renderTrash, updateProgress, checkAllDueDates,
-    applyFilter /* syncAllToCalendar será chamado de app.js por enquanto */
-} from './uiRenderer.js';
-// *** syncAllToCalendar removido daqui por enquanto ***
+// *** CORREÇÃO: REMOVIDAS TODAS AS IMPORTAÇÕES DO uiRenderer.js ***
 
-// Estado interno
+// --- Estado interno ---
 let tasks = [];
 let trash = [];
 let unsubscribeTasks = null;
 let unsubscribeTrash = null;
 
-// Getters para o estado
-export function getTasks() {
-  return [...tasks];
-}
-export function getTrash() {
-  return [...trash];
-}
+// ** 2. Adiciona o listener de evento para trocar o workspace **
+document.addEventListener('workspaceChanged', (e) => {
+    const newWorkspaceId = e.detail.workspaceId;
+    if (newWorkspaceId) {
+        console.log(`taskStore ouviu 'workspaceChanged': Carregando tarefas para ${newWorkspaceId}`);
+        loadTasksRealTime(newWorkspaceId);
+        loadTrash(newWorkspaceId);
+        migrateLocalTasksToFirestore();
+    }
+});
 
-// ===============================================
-// Funções Auxiliares Internas (Não exportadas)
-// ===============================================
 
-// <<< Funções updateNestedSubtasks, findNestedSubtask, checkCompletionStatusRecursively, getNewTaskOrderIndex INALTERADAS >>>
+// --- Getters para o estado ---
+export function getTasks() { return [...tasks]; }
+export function getTrash() { return [...trash]; }
+
+// --- Funções Auxiliares Internas ---
 function updateNestedSubtasks(subtasks, targetId, callbackFn) {
     if (!subtasks) return [];
     return subtasks.map(subtask => {
         if (subtask.id === targetId) { return callbackFn(subtask); }
-        if (subtask.subtasks?.length > 0) { // Optional chaining
+        if (subtask.subtasks?.length > 0) {
             subtask.subtasks = updateNestedSubtasks(subtask.subtasks, targetId, callbackFn);
         }
         return subtask;
     });
 }
-
-
 const checkCompletionStatusRecursively = (subtasks) => {
     if (!subtasks || subtasks.length === 0) return true;
     return subtasks.every(st => st.completed && checkCompletionStatusRecursively(st.subtasks));
@@ -57,10 +56,7 @@ function getNewTaskOrderIndex() {
 }
 
 
-// ===============================================
-// Funções de Armazenamento Local (Exportadas)
-// ===============================================
-
+// --- Funções de Armazenamento Local ---
 export function getLocalTasks() {
     try {
         const localData = localStorage.getItem('tasks');
@@ -70,109 +66,127 @@ export function getLocalTasks() {
         return [];
     }
 }
-
 export function saveLocalTasks(tasksArray) {
     localStorage.setItem('tasks', JSON.stringify(tasksArray));
-    // A UI será atualizada por quem chama esta função (geralmente addTask, updateTask local)
 }
-
 export function loadTasksFromLocalStorage() {
     tasks = getLocalTasks();
-    // *** ATUALIZADO: Chama funções de UI importadas ***
-    renderAllTasks(tasks);
-    updateProgress();
-    // checkAllDueDates(); // Esta chamada foi movida para dentro de renderAllTasks
+    // *** CORREÇÃO: Dispara evento em vez de renderizar ***
+    document.dispatchEvent(new CustomEvent('tasksUpdated'));
 }
 
+
 // ===============================================
-// Funções de Operação do Firestore (Exportadas)
+// Funções de Operação do Firestore (CRUD)
 // ===============================================
 
-// <<< Funções addTaskToFirestore, updateTaskInFirestore, moveTaskToTrash, restoreTaskFromTrash, permanentlyDeleteTask, saveSubtasksToFirestore INALTERADAS >>>
 export async function addTaskToFirestore(task) {
     const uid = getCurrentUserUID();
-    if (!uid) return;
+    const workspaceId = getActiveWorkspaceId(); 
+    if (!uid || !workspaceId) {
+        console.error("Não é possível adicionar tarefa: UID ou WorkspaceId em falta.");
+        return;
+    }
+    
     try {
-        const tasksRef = collection(db, "users", uid, "tasks");
+        const tasksRef = collection(db, "workspaces", workspaceId, "tasks"); 
         const newOrderIndex = getNewTaskOrderIndex();
-        await addDoc(tasksRef, { ...task, createdAt: serverTimestamp(), orderIndex: newOrderIndex, subtasks: task.subtasks || [] });
+        
+        const taskData = { 
+            ...task, 
+            authorId: uid, 
+            createdAt: serverTimestamp(), 
+            orderIndex: newOrderIndex, 
+            subtasks: task.subtasks || [] 
+        };
+        
+        await addDoc(tasksRef, taskData);
         console.log("✅ Tarefa adicionada com sucesso ao Firestore!");
     } catch (error) { console.error("🚨 Erro ao adicionar tarefa:", error); alert(`🚨 ERRO CRÍTICO AO SALVAR TAREFA. Motivo: ${error.message}.`); }
 }
+
 export async function updateTaskInFirestore(taskId, data) {
-    const uid = getCurrentUserUID();
-    if (!uid) return;
-    try { const taskRef = doc(db, "users", uid, "tasks", taskId); await updateDoc(taskRef, data); }
+    const workspaceId = getActiveWorkspaceId(); 
+    if (!workspaceId) return;
+    try { 
+        const taskRef = doc(db, "workspaces", workspaceId, "tasks", taskId); 
+        await updateDoc(taskRef, data); 
+    }
     catch (error) { console.error("Erro ao atualizar tarefa:", error); }
 }
+
 export async function moveTaskToTrash(taskId) {
     const uid = getCurrentUserUID();
-    if (!uid) return;
+    const workspaceId = getActiveWorkspaceId(); 
+    if (!uid || !workspaceId) return;
+    
     try {
-        const taskRef = doc(db, "users", uid, "tasks", taskId);
+        const taskRef = doc(db, "workspaces", workspaceId, "tasks", taskId);
         const taskDoc = await getDoc(taskRef);
+        
         if (taskDoc.exists()) {
             const taskData = taskDoc.data();
-            const trashRef = doc(db, "users", uid, "trash", taskId);
-            await setDoc(trashRef, { ...taskData, deletedAt: serverTimestamp() });
+            const trashRef = doc(db, "workspaces", workspaceId, "trash", taskId);
+            await setDoc(trashRef, { 
+                ...taskData, 
+                deletedAt: serverTimestamp(), 
+                originalAuthorId: taskData.authorId || uid 
+            });
             await deleteDoc(taskRef);
         }
     } catch (error) { console.error("Erro ao mover tarefa para a lixeira:", error); }
 }
+
 export async function restoreTaskFromTrash(taskId) {
-    const uid = getCurrentUserUID();
-    if (!uid) return;
+    const workspaceId = getActiveWorkspaceId(); 
+    if (!workspaceId) return;
+    
     try {
-        const trashRef = doc(db, "users", uid, "trash", taskId);
+        const trashRef = doc(db, "workspaces", workspaceId, "trash", taskId);
         const taskDoc = await getDoc(trashRef);
+        
         if (taskDoc.exists()) {
             const taskData = taskDoc.data();
             delete taskData.deletedAt;
-            const taskRef = doc(db, "users", uid, "tasks", taskId);
-            await setDoc(taskRef, taskData);
+            const taskRef = doc(db, "workspaces", workspaceId, "tasks", taskId);
+            await setDoc(taskRef, taskData); 
             await deleteDoc(trashRef);
         }
     } catch (error) { console.error("Erro ao restaurar tarefa:", error); }
 }
+
 export async function permanentlyDeleteTask(taskId) {
-    const uid = getCurrentUserUID();
-    if (!uid) return;
-    try { const trashRef = doc(db, "users", uid, "trash", taskId); await deleteDoc(trashRef); }
+    const workspaceId = getActiveWorkspaceId(); 
+    if (!workspaceId) return;
+    try { 
+        const trashRef = doc(db, "workspaces", workspaceId, "trash", taskId); 
+        await deleteDoc(trashRef); 
+    }
     catch (error) { console.error("Erro ao deletar tarefa permanentemente:", error); }
 }
-export async function saveSubtasksToFirestore(taskId, subtasks) { await updateTaskInFirestore(taskId, { subtasks: subtasks }); }
+
+export async function saveSubtasksToFirestore(taskId, subtasks) { 
+    await updateTaskInFirestore(taskId, { subtasks: subtasks }); 
+}
 
 // ===============================================
-// Listeners e Migração (Exportados)
+// Listeners e Migração
 // ===============================================
 
-/**
- * **CORREÇÃO DO BUG (Notificação triplicada)**
- * A chamada redundante para checkAllDueDates() foi removida.
- * A função renderAllTasks() já chama checkAllDueDates() internamente.
- */
-export function loadTasksRealTime() {
-    const uid = getCurrentUserUID();
-    if (!uid) return;
+export function loadTasksRealTime(workspaceId) { 
+    if (!workspaceId) {
+        console.warn("loadTasksRealTime chamado sem workspaceId. A aguardar evento...");
+        return;
+    }
     if (unsubscribeTasks) unsubscribeTasks();
 
-    const tasksRef = collection(db, "users", uid, "tasks");
+    const tasksRef = collection(db, "workspaces", workspaceId, "tasks");
     const q = query(tasksRef, orderBy("orderIndex", "asc"));
 
-    console.log("Iniciando listener para Tarefas...");
+    console.log(`Iniciando listener para Tarefas em ${workspaceId}`);
     unsubscribeTasks = onSnapshot(q, (snapshot) => {
-        console.log("Snapshot de Tarefas recebido:", snapshot.docs.length, "documentos");
-
-        // 1. Salva o estado de expansão atual ANTES de redesenhar
-        const expandedTasks = new Set();
-        $('#task-list > li').each(function() {
-            if (!$(this).find('.toggle-subtasks-btn').hasClass('collapsed')) {
-                expandedTasks.add($(this).data('id'));
-            }
-        });
-        console.log("Estado de expansão salvo:", expandedTasks);
-
-        // 2. Reconstrói o array local e renderiza
+        console.log(`Snapshot de Tarefas recebido de ${workspaceId}:`, snapshot.docs.length, "documentos");
+        
         tasks = [];
         snapshot.forEach((doc) => {
             const task = doc.data();
@@ -182,40 +196,23 @@ export function loadTasksRealTime() {
             tasks.push(task);
         });
 
-        renderAllTasks(tasks); // Esta é a chamada principal que renderiza E verifica as datas
+        // *** CORREÇÃO: Dispara evento em vez de renderizar ***
+        document.dispatchEvent(new CustomEvent('tasksUpdated'));
+        // (Renderização e outras chamadas foram movidas para uiRenderer)
 
-        // 3. Restaura o estado de expansão
-        expandedTasks.forEach(id => {
-            const $li = $(`#task-list > li[data-id="${id}"]`);
-            if ($li.length) {
-                $li.find('.toggle-subtasks-btn').removeClass('collapsed').html('▼');
-                $li.children('.subtask-list').show();
-            }
-        });
-        console.log("Estado de expansão restaurado.");
-
-        // Atualiza o resto da UI
-        updateProgress();
-        
-        // *** CORREÇÃO: Esta chamada foi removida para evitar a triplicação ***
-        // checkAllDueDates(); 
-        
-        applyFilter();
-
-    }, (error) => { console.error("Erro ao escutar tarefas em tempo real:", error); });
+    }, (error) => { console.error(`Erro ao escutar tarefas em ${workspaceId}:`, error); });
 }
 
-export function loadTrash() {
-    const uid = getCurrentUserUID();
-    if (!uid) return;
+export function loadTrash(workspaceId) { 
+    if (!workspaceId) return;
     if (unsubscribeTrash) unsubscribeTrash();
 
-    const trashRef = collection(db, "users", uid, "trash");
+    const trashRef = collection(db, "workspaces", workspaceId, "trash");
     const q = query(trashRef, orderBy("deletedAt", "desc"));
 
-    console.log("Iniciando listener para Lixeira...");
+    console.log(`Iniciando listener para Lixeira em ${workspaceId}`);
     unsubscribeTrash = onSnapshot(q, (snapshot) => {
-        console.log("Snapshot da Lixeira recebido:", snapshot.docs.length, "documentos");
+        
         trash = [];
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -225,7 +222,7 @@ export function loadTrash() {
         snapshot.forEach((doc) => {
             const task = doc.data();
             task.id = doc.id;
-            if (task.deletedAt?.toDate && task.deletedAt.toDate() < thirtyDaysAgo) { // Usa optional chaining
+            if (task.deletedAt?.toDate && task.deletedAt.toDate() < thirtyDaysAgo) {
                 batch.delete(doc.ref);
                 itemsToDelete++;
             } else {
@@ -235,129 +232,143 @@ export function loadTrash() {
 
         if (itemsToDelete > 0) {
             batch.commit().then(() => {
-                console.log(`${itemsToDelete} item(ns) antigo(s) removido(s) da lixeira.`);
-                // Não precisa chamar renderTrash aqui, o próximo snapshot fará isso
+                console.log(`${itemsToDelete} item(ns) antigo(s) removido(s) da lixeira de ${workspaceId}.`);
             }).catch(err => console.error("Erro ao apagar itens antigos da lixeira:", err));
         }
+        
+        // *** CORREÇÃO: Dispara evento em vez de renderizar ***
+        document.dispatchEvent(new CustomEvent('trashUpdated'));
 
-        // *** ATUALIZADO: Chama função de UI importada ***
-        renderTrash(trash); // Renderiza o estado atual (sem os itens que serão apagados)
-
-    }, (error) => { console.error("Erro ao escutar lixeira em tempo real:", error); });
+    }, (error) => { console.error(`Erro ao escutar lixeira em ${workspaceId}:`, error); });
 }
 
 export async function migrateLocalTasksToFirestore() {
-    // <<< CÓDIGO INALTERADO >>>
     const uid = getCurrentUserUID();
-    if (!uid) return;
+    const workspaceId = getActiveWorkspaceId(); 
+    if (!uid || !workspaceId) { return; }
+    
     const localTasks = getLocalTasks();
-    if (localTasks.length === 0) { console.log("Nenhuma tarefa local para migrar."); return; }
-    console.log(`Encontradas ${localTasks.length} tarefas locais. Iniciando migração...`);
-    const tasksRef = collection(db, "users", uid, "tasks");
-    let currentOrderIndex = getNewTaskOrderIndex();
+    if (localTasks.length === 0) { return; }
+    console.log(`Encontradas ${localTasks.length} tarefas locais. Migrando para ${workspaceId}...`);
+    
+    const tasksRef = collection(db, "workspaces", workspaceId, "tasks");
+    let currentOrderIndex = getNewTaskOrderIndex(); 
     const batch = writeBatch(db);
+    
     localTasks.forEach(task => {
-        const { id, ...taskData } = task;
-        const newTaskRef = doc(tasksRef);
-        batch.set(newTaskRef, { ...taskData, createdAt: serverTimestamp(), orderIndex: currentOrderIndex++ });
+        const { id, ...taskData } = task; 
+        const newTaskRef = doc(tasksRef); 
+        batch.set(newTaskRef, { 
+            ...taskData, 
+            authorId: uid, 
+            createdAt: serverTimestamp(), 
+            orderIndex: currentOrderIndex++ 
+        });
     });
-    try { await batch.commit(); console.log("Migração concluída com sucesso!"); localStorage.removeItem('tasks'); alert("🎉 Suas tarefas locais foram salvas na nuvem!"); }
+    
+    try { 
+        await batch.commit(); 
+        console.log("Migração de localStorage concluída!"); 
+        localStorage.removeItem('tasks'); 
+        alert("🎉 Suas tarefas locais salvas no dispositivo foram movidas para o seu workspace na nuvem!"); 
+    }
     catch (e) { console.error('Erro durante a migração do LocalStorage:', e); alert("Ocorreu um erro ao salvar suas tarefas na nuvem. Por favor, tente novamente."); }
 }
 
+
 // ===============================================
-// Funções Abstratas de CRUD (Exportadas)
+// Funções Abstratas de CRUD (MODIFICADAS PARA DISPARAR EVENTOS)
 // ===============================================
 
 export async function addTask(taskData) {
     const uid = getCurrentUserUID();
-    if (uid) {
+    if (uid && getActiveWorkspaceId()) { 
         await addTaskToFirestore(taskData);
-        // UI será atualizada pelo listener loadTasksRealTime
-    } else {
+    } else if (!uid) { // Modo Convidado (local)
         const newTask = { ...taskData, id: generateId() };
         tasks.push(newTask);
         saveLocalTasks(tasks);
-        // *** ATUALIZADO: Chama funções de UI importadas ***
-        renderAllTasks(tasks);
-        updateProgress();
+        // *** CORREÇÃO: Dispara evento em vez de renderizar ***
+        document.dispatchEvent(new CustomEvent('tasksUpdated'));
     }
 }
 
 export async function updateTask(taskId, updatedData) {
     const uid = getCurrentUserUID();
-    if (uid) {
-        // Resetar notificação se data mudar
+    if (uid && getActiveWorkspaceId()) {
         const originalTask = tasks.find(t => t.id === taskId);
          if (originalTask && (originalTask.dueDate !== updatedData.dueDate || originalTask.dueTime !== updatedData.dueTime)) {
             updatedData.deadlineNotified = false;
         }
         await updateTaskInFirestore(taskId, updatedData);
-         // UI será atualizada pelo listener loadTasksRealTime
-    } else {
+    } else if (!uid) { // Modo Convidado
         const taskIndex = tasks.findIndex(t => t.id === taskId);
         if (taskIndex > -1) {
             tasks[taskIndex] = { ...tasks[taskIndex], ...updatedData };
             saveLocalTasks(tasks);
-            // *** ATUALIZADO: Chama funções de UI importadas ***
-            renderAllTasks(tasks);
-            // updateProgress(); // Já é chamado por renderAllTasks
-            // checkAllDueDates(); // Já é chamado por renderAllTasks
+            // *** CORREÇÃO: Dispara evento em vez de renderizar ***
+            document.dispatchEvent(new CustomEvent('tasksUpdated'));
         }
     }
 }
 
 export async function updateSubtasks(taskId, updatedSubtasks) {
     const uid = getCurrentUserUID();
-    const isMainTaskCompleted = checkCompletionStatusRecursively(updatedSubtasks); // Função auxiliar interna
+    const isMainTaskCompleted = checkCompletionStatusRecursively(updatedSubtasks);
 
-    if (uid) {
-        await updateTaskInFirestore(taskId, { // Reutiliza updateTaskInFirestore
+    if (uid && getActiveWorkspaceId()) {
+        await updateTaskInFirestore(taskId, { 
             subtasks: updatedSubtasks,
             completed: isMainTaskCompleted
         });
-        // UI será atualizada pelo listener loadTasksRealTime
-    } else {
+    } else if (!uid) { // Modo Convidado
          const task = tasks.find(t => t.id === taskId);
          if(task){
             task.subtasks = updatedSubtasks;
             task.completed = isMainTaskCompleted;
             saveLocalTasks(tasks);
-            // *** ATUALIZADO: Chama função de UI importada ***
-            renderAllTasks(tasks); // Re-renderiza tudo para atualizar status
+            // *** CORREÇÃO: Dispara evento em vez de renderizar ***
+            document.dispatchEvent(new CustomEvent('tasksUpdated'));
          }
     }
 }
 
 export async function deleteTask(taskId) {
     const uid = getCurrentUserUID();
-    if (uid) {
+    if (uid && getActiveWorkspaceId()) {
         await moveTaskToTrash(taskId);
-        // UI será atualizada pelos listeners loadTasksRealTime e loadTrash
-    } else {
+    } else if (!uid) { // Modo Convidado
         tasks = tasks.filter(t => t.id !== taskId);
         saveLocalTasks(tasks);
-        // *** ATUALIZADO: Chama funções de UI importadas ***
-        renderAllTasks(tasks);
-        updateProgress();
+        // *** CORREÇÃO: Dispara evento em vez de renderizar ***
+        document.dispatchEvent(new CustomEvent('tasksUpdated'));
     }
 }
 
-// Funções para a lixeira (já exportadas): restoreTaskFromTrash, permanentlyDeleteTask
-// A função loadTrash (exportada) já lida com Firestore e chama renderTrash.
-
 export async function saveTaskOrder(orderedIds) {
-    // <<< CÓDIGO INALTERADO >>>
     const uid = getCurrentUserUID();
-    if (!uid) { console.warn("Salvamento de ordem local não implementado ainda."); return; }
+    const workspaceId = getActiveWorkspaceId(); 
+    
+    if (!uid) {
+        console.warn("Salvamento de ordem local não implementado ainda."); 
+        return;
+    }
+    
+    if (!workspaceId) {
+        console.error("Utilizador logado mas sem workspace ativo. Não é possível salvar a ordem.");
+        return; 
+    }
+    
     const batch = writeBatch(db);
-    const tasksRef = collection(db, "users", uid, "tasks");
+    const tasksRef = collection(db, "workspaces", workspaceId, "tasks");
+    
     orderedIds.forEach((taskId, newIndex) => {
-        if (tasks.some(t => t.id === taskId)) {
+        if (tasks.some(t => t.id === taskId)) { 
             const taskRef = doc(tasksRef, taskId);
             batch.update(taskRef, { orderIndex: newIndex });
         } else { console.warn(`Tentativa de salvar ordem para tarefa inexistente (ID: ${taskId}). Ignorando.`); }
     });
+    
     try { await batch.commit(); console.log("Ordem das tarefas salva no Firestore."); }
     catch (error) { console.error("🚨 Erro ao salvar a nova ordem:", error); alert("Erro ao salvar a nova ordem. Verifique sua conexão ou regras de segurança."); }
 }
@@ -379,8 +390,7 @@ export function stopTaskListeners() {
     }
     tasks = [];
     trash = [];
-    // *** ATUALIZADO: Chama funções de UI importadas para limpar a tela ***
-    renderAllTasks([]);
-    renderTrash([]);
-    updateProgress();
+    // *** CORREÇÃO: Dispara evento em vez de renderizar ***
+    document.dispatchEvent(new CustomEvent('tasksUpdated'));
+    document.dispatchEvent(new CustomEvent('trashUpdated'));
 }

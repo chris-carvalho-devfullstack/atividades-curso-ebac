@@ -3,22 +3,24 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
 
-// --- ATUALIZADO: Importa funções do taskStore.js ---
+// --- ATUALIZADO: Importações do taskStore.js ---
 import {
-    migrateLocalTasksToFirestore,
-    loadTasksRealTime,
-    loadTrash,
+    // migrateLocalTasksToFirestore, // <-- REMOVIDO DAQUI
+    // loadTasksRealTime,           // <-- REMOVIDO DAQUI
+    // loadTrash,                   // <-- REMOVIDO DAQUI
     loadTasksFromLocalStorage,
-    stopTaskListeners // <- Importa a função de limpeza
-} from './taskStore.js'; // <<< Importa do taskStore.js
+    stopTaskListeners 
+} from './taskStore.js'; 
 
 // --- Mantém importações do eventBinder.js ---
 import {
     setupCommonEventListeners
-} from './eventBinder.js'; // <<< Importa do eventBinder.js
+} from './eventBinder.js';
 
-// --- Importa initCalendar de app.js (temporário) ---
-import { initCalendar } from './app.js'; // Mantém esta importação por enquanto
+import { initCalendar, initializeViewOnLoad } from './app.js'; // <-- ADICIONADO initializeViewOnLoad
+
+// --- ADICIONA A IMPORTAÇÃO DO NOVO WORKSPACE MANAGER ---
+import { initializeWorkspaces } from './workspaceManager.js';
 
 // ===============================================
 // Variáveis Globais (Exportadas)
@@ -60,12 +62,18 @@ async function loadUserSettings() {
 
 function initializeAuthenticatedSession() {
     console.log("Sessão autenticada iniciada.");
-    loadUserSettings().then(() => { // Garante que settings carreguem antes
+    loadUserSettings().then(() => { 
         initCalendar(); // <- Vem do app.js (ainda)
-        migrateLocalTasksToFirestore(); // <- Vem do taskStore.js
-        loadTasksRealTime(); // <- Vem do taskStore.js
-        loadTrash(); // <- Vem do taskStore.js
-        setupCommonEventListeners(); // <- Vem do eventBinder.js AGORA
+        
+        // ** MODIFICADO: OS LISTENERS SÃO INICIADOS PELO WORKSPACE MANAGER **
+        // loadTasksRealTime(); // <-- REMOVIDO
+        // loadTrash();       // <-- REMOVIDO
+
+        // ** ADICIONADO: O WorkspaceManager agora inicializa a lógica de dados **
+        // Ele vai tratar a migração de tarefas antigas E a migração local
+        initializeWorkspaces(CURRENT_USER_UID);
+        
+        setupCommonEventListeners(); // <- Vem do eventBinder.js
     });
 }
 

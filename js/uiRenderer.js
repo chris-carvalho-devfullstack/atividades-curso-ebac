@@ -1,14 +1,17 @@
 // js/uiRenderer.js
-import { getTasks, getTrash } from './taskStore.js';
-import { getUserSettings } from './authManager.js';
-import { generateId, findNestedSubtask } from './utils.js'; // <<< Importa findNestedSubtask de utils.js
-// Temporário: Funções de modal/menu ainda em app.js (ou serão movidas para eventBinder/app)
-// Estas importações podem ser removidas se os listeners forem movidos para eventBinder/app
-import { openSubtaskModalForEdit } from './app.js';
-import { exportTaskToGoogleLink } from './app.js';
-// *** MUDANÇA: Importa a função de criar notificação de prazo ***
-import { createTaskDeadlineNotification } from './app.js';
+import { getCurrentUserUID, getUserSettings } from './authManager.js';
+import { db } from "./firebase-config.js"; 
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js"; 
+import { findNestedSubtask, generateId } from './utils.js'; // Adicionado findNestedSubtask
+import { showModal, hideModal } from './modalHandler.js'; // Adicionado para uso em modais
+import { updateTask } from './taskStore.js'; // Adicionado para uso em updateTaskDueVisual
 
+// *** CORREÇÃO: Importa de taskStore.js ***
+import { 
+    getTasks, 
+    getTrash, 
+    updateTaskInFirestore // *** NECESSÁRIO para a função de notificação ***
+} from './taskStore.js'; 
 
 // --- Mapeamentos para os novos ícones e tooltips ---
 const priorityMap = {
@@ -37,6 +40,40 @@ const categoryTooltipMap = {
 };
 // --------------------------------------------------
 
+// ===============================================
+// FUNÇÃO DE NOTIFICAÇÃO (MOVIDA PARA AQUI)
+// ===============================================
+/**
+ * Cria uma notificação de prazo no Firestore E
+ * marca a tarefa como 'deadlineNotified: true' para evitar duplicatas.
+ * (Movida do app.js para quebrar o ciclo de dependência)
+ */
+async function createTaskDeadlineNotification(taskId, taskText, dueDateTime) {
+     const uid = getCurrentUserUID(); if (!uid) return;
+     try {
+         const settings = getUserSettings();
+         const notificationsRef = collection(db, 'users', uid, 'notifications');
+         const leadingTime = settings.taskSettings.alertLeadTimeMinutes || 60;
+         
+         // 1. Cria a notificação
+         await addDoc(notificationsRef, {
+             type: 'task_deadline',
+             message: `Atenção: A tarefa "${taskText}" vence em menos de ${leadingTime} minutos (${dueDateTime}).`,
+             url: `/index.html#task-${taskId}`, 
+             read: false,
+             timestamp: serverTimestamp()
+         });
+         
+         // 2. Marca a tarefa como notificada para evitar spam
+         await updateTaskInFirestore(taskId, { deadlineNotified: true }); 
+         
+         console.log(`Notificação de prazo CRIADA e task marcada como notificada: ${taskId}`);
+         
+     } catch (error) {
+         console.error("Erro ao criar notificação de prazo:", error);
+     }
+}
+
 
 // ===============================================
 // Funções de Renderização Principal (Exportadas)
@@ -47,13 +84,12 @@ export function renderAllTasks(tasksArray) {
     taskList.empty();
     if (tasksArray && tasksArray.length > 0) {
         tasksArray.forEach(task => addTaskHTML(task));
-        // Inicializa sortable APÓS todos os itens serem adicionados
-        initSortableSubtasks(taskList); // Chama a função auxiliar
+        initSortableSubtasks(taskList); 
     } else {
         taskList.append('<li class="empty-list-message">Nenhuma tarefa encontrada.</li>');
     }
-    updateProgress();
-    checkAllDueDates(); // Verifica prazos após renderizar (ESTA É A CHAMADA CORRETA E ÚNICA)
+    // As chamadas updateProgress e checkAllDueDates são movidas para o listener
+    // para garantir a ordem correta após a renderização do HTML.
 }
 
 export function renderTrash(trashArray) {
@@ -83,9 +119,6 @@ export function renderTrash(trashArray) {
 // Funções de Renderização Detalhada (Internas/Auxiliares)
 // ===============================================
 
-/**
- * ATUALIZADO (Refinamento Final v2)
- */
 function addTaskHTML(task) {
     const taskPriority = task.priority || 'medium';
     const taskCategory = task.category || 'geral';
@@ -98,40 +131,32 @@ function addTaskHTML(task) {
 
     let li = $('<li></li>').attr('data-id', taskId).attr('data-category', taskCategory).addClass('priority-' + taskPriority);
     
-    // task-main é a linha flex principal
     let taskDiv = $('<div class="task-main"></div>');
     
-    // 1. Botão Expandir/Colapsar
     if (task.subtasks && task.subtasks.length > 0) {
         taskDiv.append($('<button type="button" class="toggle-subtasks-btn collapsed" title="Mostrar Subtarefas">►</button>'));
     } else {
         taskDiv.append('<span class="toggle-subtasks-placeholder"></span>');
     }
 
-    // 2. Ícone de Privacidade
     let privacyIcon = $('<i class="privacy-icon"></i>');
     if (task.privacy === 'public') privacyIcon.addClass('fa fa-globe').attr('title', 'Pública');
     else if (task.privacy === 'shared') privacyIcon.addClass('fa fa-users').attr('title', 'Compartilhada');
     else privacyIcon.addClass('fa fa-lock').attr('title', 'Privada');
     taskDiv.append(privacyIcon);
 
-    // 3. Checkbox
     let checkbox = $('<input type="checkbox" class="task-checkbox">').prop('checked', task.completed || false);
     taskDiv.append(checkbox);
 
-    // 4. Label (Título da Tarefa)
     const taskText = task.text || 'Tarefa sem nome';
-    // *** CORREÇÃO: Adicionada classe 'js-view-label' ***
     let label = $('<label class="js-view-label"></label>')
         .text(taskText)
-        .attr('title', taskText); // **NOVO: Adiciona tooltip para texto cortado**
+        .attr('title', taskText); 
     if (task.completed) label.addClass('completed');
     taskDiv.append(label);
 
-    // 5. Div de Metadados (alinhado à direita)
     let metaIconsDiv = $('<div class="task-meta-icons"></div>');
     
-    // **MUDANÇA DE ORDEM (1): Data/Hora primeiro**
     if (task.dueDate) {
         let dateText = 'Data inválida';
         try { dateText = new Date(task.dueDate + 'T00:00:00Z').toLocaleDateString(undefined, { timeZone: 'UTC' }); } catch(e) { /* Ignora data inválida */ }
@@ -139,35 +164,30 @@ function addTaskHTML(task) {
         let timeText = task.dueTime ? ` ${task.dueTime}` : ''; 
         
         let dateLabel = $('<span class="task-datetime"></span>')
-            .html(`📅 ${dateText}${timeText}`) // Mostra data e hora
+            .html(`📅 ${dateText}${timeText}`) 
             .attr('data-tooltip', `Prazo: ${dateText}${timeText}`);
         metaIconsDiv.append(dateLabel);
     }
 
-    // **MUDANÇA DE ORDEM (2): Prioridade**
     let priorityLabel = $('<span class="priority-label priority-circle"></span>')
         .addClass('priority-' + taskPriority)
         .text(priorityMap[taskPriority] || 'M')
         .attr('data-tooltip', priorityTooltipMap[taskPriority] || 'Prioridade Média');
     metaIconsDiv.append(priorityLabel);
 
-    // **MUDANÇA DE ORDEM (3): Categoria**
     let categorySpan = $('<span class="task-category category-icon"></span>')
         .html(`<i class="${categoryIconMap[taskCategory] || 'fa-solid fa-tag'}"></i>`)
         .attr('data-tooltip', categoryTooltipMap[taskCategory] || 'Categoria: Geral');
     metaIconsDiv.append(categorySpan);
     
-    taskDiv.append(metaIconsDiv); // Adiciona o grupo de ícones ao task-main
+    taskDiv.append(metaIconsDiv); 
 
-    // 6. Botões de Ação (Grupo de menu)
     let btnGroup = $('<div class="button-group"></div>');
     
-    // **MUDANÇA DE ÍCONE: 'fa-ellipsis-h' (horizontal)**
     let optionsBtn = $('<button class="task-options-btn" type="button" title="Opções"><i class="fa-solid fa-ellipsis-h"></i></button>');
     
     let actionsMenu = $('<div class="task-actions-menu"></div>');
 
-    // **MUDANÇA ÍCONE GOOGLE:**
     if (task.dueDate) {
         let googleBtn = $(`
             <button class="google-calendar-btn" type="button" data-tooltip="Agendar no Google Agenda">
@@ -185,11 +205,10 @@ function addTaskHTML(task) {
     actionsMenu.append(editBtn, addSubBtn, removeBtn);
     btnGroup.append(optionsBtn, actionsMenu);
     
-    taskDiv.append(btnGroup); // Adiciona o grupo de menu ao task-main
+    taskDiv.append(btnGroup); 
     
-    li.append(taskDiv); // Adiciona a linha principal (task-main) ao li
+    li.append(taskDiv); 
 
-    // Lista de Subtarefas (escondida por padrão)
     let subtaskList = $('<ul class="subtask-list"></ul>').hide();
     if (task.subtasks && task.subtasks.length > 0) {
         task.subtasks.forEach(st => addSubtaskHTML(subtaskList, st, taskId));
@@ -197,49 +216,27 @@ function addTaskHTML(task) {
     li.append(subtaskList);
 
     $('#task-list').append(li);
-    
-    // *** CORREÇÃO: Esta chamada foi removida daqui para evitar a primeira chamada duplicada ***
-    // updateTaskDueVisual(li, task); 
 }
 
-/**
- * ATUALIZADO (Refinamento Final v2)
- */
 function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     const subtaskId = subtask.id || generateId(); 
 
     let li = $('<li></li>').attr('data-id', subtaskId).attr('data-parent-id', parentId || taskId);
     
-    // task-main é a linha flex principal da subtarefa
     let taskDiv = $('<div class="task-main"></div>');
     
-    // *** CORREÇÃO: Placeholders removidos para permitir que o CSS controle o alinhamento ***
-    // 1. Placeholder (para alinhar com o botão de expandir do pai) - REMOVIDO
-    // taskDiv.append('<span class="toggle-subtasks-placeholder"></span>');
-    
-    // 2. Placeholder (para alinhar com o ícone de privacidade do pai) - REMOVIDO
-    // taskDiv.append('<span class="privacy-placeholder"></span>');
-
-    // 3. Checkbox
     let checkbox = $('<input type="checkbox" class="subtask-checkbox">').prop('checked', subtask.completed || false);
     taskDiv.append(checkbox);
 
-    // 4. Label (Título da Subtarefa)
     const subtaskText = subtask.text || 'Subtarefa sem nome';
-    // *** CORREÇÃO: Adicionada classe 'js-view-label' ***
     let label = $('<label class="js-view-label"></label>')
         .text(subtaskText)
-        .attr('title', subtaskText); // **NOVO: Tooltip para texto cortado**
+        .attr('title', subtaskText); 
     if (subtask.completed) label.addClass('completed');
     taskDiv.append(label);
 
-    // 5. Metadados (NÃO SÃO RENDERIZADOS, conforme solicitado)
-    // O 'margin-left: auto' no 'label' (via CSS) vai empurrá-lo
-
-    // 6. Botão de Opções da Subtarefa
     let btnGroup = $('<div class="button-group"></div>');
     
-    // **MUDANÇA DE ÍCONE: 'fa-ellipsis-h' (horizontal)**
     let optionsBtn = $('<button class="subtask-options-btn" type="button" title="Opções"><i class="fa-solid fa-ellipsis-h"></i></button>').attr('data-task-id', taskId).attr('data-subtask-id', subtaskId).attr('data-parent-id', parentId || taskId);
     
     let contextMenu = $(`
@@ -254,9 +251,9 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     `);
     btnGroup.append(optionsBtn, contextMenu);
     
-    taskDiv.append(btnGroup); // Adiciona o grupo de menu ao task-main
+    taskDiv.append(btnGroup); 
     
-    li.append(taskDiv); // Adiciona a linha principal (task-main) ao li
+    li.append(taskDiv); 
 
     if (subtask.subtasks && subtask.subtasks.length > 0) {
         let nestedSubtaskList = $('<ul class="subtask-list nested-subtask-list"></ul>');
@@ -265,7 +262,6 @@ function addSubtaskHTML(list, subtask, taskId, parentId = null) {
     }
 
     list.append(li);
-    // Não chama updateTaskDueVisual, pois subtarefas não têm metadados visuais
 }
 
 // ===============================================
@@ -300,8 +296,7 @@ export function updateProgress() {
 }
 
 /**
- * *** FUNÇÃO CORRIGIDA ***
- * Atualiza o visual (cores) e agora também dispara a notificação de prazo.
+ * Atualiza o visual (cores) e dispara a notificação de prazo.
  */
 export function updateTaskDueVisual(li, task) {
     if (!li || !task) return;
@@ -309,20 +304,18 @@ export function updateTaskDueVisual(li, task) {
     li.removeClass('due-soon overdue');
     li.removeClass('priority-low priority-medium priority-high').addClass('priority-' + (task.priority || 'medium'));
     
-    // Se não tiver data ou já estiver completa, remove classes e sai
     if (!task.dueDate || task.completed) return; 
     
     const dateTimeString = task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T00:00:00'); 
     let due;
     try { due = new Date(dateTimeString); if (isNaN(due.getTime())) throw new Error(); }
-    catch (e) { return; } // Data inválida, sai
+    catch (e) { return; } 
     
     const now = new Date();
     const settings = getUserSettings();
     const leadTimeMinutes = settings.taskSettings.alertLeadTimeMinutes || 60;
     const diffMinutes = (due.getTime() - now.getTime()) / (1000 * 60);
     
-    // +1 minuto de buffer para garantir que a verificação capture
     const isDueSoon = diffMinutes > 0 && diffMinutes <= leadTimeMinutes + 1; 
     const isOverdue = diffMinutes <= 0;
 
@@ -331,18 +324,12 @@ export function updateTaskDueVisual(li, task) {
     } else if (isDueSoon) {
         li.addClass('due-soon');
         
-        // *** MUDANÇA: Dispara a notificação ***
-        // Se está vencendo em breve E AINDA NÃO FOI NOTIFICADA
         if (!task.deadlineNotified) {
             console.log(`Disparando notificação de prazo para: ${task.text}`);
-            // Passa a data formatada para a notificação
             const simpleDateTime = due.toLocaleString('pt-BR', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'short' });
             createTaskDeadlineNotification(task.id, task.text, simpleDateTime);
-            // A função 'createTaskDeadlineNotification' agora é responsável por
-            // criar a notificação E marcar 'deadlineNotified: true' no Firestore.
         }
     }
-    // Se não for 'overdue' nem 'due-soon', nenhuma classe de prazo é adicionada.
 }
 
 
@@ -352,13 +339,22 @@ export function checkAllDueDates() {
         const task = tasksMap.get($(this).attr('data-id'));
         if (task) updateTaskDueVisual($(this), task);
     });
-    // Não é mais necessário iterar sobre subtarefas, pois elas não têm data visual
 }
 
 export function applyFilter() {
     let searchVal = $('#search-input').val().toLowerCase();
     let priorityVal = $('#filter-priority').val();
     let categoryVal = $('#filter-category').val();
+    const tasks = getTasks();
+    
+    // Mostra/Esconde a mensagem de lista vazia
+    if (tasks.length === 0 && searchVal === '' && priorityVal === 'all' && categoryVal === 'all') {
+         $('.empty-list-message').text("Nenhuma tarefa encontrada.").show();
+         return;
+    } else if (tasks.length > 0) {
+        $('.empty-list-message').hide();
+    }
+    
     $('#task-list>li[data-id]').each(function () { 
         let taskElement = $(this);
         let text = taskElement.find('label').first().text()?.toLowerCase() || '';
@@ -369,15 +365,26 @@ export function applyFilter() {
         const matchesCategory = (categoryVal === 'all' || taskCategory === categoryVal);
         taskElement.toggle(matchesSearch && matchesPriority && matchesCategory);
     });
-     const noVisibleTasks = $('#task-list>li[data-id]:visible').length === 0;
-     $('.empty-list-message').toggle(noVisibleTasks);
+    
+    const noVisibleTasks = $('#task-list>li[data-id]:visible').length === 0;
+    // Se não houver tarefas visíveis (mas a lista não está vazia originalmente)
+    if (noVisibleTasks && tasks.length > 0) {
+        // Encontra o container principal de tarefas, se houver
+        const $taskList = $('#task-list');
+        // Adiciona uma mensagem temporária de que os filtros não encontraram nada
+        if ($taskList.find('.no-results-message').length === 0) {
+             $taskList.append('<li class="no-results-message">Nenhum resultado encontrado com os filtros atuais.</li>');
+        }
+    } else {
+         $('.no-results-message').remove(); // Remove a mensagem se houver resultados
+    }
 }
+
 
 // ===============================================
 // Funções Auxiliares de UI (Inicialização de Plugins, etc.)
 // ===============================================
 
-// Inicializa o jQuery UI Sortable para listas de subtarefas
 function initSortableSubtasks(container) {
     container.find('.subtask-list').each(function() {
         if ($(this).data('ui-sortable')) {
@@ -393,3 +400,45 @@ function initSortableSubtasks(container) {
         }).disableSelection();
     });
 }
+
+
+// ===============================================
+// *** NOVO: EVENT LISTENERS DO RENDERER ***
+// ===============================================
+// O uiRenderer agora ouve os eventos do taskStore e atualiza a UI.
+
+document.addEventListener('tasksUpdated', () => {
+    console.log("uiRenderer ouviu 'tasksUpdated'. A renderizar...");
+    
+    // 1. Salva o estado de expansão antes de renderizar
+    const expandedTasks = new Set();
+    $('#task-list > li').each(function() {
+        if (!$(this).find('.toggle-subtasks-btn').hasClass('collapsed')) {
+            expandedTasks.add($(this).data('id'));
+        }
+    });
+
+    // 2. Renderiza
+    const tasks = getTasks();
+    renderAllTasks(tasks); 
+    
+    // 3. Aplica atualizações e filtros
+    updateProgress();
+    applyFilter();
+    checkAllDueDates(); // Verifica prazos APÓS a UI estar no DOM
+    
+    // 4. Restaura o estado de expansão
+    expandedTasks.forEach(id => {
+        const $li = $(`#task-list > li[data-id="${id}"]`);
+        if ($li.length) {
+            $li.find('.toggle-subtasks-btn').removeClass('collapsed').html('▼');
+            $li.children('.subtask-list').show();
+        }
+    });
+});
+
+document.addEventListener('trashUpdated', () => {
+    console.log("uiRenderer ouviu 'trashUpdated'. A renderizar lixeira...");
+    const trash = getTrash();
+    renderTrash(trash);
+});

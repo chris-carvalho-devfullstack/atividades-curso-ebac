@@ -1,192 +1,185 @@
-// js/app.js - Ponto de Entrada Principal e Funções Residuais
-
-// ===============================================
-// 1. IMPORTAÇÕES DE MÓDULOS E FIREBASE
-// ===============================================
-
+// js/app.js - Ponto de Entrada Principal
+import { initializeAuth } from './authManager.js';
+import { getTasks, updateTaskInFirestore } from './taskStore.js';
 import { db } from "./firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import { initializeAuth, getCurrentUserUID, getUserSettings } from './authManager.js';
-import { showModal, hideModal } from './modalHandler.js';
-// *** MUDANÇA: Importa 'updateTaskInFirestore' de taskStore ***
-import { getTasks, updateSubtasks, updateTaskInFirestore } from './taskStore.js';
-// *** CORRIGIDO: Importa findNestedSubtask de utils.js ***
-import { findNestedSubtask } from './utils.js';
-import { showToastNotification } from './toast-notification.js'; // Mantido para createTaskDeadlineNotification (se mover, remover)
+import { getCurrentUserUID, getUserSettings } from './authManager.js';
 
-// ===============================================
-// 2. VARIÁVEIS GLOBAIS (Restantes e Exportadas)
-// ===============================================
-
-// Exportadas para serem usadas/modificadas por eventBinder.js
-export let currentTaskLi = null;
-export function setCurrentTaskLi(li) { currentTaskLi = li; }
-export let currentSubtaskData = {
-    taskId: null, subtaskId: null, isEdit: false, parentId: null,
-    priority: 'medium', category: 'geral', dueDate: '', dueTime: ''
+// --- Variáveis de Estado de UI ---
+let currentView = sessionStorage.getItem('activeView') || 'list'; // Carrega o último estado
+const taskViewElements = {
+    list: $('#task-view-list'),
+    board: $('#task-view-board'),
+    calendar: $('#task-view-calendar')
 };
-export function setCurrentSubtaskData(data) { currentSubtaskData = data; }
-export function getCurrentSubtaskData() { return { ...currentSubtaskData }; } // Retorna cópia
 
-// Mantidas internas para o calendário
+// --- Lógica do Calendário ---
 let calendar = null;
 let calendarInitialized = false;
 
-// ===============================================
-// 3. FUNÇÕES QUE AINDA RESIDEM EM APP.JS
-// ===============================================
-
-// --- Funções relacionadas aos Modais Específicos ---
-// (Estas permanecem exportadas para eventBinder.js)
-export function openSubtaskModalForCreate(taskId, parentId) {
-    const tasks = getTasks(); let parentText = "Tarefa Principal"; const task = tasks.find(t => t.id === taskId);
-    if (task) { if (parentId === taskId) { parentText = task.text; } else if (task.subtasks) { parentText = findNestedSubtask(task.subtasks, parentId)?.text || "Subtarefa"; } }
-    setCurrentSubtaskData({ taskId, subtaskId: null, isEdit: false, parentId, priority: 'medium', category: 'geral', dueDate: '', dueTime: '' });
-    $('#subtask-modal-title').text(`Adicionar Subtarefa a "${parentText}"`); $('#subtask-input').val(''); $('#subtask-priority').val('medium'); $('#subtask-category').val('geral'); $('#subtask-date').val(''); $('#subtask-time').val(''); $('#subtask-add-btn').text('Adicionar');
-    showModal('#subtask-modal');
-}
-export function openSubtaskModalForEdit(taskId, subtaskId) {
-    const tasks = getTasks(); const task = tasks.find(t => t.id === taskId); if (!task || !task.subtasks) return;
-    const subtask = findNestedSubtask(task.subtasks, subtaskId); if (!subtask) return;
-    setCurrentSubtaskData({ taskId, subtaskId, isEdit: true, parentId: null, priority: subtask.priority || 'medium', category: subtask.category || 'geral', dueDate: subtask.dueDate || '', dueTime: subtask.dueTime || '' });
-    $('#subtask-modal-title').text(`Editar Subtarefa: "${subtask.text}"`); $('#subtask-input').val(subtask.text); $('#subtask-priority').val(currentSubtaskData.priority); $('#subtask-category').val(currentSubtaskData.category); $('#subtask-date').val(currentSubtaskData.dueDate); $('#subtask-time').val(currentSubtaskData.dueTime); $('#subtask-add-btn').text('Salvar Edição');
-    showModal('#subtask-modal');
-}
-// Função para mostrar/esconder e configurar o menu de opções da subtarefa
-export function toggleSubtaskMenu($button, taskId, subtaskId, parentId) {
-    // <<< Encontra o LI principal da tarefa >>>
-    const $mainTaskLi = $button.closest('#task-list > li');
-
-    // *** CORREÇÃO: Usa a classe '.menu-active' ***
-    // Remove a classe ativa de outros LIs principais
-    $('#task-list > li').removeClass('menu-active'); // <<< Remove de todos primeiro >>>
-
-    // Esconde outros menus
-    $('.subtask-options-menu.active').not($button.siblings('.subtask-options-menu')).removeClass('active');
-
-    // Pega o menu atual
-    const $menu = $button.siblings('.subtask-options-menu').first();
-    const isActive = $menu.hasClass('active');
-
-    if (!isActive) {
-        // Mostra o menu atual
-        $menu.addClass('active');
-        
-        // *** CORREÇÃO: Usa a classe '.menu-active' ***
-        // <<< Adiciona a classe ao LI principal PAI deste menu >>>
-        $mainTaskLi.addClass('menu-active');
-
-        // Configura os botões do menu (listeners são reatribuídos a cada abertura)
-        $menu.find('.menu-edit').off('click').on('click', (e) => {
-            e.stopPropagation();
-            openSubtaskModalForEdit(taskId, subtaskId); // Usa a função exportada
-            $menu.removeClass('active');
-            $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
-        });
-        $menu.find('.menu-add-below').off('click').on('click', (e) => {
-            e.stopPropagation();
-            openSubtaskModalForCreate(taskId, parentId); // Usa a função exportada
-            $menu.removeClass('active');
-            $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
-        });
-        $menu.find('.menu-add-child').off('click').on('click', (e) => {
-            e.stopPropagation();
-            openSubtaskModalForCreate(taskId, subtaskId); // Adiciona como filho da subtarefa atual
-            $menu.removeClass('active');
-            $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
-        });
-        $menu.find('.menu-remove').off('click').on('click', (e) => {
-            e.stopPropagation();
-            $menu.removeClass('active');
-            $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
-            deleteSubtaskViaModal(taskId, subtaskId); // Usa a função exportada
-        });
-
-        // Listener para fechar ao clicar fora (remove a classe do LI pai também)
-        setTimeout(() => {
-            $(document).one('click.closeSubtaskMenu', (e) => {
-                // Verifica se o clique foi fora do menu E fora do botão que o abriu
-                if (!$menu.is(e.target) && $menu.has(e.target).length === 0 && !$button.is(e.target)) {
-                    $menu.removeClass('active');
-                    // <<< Remove a classe de TODOS os LIs principais ao clicar fora >>>
-                    $('#task-list > li').removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
-                }
-            });
-        }, 0); // Timeout 0 para garantir que execute após o evento de clique atual
-    } else {
-        // Esconde o menu se já estiver ativo
-        $menu.removeClass('active');
-        // <<< Remove a classe do LI principal se o menu for fechado clicando no botão novamente >>>
-        $mainTaskLi.removeClass('menu-active'); // *** CORREÇÃO: Usa a classe '.menu-active' ***
-        // <<< Remove o listener de clique fora para evitar acúmulo >>>
-        $(document).off('click.closeSubtaskMenu');
-    }
-}
-export function deleteSubtaskViaModal(taskId, subId) {
-    const tasks = getTasks(); const task = tasks.find(t => t.id === taskId); if (!task || !task.subtasks) return;
-    const subtask = findNestedSubtask(task.subtasks, subId); if (!subtask) return;
-    $('#confirm-title').text('Apagar Subtarefa'); $('#confirm-text').html(`Deseja realmente apagar a subtarefa <strong>"${subtask.text}"</strong> e todos os seus itens aninhados? Esta ação não pode ser desfeita.`); showModal('#confirmModal');
-    $('#confirm-ok-btn').off('click').on('click', async function() { $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Excluindo...'); const recursiveRemove = (subtasksArray) => { if (!subtasksArray) return []; return subtasksArray.filter(sub => sub.id !== subId).map(sub => { if (sub.subtasks?.length > 0) { sub.subtasks = recursiveRemove(sub.subtasks); } return sub; }); }; const updatedSubtasks = recursiveRemove([...task.subtasks]); await updateSubtasks(taskId, updatedSubtasks); hideModal('#confirmModal'); $(this).prop('disabled', false).html('Confirmar'); });
-    $('#confirm-cancel-btn').off('click').on('click', function() { hideModal('#confirmModal'); $('#confirm-ok-btn').prop('disabled', false).html('Confirmar'); });
-}
-
-// --- Funções Relacionadas ao Calendário ---
-// (initCalendar é exportada para authManager, syncAllToCalendar é interna)
+// Esta função é chamada pelo authManager
 export function initCalendar() {
     const calendarEl = document.getElementById('calendar');
-    if (calendarEl && typeof FullCalendar !== 'undefined' && FullCalendar.Calendar && !calendarInitialized) {
-        calendar = new FullCalendar.Calendar(calendarEl, { initialView: 'timeGridWeek', locale: 'pt-br', headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' }, events: [],
-            eventClick: function (info) { const { taskId, subtaskId } = info.event.extendedProps; hideModal('.modal.show'); if (subtaskId) { openSubtaskModalForEdit(taskId, subtaskId); } else { const li = $(`#task-list > li[data-id="${taskId}"]`); if (li.length) li.find('.edit-btn').first().trigger('click'); } }
+    if (!calendarEl || typeof FullCalendar === 'undefined' || !FullCalendar.Calendar) {
+        console.warn("Elemento do calendário ou biblioteca FullCalendar não encontrado.");
+        return;
+    }
+
+    if (!calendarInitialized) {
+        calendar = new FullCalendar.Calendar(calendarEl, { 
+            initialView: 'timeGridWeek', 
+            locale: 'pt-br', 
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' }, 
+            events: [],
+            // ... (restante das configurações do calendário)
+            eventClick: function (info) { 
+                const { taskId } = info.event.extendedProps; 
+                
+                if (typeof $ === 'function') {
+                    // Oculta modais abertos
+                    $('.modal.show').each(function() { $(this).hide(); });
+                }
+                
+                if (taskId) { 
+                    const li = $(`#task-list > li[data-id="${taskId}"]`); 
+                    if (li.length) li.find('.edit-btn').first().trigger('click'); 
+                } 
+            }
         });
-        try { calendar.render(); calendarInitialized = true; syncAllToCalendar(); console.log("Calendário inicializado."); } catch (e) { console.error("Erro ao renderizar calendário:", e); calendarInitialized = false; }
-    } else if (calendarInitialized && calendar) { console.log("Tentando re-renderizar calendário existente."); setTimeout(() => { if (calendar) calendar.render(); }, 10); syncAllToCalendar(); }
+        
+        try { 
+            calendar.render(); 
+            calendarInitialized = true; 
+            syncAllToCalendar(); 
+            console.log("Calendário inicializado e renderizado."); 
+        } catch (e) { 
+            console.error("Erro ao renderizar calendário:", e); 
+            calendarInitialized = false; 
+        }
+    } else if (calendar) { 
+        // Se já inicializado, apenas garante que está sincronizado
+        console.log("Calendário existente sincronizado."); 
+        syncAllToCalendar(); 
+    }
 }
-function syncAllToCalendar() {
-    if (!calendarInitialized || !calendar) return; calendar.getEvents().forEach(event => event.remove()); const tasks = getTasks();
-    const addEventToCalendar = (item, parentTaskId = null) => { if (item.dueDate) { let startDateTime = item.dueDate + (item.dueTime ? `T${item.dueTime}` : ''); try { new Date(startDateTime); calendar.addEvent({ id: parentTaskId ? `${parentTaskId}_${item.id}` : item.id, title: item.text || 'Tarefa sem nome', start: startDateTime, allDay: !item.dueTime, color: item.completed ? '#6c757d' : (item.priority === 'high' ? '#dc3545' : item.priority === 'medium' ? '#ffc107' : '#28a745'), extendedProps: { taskId: parentTaskId || item.id, subtaskId: parentTaskId ? item.id : null } }); } catch(e) { console.warn(`Data inválida ignorada para evento do calendário: ${startDateTime}`); } } };
-    tasks.forEach(task => { addEventToCalendar(task); if (task.subtasks?.length > 0) { const traverseSubtasks = (subtasks, parentId) => { subtasks.forEach(sub => { addEventToCalendar(sub, parentId); if (sub.subtasks?.length > 0) { traverseSubtasks(sub.subtasks, parentId); } }); }; traverseSubtasks(task.subtasks, task.id); } });
+
+// Sincroniza o FullCalendar com as tarefas do taskStore
+export function syncAllToCalendar() {
+    if (!calendarInitialized || !calendar) return; 
+    calendar.getEvents().forEach(event => event.remove()); 
+    const tasks = getTasks();
+    
+    // ... (restante da lógica de syncAllToCalendar é mantida)
+    const addEventToCalendar = (item, parentTaskId = null) => { 
+        if (item.dueDate) { 
+            let startDateTime = item.dueDate + (item.dueTime ? `T${item.dueTime}` : ''); 
+            try { 
+                new Date(startDateTime); 
+                calendar.addEvent({ 
+                    id: parentTaskId ? `${parentTaskId}_${item.id}` : item.id, 
+                    title: item.text || 'Tarefa sem nome', 
+                    start: startDateTime, 
+                    allDay: !item.dueTime, 
+                    color: item.completed ? '#6c757d' : (item.priority === 'high' ? '#dc3545' : item.priority === 'medium' ? '#ffc107' : '#28a745'), 
+                    extendedProps: { taskId: parentTaskId || item.id, subtaskId: parentTaskId ? item.id : null } 
+                }); 
+            } catch(e) { console.warn(`Data inválida ignorada para evento do calendário: ${startDateTime}`); } 
+        } 
+    };
+    
+    tasks.forEach(task => { 
+        addEventToCalendar(task); 
+        if (task.subtasks?.length > 0) { 
+            const traverseSubtasks = (subtasks, parentId) => { 
+                subtasks.forEach(sub => { 
+                    addEventToCalendar(sub, parentId); 
+                    if (sub.subtasks?.length > 0) { 
+                        traverseSubtasks(sub.subtasks, parentId); 
+                    } 
+                }); 
+            }; 
+            traverseSubtasks(task.subtasks, task.id); 
+        } 
+    });
     console.log("Calendário sincronizado com", tasks.length, "tarefas.");
 }
 
-// --- Outras Funções Utilitárias que Restaram ---
-// (exportTaskToGoogleLink exportada para eventBinder, createTaskDeadlineNotification interna)
-export function exportTaskToGoogleLink(task) {
-    if (!task.dueDate) { alert("A tarefa precisa ter uma data para exportar!"); return; } let startDateTime = task.dueDate + (task.dueTime ? `T${task.dueTime}:00Z` : 'T00:00:00Z'); let startDate = new Date(startDateTime); let endDate = new Date(startDate.getTime() + 60 * 60 * 1000); let formatForGoogle = (date) => date.toISOString().replace(/-|:|\.\d+/g, ''); let details = task.subtasks ? task.subtasks.map(st => st.text).join('\n') : ''; let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.text)}&dates=${formatForGoogle(startDate)}/${formatForGoogle(endDate)}&details=${encodeURIComponent(details)}`; window.open(url, '_blank');
-}
+
+// ===============================================
+// LÓGICA DE TROCA DE VISUALIZAÇÃO (CORRIGIDO)
+// ===============================================
 
 /**
- * *** FUNÇÃO CORRIGIDA ***
- * Cria uma notificação de prazo no Firestore E
- * marca a tarefa como 'deadlineNotified: true' para evitar duplicatas.
+ * Altera a visualização principal (Lista, Quadro ou Calendário).
+ * @param {string} viewId - O ID da visualização a ser exibida ('list', 'board', 'calendar').
+ */
+export function switchView(viewId) {
+    if (!taskViewElements[viewId]) {
+        console.error(`Visualização desconhecida: ${viewId}`);
+        return;
+    }
+    
+    currentView = viewId;
+    sessionStorage.setItem('activeView', viewId);
+
+    // 1. Oculta todas as visualizações e remove a classe 'active'
+    $('.view-list .view-link').removeClass('active');
+    Object.values(taskViewElements).forEach($el => $el.hide());
+
+    // 2. Mostra a visualização solicitada
+    const $targetView = taskViewElements[viewId];
+    $targetView.show();
+
+    // 3. Atualiza o estado 'active' na barra lateral
+    $(`.view-list .view-link[data-view="${viewId}"]`).addClass('active');
+
+    console.log(`Visualização alterada para: ${viewId}`);
+
+    // 4. Ações específicas após a troca
+    if (viewId === 'calendar') {
+        // CORREÇÃO: Forçamos a renderização do FullCalendar para ajustar o seu tamanho
+        // quando o seu container se torna visível.
+        initCalendar(); 
+        if (calendar) {
+             setTimeout(() => { calendar.render(); }, 10);
+        }
+    } else if (viewId === 'board') {
+        // Lógica futura para renderizar o Kanban
+        console.warn("Visualização Kanban selecionada. A implementação de renderização está pendente.");
+        // Exemplo: renderKanbanBoard(getTasks());
+    }
+    
+    // CORREÇÃO: Força o reajuste de layout após a troca
+    if (typeof $(window).resize === 'function') {
+        $(window).resize(); 
+    }
+}
+
+// Inicializa a visualização no carregamento
+function initializeViewOnLoad() {
+    // Garante que a view salva seja a primeira a ser mostrada após o login
+    switchView(currentView);
+}
+
+
+// ===============================================
+// OUTRAS FUNÇÕES ÚTEIS (Mantidas)
+// ===============================================
+
+/**
+ * Cria uma notificação de prazo no Firestore.
+ * (A lógica de criação real foi movida para uiRenderer.js)
  */
 export async function createTaskDeadlineNotification(taskId, taskText, dueDateTime) {
-     const uid = getCurrentUserUID(); if (!uid) return;
-     try {
-         const settings = getUserSettings();
-         const notificationsRef = collection(db, 'users', uid, 'notifications');
-         const leadingTime = settings.taskSettings.alertLeadTimeMinutes || 60;
-         
-         // 1. Cria a notificação
-         await addDoc(notificationsRef, {
-             type: 'task_deadline',
-             message: `Atenção: A tarefa "${taskText}" vence em menos de ${leadingTime} minutos (${dueDateTime}).`,
-             url: `/index.html#task-${taskId}`, // (URL é hipotética por enquanto)
-             read: false,
-             timestamp: serverTimestamp()
-         });
-         
-         // 2. Marca a tarefa como notificada para evitar spam
-         await updateTaskInFirestore(taskId, { deadlineNotified: true });
-         
-         console.log(`Notificação de prazo CRIADA e task marcada como notificada: ${taskId}`);
-         
-     } catch (error) {
-         console.error("Erro ao criar notificação de prazo:", error);
-     }
+     console.warn(`[APP.JS] Chamada a createTaskDeadlineNotification para ${taskText}. A lógica principal está em uiRenderer.`);
 }
+
 
 // ===============================================
 // INICIALIZAÇÃO
 // ===============================================
-initializeAuth(); // Chama a função do authManager para iniciar o processo
-// setupCommonEventListeners foi movido para eventBinder.js e será chamado pelo authManager.
+// Adicionamos a chamada para inicializar a view após a autenticação
+initializeAuth(); 
+
+// Exporta a função para que o eventBinder possa usá-la
+export { initializeViewOnLoad };
