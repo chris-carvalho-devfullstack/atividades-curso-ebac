@@ -1,4 +1,4 @@
-// js/eventBinder.js
+// chris-carvalho-devfullstack/atividades-curso-ebac/atividades-curso-ebac-feature-workspace/js/eventBinder.js
 import { showModal, hideModal } from './modalHandler.js';
 import { addTask, updateTask, deleteTask, updateSubtasks, getTasks, saveTaskOrder, restoreTaskFromTrash, permanentlyDeleteTask, getTrash, updateTaskStatus } from './taskStore.js';
 import { applyFilter, checkAllDueDates } from './uiRenderer.js';
@@ -26,23 +26,38 @@ export function initKanbanSortable() {
     console.log("Inicializando Sortable para o Kanban.");
     
     // Destrói Sortable anterior nos elementos kanban-list
-    $('.kanban-list').sortable('destroy');
+    $('.kanban-list').each(function() {
+        if ($(this).data('ui-sortable')) {
+            $(this).sortable('destroy');
+        }
+    });
     
     $('.kanban-list').sortable({
         connectWith: '.kanban-list', // Permite arrastar entre as colunas
         placeholder: "ui-sortable-placeholder", 
         forcePlaceholderSize: true,
-        axis: "y",
         cursor: "grabbing",
         opacity: 0.8,
         items: "> .kanban-card",
-        // Ao soltar, atualiza o status no Firestore
+        
+        // CORREÇÃO CRÍTICA PARA MOVIMENTO SUAVE E PRECISO
+        helper: 'clone', 
+        cursorAt: { left: 10, top: 10 }, 
+        
+        // Evento start: Ajusta a largura do helper para ser igual ao card original
+        start: function(event, ui) {
+             // Usamos outerWidth() para incluir padding/borda na largura do clone.
+             ui.helper.width(ui.item.outerWidth()); 
+        },
+        
         stop: function(event, ui) {
             const $item = ui.item;
             const taskId = $item.data('id');
+            // Pega o status do *novo* pai (a coluna onde foi solto)
             const newStatus = $item.closest('.kanban-column').data('status');
             
             if (taskId && newStatus) {
+                // Chama a função da taskStore para atualizar o status e completed
                 updateTaskStatus(taskId, newStatus);
             }
         }
@@ -85,9 +100,9 @@ export function setupCommonEventListeners() {
     $('#empty-trash-btn').off('click');
     $(document).off('click', '.task-options-btn');
     $(document).off('click', '.view-list .view-link');
-    $(document).off('click', '.kanban-card .edit-btn'); 
-    $(document).off('click', '.kanban-card .remove-btn'); 
     
+    // REMOVIDOS OS LISTENERS DELEGADOS DE .kanban-card .edit-btn e .kanban-card .remove-btn
+
     // Limpa o botão de teste
     const testButton = document.getElementById('test-toast-btn');
     if (testButton) {
@@ -135,20 +150,6 @@ export function setupCommonEventListeners() {
         await addTask(task); $(this).trigger('reset'); $('#task-priority').val(''); $('#task-category').val(''); $('#task-privacy').val('private'); $('#task-date').val(''); $('#task-time').val(''); hideModal('#addTaskModal');
     });
 
-    // --- Listeners Delegados ---
-    
-    // Botões de Ação para Kanban Cards (usam o mesmo seletor para reaproveitar a lógica)
-     $(document).on('click', '.kanban-card .edit-btn', function() {
-        const taskId = $(this).data('id');
-        $(`#task-list > li[data-id="${taskId}"]`).find('.edit-btn').trigger('click');
-     });
-     
-     $(document).on('click', '.kanban-card .remove-btn', function() {
-        const taskId = $(this).data('id');
-        $(`#task-list > li[data-id="${taskId}"]`).find('.remove-btn').trigger('click');
-     });
-
-
     // Checkboxes de Tarefa Principal
     $(document).on('change', '.task-checkbox', async function () {
         let li = $(this).closest('li'); let taskId = li.attr('data-id'); let isCompleted = $(this).prop('checked');
@@ -164,14 +165,14 @@ export function setupCommonEventListeners() {
         let subLi = $(this).closest('li'); let subId = subLi.attr('data-id'); let taskLi = subLi.closest('li[data-id][data-category]'); let taskId = taskLi.attr('data-id');
         const task = getTasks().find(t => t.id === taskId); if (!task || !task.subtasks) return;
         const isCompleted = $(this).prop('checked');
-        const updateTargetAndChildren = (subtasks) => { if (!subtasks) return []; return subtasks.map(st => { if (st.id === subId) { st.completed = isCompleted; const updateChildren = (children) => (!children ? [] : children.map(child => ({ ...child, completed: isCompleted, subtasks: updateChildren(child.subtasks) }))); st.subtasks = updateChildren(child.subtasks); } else if (st.subtasks?.length > 0) { st.subtasks = updateTargetAndChildren(st.subtasks); } return st; }); };
+        const updateTargetAndChildren = (subtasks) => { if (!subtasks) return []; return subtasks.map(st => { if (st.id === subId) { st.completed = isCompleted; const updateChildren = (children) => (!children ? [] : children.map(child => ({ ...child, completed: isCompleted, subtasks: updateChildren(child.subtasks) }))); st.subtasks = updateChildren(st.subtasks); } else if (st.subtasks?.length > 0) { st.subtasks = updateTargetAndChildren(st.subtasks); } return st; }); };
         let updatedSubtasks = updateTargetAndChildren([...task.subtasks]);
         await updateSubtasks(taskId, updatedSubtasks);
     });
 
     // Botão Remover Tarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.remove-btn', function () {
-        let li = $(this).closest('li[data-id][data-category]') || $(this).closest('.kanban-card'); 
+        let li = $(this).closest('li[data-id][data-category]'); // Apenas lista, pois o Kanban não tem mais o botão
         let taskId = li.attr('data-id');
         const task = getTasks().find(t => t.id === taskId); if (!task) return;
         $('#confirm-title').text('Mover para a Lixeira'); $('#confirm-text').text(`Deseja realmente mover a tarefa "${task.text}" para a lixeira?`); showModal('#confirmModal');
@@ -181,7 +182,7 @@ export function setupCommonEventListeners() {
 
     // Botão Editar Tarefa (AGORA DENTRO DO MENU)
     $(document).on('click', '.edit-btn', function() {
-        let li = $(this).closest('li[data-id][data-category]') || $(this).closest('.kanban-card'); 
+        let li = $(this).closest('li[data-id][data-category]'); // Apenas lista, pois o Kanban não tem mais o botão
         setCurrentTaskLi(li); // Salva a referência do LI
         const task = getTasks().find(t => t.id === li.attr('data-id')); if (!task) return;
         $('#edit-task-name').val(task.text); 
@@ -292,8 +293,7 @@ export function setupCommonEventListeners() {
         $(this).closest('li').children('.subtask-list').slideToggle(200);
     });
 
-    // --- Listener unificado para abrir Modal de Visualização (Label Principal E Subtarefa) ---
-    // CORREÇÃO: Usamos o seletor mais específico e genérico para pegar o elemento que contém o ID da tarefa
+    // --- Listener unificado para abrir Modal de Visualização (Label Principal E Subtarefa E KANBAN CARD) ---
     $(document).on('click', '.js-view-label', function() {
         // Encontra o item raiz (LI ou kanban-card) que possui o data-id
         let itemRoot = $(this).closest('li[data-id][data-category]') || $(this).closest('.kanban-card');
@@ -332,7 +332,7 @@ export function setupCommonEventListeners() {
         }
         showModal('#viewTaskModal');
         
-        // CORREÇÃO: Acha o LI original da lista para acionar os botões de ação
+        // CORREÇÃO: Acha o LI original da lista para acionar os botões de ação (Lista/Kanban)
         const originalLi = $(`#task-list > li[data-id="${taskId}"]`);
 
         $('#view-edit-btn').off('click').on('click', () => { hideModal('#viewTaskModal'); originalLi.find('.edit-btn').first().trigger('click'); });
@@ -372,24 +372,14 @@ export function setupCommonEventListeners() {
              console.log("Botão de teste do toast clicado!");
              showToastNotification('Notificação de Teste', 'Esta é uma mensagem de teste manual.', 'default', 5000);
          });
-     } else { console.warn("Botão de teste do toast (#test-toast-btn) não encontrado para adicionar listener."); }
+     } else { console.warn("Botão de teste do toast não encontrado no DOM."); }
 
-     // --- **MUDANÇA**: Fechar menus ao clicar fora ---
-    $(document).on('click', function(e) {
-        // Se o clique NÃO for dentro de um botão de menu E NÃO for dentro de um menu...
-        if (!$(e.target).closest('.subtask-options-btn').length &&
-            !$(e.target).closest('.subtask-options-menu').length &&
-            !$(e.target).closest('.task-options-btn').length &&
-            !$(e.target).closest('.task-actions-menu').length)
-        {
-            // Fecha todos os menus
-            $('.subtask-options-menu.active').removeClass('active');
-            $('.task-actions-menu.active').removeClass('active');
-            // Remove a classe de z-index de todos os LIs
-            $('#task-list > li.menu-active').removeClass('menu-active');
-            $('.kanban-card.menu-active').removeClass('menu-active');
-        }
-    });
-
-     console.log("Event Listeners comuns configurados.");
+    // --- Intervalo de Verificação de Datas (60s) ---
+    if (!window.checkDatesIntervalId) {
+        window.checkDatesIntervalId = setInterval(() => {
+            console.log("Verificação automática de datas de vencimento iniciada.");
+            checkAllDueDates();
+        }, 60000); 
+        console.log("Intervalo de verificação de datas (60s) configurado.");
+    }
 }

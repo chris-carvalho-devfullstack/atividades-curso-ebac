@@ -1,4 +1,4 @@
-// js/taskStore.js
+// chris-carvalho-devfullstack/atividades-curso-ebac/atividades-curso-ebac-feature-workspace/js/taskStore.js
 import { db } from "./firebase-config.js";
 import {
     collection, query, orderBy, onSnapshot, doc, addDoc, updateDoc,
@@ -126,19 +126,11 @@ export async function updateTaskInFirestore(taskId, data) {
  * @param {string} newStatus - O novo status ('todo', 'in_progress', 'done').
  */
 export async function updateTaskStatus(taskId, newStatus) {
-    const data = { status: newStatus };
-
-    if (newStatus === 'done') {
-        data.completed = true;
-    } else {
-        // Se a tarefa sair de 'done', ela deve ser marcada como não concluída.
-        // A lógica do checkbox no modo lista também define 'completed'.
-        // Aqui, garantimos que se não for 'done', ela não estará concluída.
-        data.completed = false; 
-    }
-    
-    console.log(`Atualizando status da tarefa ${taskId} para: ${newStatus}, completed: ${data.completed}`);
-    await updateTask(taskId, data);
+    // A função updateTask agora é responsável por garantir a consistência dos flags.
+    await updateTask(taskId, { 
+        status: newStatus,
+        completed: newStatus === 'done'
+    });
 }
 
 export async function moveTaskToTrash(taskId) {
@@ -338,27 +330,35 @@ export async function addTask(taskData) {
 
 export async function updateTask(taskId, updatedData) {
     const uid = getCurrentUserUID();
+    const originalTask = tasks.find(t => t.id === taskId);
+    
     if (uid && getActiveWorkspaceId()) {
-        const originalTask = tasks.find(t => t.id === taskId);
+        
          if (originalTask && (originalTask.dueDate !== updatedData.dueDate || originalTask.dueTime !== updatedData.dueTime)) {
             updatedData.deadlineNotified = false;
         }
         
-        // *** NOVO: Lógica para manter o status consistente com 'completed' ***
-        if (updatedData.completed !== undefined) {
-             updatedData.status = updatedData.completed ? 'done' : 'todo';
+        // CORREÇÃO CRÍTICA: Prioriza o status se ele for fornecido (do Kanban drop).
+        if (updatedData.status !== undefined) {
+             updatedData.completed = updatedData.status === 'done';
+        } 
+        // Se apenas 'completed' for fornecido (do checkbox), define o status para 'done' ou mantém o original.
+        else if (updatedData.completed !== undefined) {
+             updatedData.status = updatedData.completed ? 'done' : originalTask?.status || 'todo';
         }
-        
+
         await updateTaskInFirestore(taskId, updatedData);
     } else if (!uid) { // Modo Convidado
         const taskIndex = tasks.findIndex(t => t.id === taskId);
         if (taskIndex > -1) {
-            const originalTask = tasks[taskIndex];
+            
             tasks[taskIndex] = { ...originalTask, ...updatedData };
             
-            // *** NOVO: Lógica para manter o status consistente com 'completed' ***
-            if (updatedData.completed !== undefined) {
-                 tasks[taskIndex].status = updatedData.completed ? 'done' : 'todo';
+            // CORREÇÃO CRÍTICA: Aplica a mesma lógica de consistência localmente.
+            if (updatedData.status !== undefined) {
+                 tasks[taskIndex].completed = updatedData.status === 'done';
+            } else if (updatedData.completed !== undefined) {
+                 tasks[taskIndex].status = updatedData.completed ? 'done' : originalTask?.status || 'todo';
             }
             
             saveLocalTasks(tasks);

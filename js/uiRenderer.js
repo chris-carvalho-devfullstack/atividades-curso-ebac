@@ -129,7 +129,7 @@ export function renderTrash(trashArray) {
     const trashList = $('#trash-list');
     trashList.empty();
     if (!trashArray || trashArray.length === 0) {
-        trashList.append('<li class="empty-list-message" style="justify-content:center;">Lixeira vazia.</li>');
+        trashList.append('<li class="notification-item empty" style="justify-content:center;">Lixeira vazia.</li>');
     } else {
         trashArray.forEach(task => {
             const deletedAtDate = task.deletedAt?.toDate ? task.deletedAt.toDate() : null;
@@ -189,10 +189,12 @@ function createKanbanCard(task) {
         } catch(e) { /* Ignora */ }
     }
 
-    // Corrigido para incluir o botão de opções no card kanban para edição/remoção
+    // ALTERAÇÃO: 
+    // 1. Adiciona a classe 'js-view-label' no LI para capturar o clique e abrir o modal.
+    // 2. Remove o botão de opções (os 3 pontinhos)
     const $card = $(`
-        <li class="kanban-card" data-id="${taskId}" data-priority="${taskPriority}" style="--card-color: ${cardColor};">
-            <span class="kanban-card-text js-view-label" title="${task.text || 'Tarefa sem nome'}">${task.text || 'Tarefa sem nome'}</span>
+        <li class="kanban-card js-view-label" data-id="${taskId}" data-priority="${taskPriority}" data-category="${task.category || 'geral'}" style="--card-color: ${cardColor};">
+            <span class="kanban-card-text" title="${task.text || 'Tarefa sem nome'}">${task.text || 'Tarefa sem nome'}</span>
             <div class="kanban-card-meta">
                 <div>
                     <span class="priority-label priority-${taskPriority}">${priorityTooltipMap[taskPriority]}</span>
@@ -203,33 +205,8 @@ function createKanbanCard(task) {
                 }
             </div>
             
-            <button class="task-options-btn" type="button" data-tooltip="Opções"><i class="fa-solid fa-ellipsis-h"></i></button>
-            <div class="task-actions-menu" style="right: 5px; top: 35px; width: 170px;">
-                <button class="edit-btn" type="button" data-id="${taskId}"><i class="fa fa-pencil"></i> Editar</button>
-                <button class="remove-btn" type="button" data-id="${taskId}"><i class="fa fa-trash"></i> Apagar</button>
-            </div>
-        </li>
+            </li>
     `);
-    
-    // Adiciona listener para o menu de opções do cartão
-    $card.find('.task-options-btn').on('click', function(e) {
-        e.stopPropagation();
-        const $menu = $(this).siblings('.task-actions-menu');
-        $('.task-actions-menu.active').not($menu).removeClass('active');
-        $menu.toggleClass('active');
-    });
-
-    // Adiciona listener para o botão de edição no Kanban (usa o listener delegado do eventBinder)
-    $card.find('.edit-btn').on('click', function() {
-        const id = $(this).data('id');
-        $(`#task-list > li[data-id="${id}"]`).find('.edit-btn').trigger('click');
-    });
-    
-    // Adiciona listener para o botão de apagar no Kanban (usa o listener delegado do eventBinder)
-    $card.find('.remove-btn').on('click', function() {
-        const id = $(this).data('id');
-        $(`#task-list > li[data-id="${id}"]`).find('.remove-btn').trigger('click');
-    });
     
     return $card;
 }
