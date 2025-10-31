@@ -811,12 +811,11 @@ footer a:hover {
 
 #calendar-container {
     max-width: 900px;
-    margin: 20px auto;
+    margin: 20px 0; /* CORREÇÃO: Altera 'auto' para '0' para alinhar à esquerda */
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 10px;
     background-color: #fff;
-    display: none;
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 

@@ -130,12 +130,15 @@ export function switchView(viewId) {
 
     // 4. Ações específicas após a troca
     if (viewId === 'calendar') {
-        // CORREÇÃO: Inicializa ou força o redimensionamento APÓS o container estar visível
-        initCalendar(); 
-        if (calendar) {
-             // updateSize é o método correto para corrigir problemas de redimensionamento
-             calendar.updateSize(); 
-        }
+        // CORREÇÃO: Adiciona setTimeout para garantir que o DOM recalcule o layout
+        setTimeout(() => {
+            // Garante que o elemento 'calendar' esteja visível antes de chamar initCalendar
+            initCalendar(); 
+            if (calendarInitialized && calendar) {
+                 // Força o redimensionamento do calendário
+                 calendar.updateSize(); 
+            }
+        }, 0); // Atraso de 0ms garante o recalculamento do layout
     } else if (viewId === 'board') {
         console.warn("Visualização Kanban selecionada. A implementação de renderização está pendente.");
     }

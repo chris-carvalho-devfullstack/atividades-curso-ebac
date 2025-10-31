@@ -47,6 +47,8 @@ function initializeAuthenticatedSession() {
     console.log("Sessão autenticada iniciada.");
     loadUserSettings().then(() => { 
         
+        // initCalendar(); // <-- REMOVIDO, A CHAMADA É FEITA PELA initializeViewOnLoad()
+        
         initializeWorkspaces(CURRENT_USER_UID);
         
         // ADICIONADO: Inicializa a visualização (Lista, Kanban, Calendário)
