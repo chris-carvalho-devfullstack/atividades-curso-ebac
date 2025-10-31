@@ -11,8 +11,9 @@ import { renderKanbanBoard } from './uiRenderer.js';
 import { initKanbanSortable } from './eventBinder.js';
 
 // --- Variáveis de Estado de UI ---
-let currentView = sessionStorage.getItem('activeView') || 'list'; // Carrega o último estado
+let currentView = sessionStorage.getItem('activeView') || 'overview'; // <-- ALTERADO: Agora é 'overview'
 const taskViewElements = {
+    overview: $('#task-view-overview'), // <-- NOVO ELEMENTO
     list: $('#task-view-list'),
     board: $('#task-view-board'),
     calendar: $('#task-view-calendar')
@@ -24,6 +25,7 @@ let calendarInitialized = false;
 
 // Esta função é chamada pela switchView APENAS quando o utilizador ativa a view
 export function initCalendar() {
+// ... (código initCalendar mantido) ...
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl || typeof FullCalendar === 'undefined' || !FullCalendar.Calendar) {
         console.warn("Elemento do calendário ou biblioteca FullCalendar não encontrado.");
@@ -63,6 +65,7 @@ export function initCalendar() {
 
 // Sincroniza o FullCalendar com as tarefas do taskStore
 export function syncAllToCalendar() {
+// ... (código syncAllToCalendar mantido) ...
     if (!calendarInitialized || !calendar) return; 
     calendar.getEvents().forEach(event => event.remove()); 
     const tasks = getTasks();
@@ -107,8 +110,8 @@ export function syncAllToCalendar() {
 // ===============================================
 
 /**
- * Altera a visualização principal (Lista, Quadro ou Calendário).
- * @param {string} viewId - O ID da visualização a ser exibida ('list', 'board', 'calendar').
+ * Altera a visualização principal (Lista, Quadro, Calendário ou Visão Geral).
+ * @param {string} viewId - O ID da visualização a ser exibida.
  */
 export function switchView(viewId) {
     if (!taskViewElements[viewId]) {
@@ -151,6 +154,9 @@ export function switchView(viewId) {
              initKanbanSortable(); 
              console.log("Visualização Kanban selecionada. Renderizando tarefas e inicializando Sortable.");
         }, 50); 
+    } else if (viewId === 'overview') { // <-- NOVO: Ação para Visão Geral
+         // Dispara um evento para que o overview.js redesenhe o conteúdo
+         document.dispatchEvent(new CustomEvent('viewSwitched', { detail: { viewId: 'overview' } }));
     }
     
     // Força o reajuste de layout após a troca

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="style/toast-notification.css">
 
     <link rel="stylesheet" href="style/workspace.css">
+    <link rel="stylesheet" href="style/overview.css"> 
     
     <link rel="manifest" href="/manifest.json">
 </head>
@@ -34,7 +35,8 @@
             <div class="workspace-sidebar-section">
                 <h3>Visualizações</h3>
                 <ul class="view-list" id="view-list">
-                    <li><a href="#" class="view-link active" data-view="list"><i class="fa-solid fa-list-check"></i> Lista</a></li>
+                    <li><a href="#" class="view-link active" data-view="overview"><i class="fa-solid fa-chart-line"></i> Visão Geral</a></li>
+                    <li><a href="#" class="view-link" data-view="list"><i class="fa-solid fa-list-check"></i> Lista</a></li>
                     <li><a href="#" class="view-link" data-view="board"><i class="fa-solid fa-columns"></i> Quadro (Kanban)</a></li>
                     <li><a href="#" class="view-link" data-view="calendar"><i class="fa-solid fa-calendar-days"></i> Calendário</a></li>
                 </ul>
@@ -51,6 +53,25 @@
         
         <div class="workspace-content" id="workspace-content">
             
+            <main class="overview-view" id="task-view-overview" style="display: none;">
+                <div class="overview-grid">
+                    
+                    <div class="overview-card agenda-card">
+                        <div class="agenda-header-info">
+                             <div class="agenda-icon-wrapper"><i class="fa-solid fa-calendar-check"></i></div>
+                            <div class="agenda-date" id="agenda-date">31/10/2025</div>
+                        </div>
+                        <ul class="agenda-list" id="agenda-list">
+                            <li>Nenhuma tarefa agendada para hoje.</li>
+                        </ul>
+                    </div>
+                    <div class="mini-calendar-container">
+                        <div id="mini-calendar"></div>
+                    </div>
+                    <div class="category-blocks-wrapper" id="category-blocks-container">
+                         </div>
+                    </div>
+            </main>
             <main class="task-form-body" id="task-view-list">
                 
                 <div class="progress-container">
@@ -99,7 +120,25 @@
                 </div>
             </main>
             
-        </div> </div> <div id="addTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" aria-hidden="true" style="display: none;">
+        </div> </div> 
+        
+    <div id="overviewDayTasksModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="day-tasks-modal-title" aria-hidden="true" style="display: none;">
+        <div class="modal-content" style="max-width: 550px;">
+            <button class="close close-top-right" aria-label="Fechar">&times;</button>
+            <div class="modal-header">
+                <h2 id="day-tasks-modal-title">Tarefas em [Data]</h2>
+            </div>
+            <div class="modal-body">
+                <ul id="day-tasks-list" class="task-modal-list">
+                    <li>Nenhuma tarefa para este dia.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-neutral close-modal-btn">Fechar</button>
+            </div>
+        </div>
+    </div>
+    <div id="addTaskModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" aria-hidden="true" style="display: none;">
       <div class="modal-content" style="max-width: 450px;">
         <button class="close close-top-right" aria-label="Fechar" data-dismiss-modal="">&times;</button>
         <div class="modal-header">
@@ -399,6 +438,7 @@
     <script type="module" src="js/push-service.js"></script>
 
     <script type="module" src="js/workspaceManager.js"></script>
+    <script type="module" src="js/overview.js"></script> 
 
 </body>
 </html>
