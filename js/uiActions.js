@@ -1,13 +1,13 @@
 // js/uiActions.js
-// Este ficheiro contém as funções que estavam no app.js e que o eventBinder.js precisa.
-// Isto quebra a dependência circular.
+// Este ficheiro contém as funções de UI que o eventBinder.js precisa.
+// Foi criado para quebrar a dependência circular (eventBinder -> app -> eventBinder).
 
 import { showModal, hideModal } from './modalHandler.js';
 import { getTasks, updateSubtasks } from './taskStore.js';
 import { findNestedSubtask, generateId } from './utils.js';
 import { db } from "./firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import { initializeAuth, getCurrentUserUID, getUserSettings } from './authManager.js';
+import { getCurrentUserUID, getUserSettings } from './authManager.js';
 
 // --- Variáveis de estado movidas do app.js ---
 export let currentTaskLi = null;

@@ -4,7 +4,6 @@ import { addTask, updateTask, deleteTask, updateSubtasks, getTasks, saveTaskOrde
 import { applyFilter, checkAllDueDates } from './uiRenderer.js';
 import { findNestedSubtask, generateId } from './utils.js';
 
-// *** CORREÇÃO: Importa as funções de UI do novo ficheiro uiActions.js ***
 import {
     openSubtaskModalForCreate, openSubtaskModalForEdit, deleteSubtaskViaModal, toggleSubtaskMenu,
     exportTaskToGoogleLink, setCurrentTaskLi, setCurrentSubtaskData, getCurrentSubtaskData,
@@ -12,8 +11,7 @@ import {
 } from './uiActions.js'; 
 
 // Importa funções do app.js
-import { initCalendar, switchView } from './app.js'; // <-- ADICIONADO switchView
-
+import { initCalendar, switchView } from './app.js'; // <-- CORREÇÃO: Importa switchView
 
 // Importa showToastNotification para o botão de teste
 import { showToastNotification } from './toast-notification.js';
@@ -38,9 +36,6 @@ export function setupCommonEventListeners() {
     $('#task-form').off('submit');
     $('#edit-save-btn').off('click');
     $('#subtask-add-btn').off('click');
-    $('#search-input').off('input');
-    $('#filter-priority').off('change');
-    $('#filter-category').off('change');
     $(document).off('change', '.task-checkbox');
     $(document).off('change', '.subtask-checkbox');
     $(document).off('click', '.remove-btn');
@@ -82,9 +77,6 @@ export function setupCommonEventListeners() {
     $(document).on('click', '#toggle-filter-btn', () => { showModal('#filterModal'); setTimeout(() => $('#search-input').focus(), 150); });
     $(document).on('click', '#toggle-trash-btn', () => showModal('#trashModal'));
     
-    // Antigo botão de calendário foi removido do HTML, mas mantemos o código se for útil no futuro
-    // $(document).on('click', '#toggle-calendar-btn', () => { ... }); 
-
     // ** LÓGICA DO SELETOR DE VISUALIZAÇÃO (NOVO) **
     $(document).on('click', '.view-list .view-link', function(e) {
         e.preventDefault();

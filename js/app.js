@@ -1,9 +1,8 @@
 // js/app.js - Ponto de Entrada Principal
-import { initializeAuth } from './authManager.js';
-import { getTasks, updateTaskInFirestore } from './taskStore.js';
+import { initializeAuth, getCurrentUserUID, getUserSettings } from './authManager.js';
+import { getTasks } from './taskStore.js';
 import { db } from "./firebase-config.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
-import { getCurrentUserUID, getUserSettings } from './authManager.js';
 
 // --- Variáveis de Estado de UI ---
 let currentView = sessionStorage.getItem('activeView') || 'list'; // Carrega o último estado
@@ -17,7 +16,7 @@ const taskViewElements = {
 let calendar = null;
 let calendarInitialized = false;
 
-// Esta função é chamada pelo authManager
+// Esta função é chamada pela switchView APENAS quando o utilizador ativa a view
 export function initCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl || typeof FullCalendar === 'undefined' || !FullCalendar.Calendar) {
@@ -31,15 +30,11 @@ export function initCalendar() {
             locale: 'pt-br', 
             headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' }, 
             events: [],
-            // ... (restante das configurações do calendário)
             eventClick: function (info) { 
                 const { taskId } = info.event.extendedProps; 
-                
                 if (typeof $ === 'function') {
-                    // Oculta modais abertos
                     $('.modal.show').each(function() { $(this).hide(); });
                 }
-                
                 if (taskId) { 
                     const li = $(`#task-list > li[data-id="${taskId}"]`); 
                     if (li.length) li.find('.edit-btn').first().trigger('click'); 
@@ -50,17 +45,14 @@ export function initCalendar() {
         try { 
             calendar.render(); 
             calendarInitialized = true; 
-            syncAllToCalendar(); 
             console.log("Calendário inicializado e renderizado."); 
         } catch (e) { 
-            console.error("Erro ao renderizar calendário:", e); 
+            console.error("Erro ao renderizar calendário na primeira inicialização:", e); 
             calendarInitialized = false; 
         }
-    } else if (calendar) { 
-        // Se já inicializado, apenas garante que está sincronizado
-        console.log("Calendário existente sincronizado."); 
-        syncAllToCalendar(); 
     }
+    // NOTA: Se já inicializado, a sincronização será feita abaixo
+    syncAllToCalendar(); 
 }
 
 // Sincroniza o FullCalendar com as tarefas do taskStore
@@ -69,7 +61,6 @@ export function syncAllToCalendar() {
     calendar.getEvents().forEach(event => event.remove()); 
     const tasks = getTasks();
     
-    // ... (restante da lógica de syncAllToCalendar é mantida)
     const addEventToCalendar = (item, parentTaskId = null) => { 
         if (item.dueDate) { 
             let startDateTime = item.dueDate + (item.dueTime ? `T${item.dueTime}` : ''); 
@@ -119,8 +110,8 @@ export function switchView(viewId) {
         return;
     }
     
-    currentView = viewId;
-    sessionStorage.setItem('activeView', viewId);
+    // Se não for a primeira vez e for a mesma view, não faz nada
+    if (currentView === viewId && viewId !== 'calendar') return;
 
     // 1. Oculta todas as visualizações e remove a classe 'active'
     $('.view-list .view-link').removeClass('active');
@@ -130,33 +121,33 @@ export function switchView(viewId) {
     const $targetView = taskViewElements[viewId];
     $targetView.show();
 
-    // 3. Atualiza o estado 'active' na barra lateral
+    // 3. Atualiza o estado
+    currentView = viewId;
+    sessionStorage.setItem('activeView', viewId);
     $(`.view-list .view-link[data-view="${viewId}"]`).addClass('active');
 
     console.log(`Visualização alterada para: ${viewId}`);
 
     // 4. Ações específicas após a troca
     if (viewId === 'calendar') {
-        // CORREÇÃO: Forçamos a renderização do FullCalendar para ajustar o seu tamanho
-        // quando o seu container se torna visível.
+        // CORREÇÃO: Inicializa ou força o redimensionamento APÓS o container estar visível
         initCalendar(); 
         if (calendar) {
-             setTimeout(() => { calendar.render(); }, 10);
+             // updateSize é o método correto para corrigir problemas de redimensionamento
+             calendar.updateSize(); 
         }
     } else if (viewId === 'board') {
-        // Lógica futura para renderizar o Kanban
         console.warn("Visualização Kanban selecionada. A implementação de renderização está pendente.");
-        // Exemplo: renderKanbanBoard(getTasks());
     }
     
-    // CORREÇÃO: Força o reajuste de layout após a troca
+    // Força o reajuste de layout após a troca
     if (typeof $(window).resize === 'function') {
         $(window).resize(); 
     }
 }
 
 // Inicializa a visualização no carregamento
-function initializeViewOnLoad() {
+export function initializeViewOnLoad() {
     // Garante que a view salva seja a primeira a ser mostrada após o login
     switchView(currentView);
 }
@@ -166,10 +157,6 @@ function initializeViewOnLoad() {
 // OUTRAS FUNÇÕES ÚTEIS (Mantidas)
 // ===============================================
 
-/**
- * Cria uma notificação de prazo no Firestore.
- * (A lógica de criação real foi movida para uiRenderer.js)
- */
 export async function createTaskDeadlineNotification(taskId, taskText, dueDateTime) {
      console.warn(`[APP.JS] Chamada a createTaskDeadlineNotification para ${taskText}. A lógica principal está em uiRenderer.`);
 }
@@ -178,8 +165,4 @@ export async function createTaskDeadlineNotification(taskId, taskText, dueDateTi
 // ===============================================
 // INICIALIZAÇÃO
 // ===============================================
-// Adicionamos a chamada para inicializar a view após a autenticação
-initializeAuth(); 
-
-// Exporta a função para que o eventBinder possa usá-la
-export { initializeViewOnLoad };
+initializeAuth();
