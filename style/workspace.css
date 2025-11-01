@@ -204,8 +204,19 @@
 }
 
 .column-header-todo { border-bottom-color: #007bff; color: #007bff; }
-.column-header-progress { border-bottom-color: #ff9800; color: #ff9800; }
+.column-header-in_progress { border-bottom-color: #ff9800; color: #ff9800; }
 .column-header-done { border-bottom-color: #4CAF50; color: #4CAF50; }
+
+/* Cores Adicionais para Agrupamento (Priority e Category) */
+.column-header-high { border-bottom-color: #f44336; color: #f44336; }
+.column-header-medium { border-bottom-color: #FF9800; color: #FF9800; }
+.column-header-low { border-bottom-color: #4CAF50; color: #4CAF50; }
+
+.column-header-trabalho { border-bottom-color: #3F51B5; color: #3F51B5; }
+.column-header-estudo { border-bottom-color: #00BCD4; color: #00BCD4; }
+.column-header-pessoal { border-bottom-color: #E91E63; color: #E91E63; }
+.column-header-geral { border-bottom-color: #795548; color: #795548; }
+.column-header-outros { border-bottom-color: #607D8B; color: #607D8B; }
 
 
 .kanban-list {
@@ -281,4 +292,38 @@
     border: 1px dashed #999 !important;
     height: 40px; /* Altura do placeholder */
     border-radius: 6px;
+}
+
+/* ============================================= */
+/* KANBAN BOARD STYLES (ADICIONAIS)              */
+/* ============================================= */
+
+.kanban-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.kanban-controls label {
+    font-weight: 600;
+    color: #333;
+}
+
+.kanban-controls select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+}
+
+/* Novo estilo para o container de colunas dinâmicas (agrupamento) */
+.kanban-dynamic-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }

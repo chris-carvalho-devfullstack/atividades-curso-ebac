@@ -40,6 +40,98 @@ const categoryTooltipMap = {
 };
 // --------------------------------------------------
 
+// --- Funções Auxiliares Internas ---
+
+// Mapeamentos para as novas colunas dinâmicas (Groupings/Swimlanes)
+const groupingMap = {
+    'status': { 
+        todo: { header: 'A Fazer', color: '#007bff' }, 
+        in_progress: { header: 'Em Progresso', color: '#ff9800' }, 
+        done: { header: 'Concluída', color: '#4CAF50' } 
+    },
+    'priority': { 
+        high: { header: 'Prioridade Alta', color: '#f44336' }, 
+        medium: { header: 'Prioridade Média', color: '#FF9800' }, 
+        low: { header: 'Prioridade Baixa', color: '#4CAF50' } 
+    },
+    'category': { 
+        trabalho: { header: 'Trabalho', color: '#3F51B5' }, 
+        estudo: { header: 'Estudo', color: '#00BCD4' }, 
+        pessoal: { header: 'Pessoal', color: '#E91E63' }, 
+        geral: { header: 'Geral', color: '#795548' }, 
+        outros: { header: 'Outros', color: '#607D8B' } 
+    }
+};
+
+
+/**
+ * Cria o HTML para um cartão Kanban.
+ */
+function createKanbanCard(task) {
+    const taskPriority = task.priority || 'medium';
+    const taskId = task.id;
+    const isCompleted = task.completed;
+    const taskStatus = task.status || 'todo';
+    
+    let cardColor;
+    if (isCompleted) {
+        cardColor = '#4CAF50'; // Verde para concluída
+    } else if (taskStatus === 'in_progress') {
+         cardColor = '#ff9800'; // Laranja para em progresso
+    } else if (taskPriority === 'high') {
+        cardColor = '#f44336'; // Vermelho para alta prioridade (e todo)
+    } else {
+        cardColor = '#2196F3'; // Azul para baixa/media (e todo)
+    }
+
+    // Lógica de Data
+    let dateText = '';
+    let timeText = '';
+    if (task.dueDate) {
+        try { 
+            // CORREÇÃO: Adiciona uma classe para destaque de prazo
+            let dateClass = '';
+            const due = new Date(task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T00:00:00'));
+            const now = new Date();
+            const isOverdue = due.getTime() < now.getTime() && !isCompleted;
+            const diffMinutes = (due.getTime() - now.getTime()) / (1000 * 60);
+            const settings = getUserSettings();
+            const leadTimeMinutes = settings.taskSettings?.alertLeadTimeMinutes || 60;
+            const isDueSoon = diffMinutes > 0 && diffMinutes <= leadTimeMinutes + 1;
+            
+            if (isOverdue) dateClass = 'overdue-kanban';
+            else if (isDueSoon) dateClass = 'due-soon-kanban';
+
+            dateText = due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            timeText = task.dueTime ? due.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+            
+            if (isOverdue) {
+                dateText = `<i class="fa fa-exclamation-circle" style="color:#f44336;"></i> ${dateText}`;
+            }
+        } catch(e) { /* Ignora */ }
+    }
+
+    // Mantém a estrutura original do card
+    const $card = $(`
+        <li class="kanban-card js-view-label" data-id="${taskId}" data-priority="${taskPriority}" data-category="${task.category || 'geral'}" data-status="${taskStatus}" style="--card-color: ${cardColor};">
+            <span class="kanban-card-text" title="${task.text || 'Tarefa sem nome'}">${task.text || 'Tarefa sem nome'}</span>
+            <div class="kanban-card-meta">
+                <div>
+                    <span class="priority-label priority-${taskPriority}">${priorityTooltipMap[taskPriority]}</span>
+                </div>
+                ${task.dueDate ? 
+                    `<span class="task-datetime">${dateText} ${timeText}</span>` : 
+                    ''
+                }
+            </div>
+            
+        </li>
+    `);
+    
+    return $card;
+}
+
+
 // ===============================================
 // FUNÇÃO DE NOTIFICAÇÃO (MOVIDA PARA AQUI)
 // ===============================================
@@ -93,35 +185,82 @@ export function renderAllTasks(tasksArray) {
 }
 
 /**
- * Renderiza todas as tarefas no quadro Kanban, separadas por status.
+ * Renderiza todas as tarefas no quadro Kanban, usando um critério de agrupamento.
+ * @param {Array<object>} tasksArray - A lista de todas as tarefas.
+ * @param {string} [groupBy='status'] - O critério de agrupamento ('status', 'priority', 'category').
  */
-export function renderKanbanBoard(tasksArray) {
-    // 1. Limpa todas as colunas
-    $('.kanban-list').empty();
+export function renderKanbanBoard(tasksArray, groupBy = 'status') {
+    // 1. Obtém o container principal do Kanban
+    const $kanbanContainer = $('#task-view-board .kanban-container');
+    $kanbanContainer.empty();
+    
+    // 2. Define os grupos e os títulos com base no `groupBy`
+    const groups = groupingMap[groupBy];
+    let tasksByGroup = {};
 
-    // 2. Agrupa as tarefas por status
-    const tasksByStatus = { todo: [], in_progress: [], done: [] };
-    tasksArray.forEach(task => {
-        // CORREÇÃO: Garante que 'completed: true' force o status para 'done'
-        const status = task.completed ? 'done' : (task.status || 'todo');
-        if (tasksByStatus[status]) {
-            tasksByStatus[status].push(task);
-        } else {
-            // Garante que a tarefa vá para 'todo' se o status for inválido
-            tasksByStatus.todo.push(task);
+    // 3. Inicializa os grupos
+    for (const key in groups) {
+        tasksByGroup[key] = [];
+    }
+    
+    // 4. Preenche os grupos
+    if (groupBy === 'status') {
+         tasksArray.forEach(task => {
+            // CORREÇÃO: Força o status para 'done' se estiver completo
+            const status = task.completed ? 'done' : (task.status || 'todo');
+            if (tasksByGroup[status]) {
+                tasksByGroup[status].push(task);
+            } else {
+                tasksByGroup['todo'].push(task);
+            }
+        });
+    } else {
+        // Agrupa por Priority ou Category
+        tasksArray.forEach(task => {
+            const key = task[groupBy] || (groupBy === 'category' ? 'geral' : 'medium');
+            
+            // Ignora tarefas 'done' quando agrupando por Priority/Category
+            if (groups[key] && !task.completed) {
+                tasksByGroup[key].push(task);
+            }
+        });
+    }
+
+    // 5. Cria e anexa as colunas
+    for (const key in groups) {
+        const groupInfo = groups[key];
+        const tasksInGroup = tasksByGroup[key];
+        
+        // Se for agrupamento por Priority ou Category e a lista de tarefas estiver vazia, ignora a coluna para não poluir
+        if (tasksInGroup.length === 0 && groupBy !== 'status') {
+            continue;
         }
-    });
 
-    // 3. Renderiza os cartões em cada coluna
-    for (const status in tasksByStatus) {
-        const $list = $(`.kanban-column[data-status="${status}"] .kanban-list`);
-        tasksByStatus[status].forEach(task => {
+        // ORDEM: Ordena as tarefas dentro de cada coluna por orderIndex
+        tasksInGroup.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+
+        // A chave `key` se torna o `data-status` para o Sortable funcionar,
+        // mas o `data-group-by` armazena o critério real.
+        const $column = $(`
+            <div class="kanban-column" data-status="${key}" data-group-by="${groupBy}">
+                <div class="column-header column-header-${key.toLowerCase().replace(/[^a-z0-9]/g, '')}">
+                    ${groupInfo.header} (${tasksInGroup.length})
+                </div>
+                <ul class="kanban-list" data-status="${key}">
+                    ${tasksInGroup.length === 0 ? '<li class="empty-list-message" style="border-left: none;">Arraste e solte tarefas aqui.</li>' : ''}
+                </ul>
+            </div>
+        `);
+        
+        // 6. Adiciona os cards à lista da coluna
+        const $list = $column.find('.kanban-list');
+        tasksInGroup.forEach(task => {
             const $card = createKanbanCard(task);
             $list.append($card);
         });
+        
+        $kanbanContainer.append($column);
     }
-    
-    // 4. A inicialização do Sortable foi movida para o app.js
 }
 
 
@@ -151,66 +290,6 @@ export function renderTrash(trashArray) {
 // ===============================================
 // Funções de Renderização Detalhada (Internas/Auxiliares)
 // ===============================================
-
-/**
- * Cria o HTML para um cartão Kanban.
- */
-function createKanbanCard(task) {
-    const taskPriority = task.priority || 'medium';
-    const taskId = task.id;
-    const isCompleted = task.completed;
-    
-    let cardColor;
-    if (isCompleted) {
-        cardColor = '#4CAF50'; // Verde para concluída
-    } else if (task.status === 'in_progress') {
-         cardColor = '#ff9800'; // Laranja para em progresso
-    } else if (taskPriority === 'high') {
-        cardColor = '#f44336'; // Vermelho para alta prioridade (e todo)
-    } else {
-        cardColor = '#2196F3'; // Azul para baixa/media (e todo)
-    }
-
-    // Lógica de Data
-    let dateText = '';
-    let timeText = '';
-    if (task.dueDate) {
-        try { 
-            const due = new Date(task.dueDate + (task.dueTime ? `T${task.dueTime}:00` : 'T00:00:00'));
-            const now = new Date();
-            const isOverdue = due.getTime() < now.getTime() && !isCompleted;
-
-            dateText = due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-            timeText = task.dueTime ? due.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
-            
-            if (isOverdue) {
-                dateText = `<i class="fa fa-exclamation-circle" style="color:#f44336;"></i> ${dateText}`;
-            }
-        } catch(e) { /* Ignora */ }
-    }
-
-    // ALTERAÇÃO: 
-    // 1. Adiciona a classe 'js-view-label' no LI para capturar o clique e abrir o modal.
-    // 2. Remove o botão de opções (os 3 pontinhos)
-    const $card = $(`
-        <li class="kanban-card js-view-label" data-id="${taskId}" data-priority="${taskPriority}" data-category="${task.category || 'geral'}" style="--card-color: ${cardColor};">
-            <span class="kanban-card-text" title="${task.text || 'Tarefa sem nome'}">${task.text || 'Tarefa sem nome'}</span>
-            <div class="kanban-card-meta">
-                <div>
-                    <span class="priority-label priority-${taskPriority}">${priorityTooltipMap[taskPriority]}</span>
-                </div>
-                ${task.dueDate ? 
-                    `<span class="task-datetime">${dateText} ${timeText}</span>` : 
-                    ''
-                }
-            </div>
-            
-            </li>
-    `);
-    
-    return $card;
-}
-
 
 function addTaskHTML(task) {
     const taskPriority = task.priority || 'medium';
@@ -528,8 +607,12 @@ document.addEventListener('tasksUpdated', () => {
 
     // 2. Renderiza o Kanban (se estiver na view correta)
     if (sessionStorage.getItem('activeView') === 'board') {
-        renderKanbanBoard(tasks);
-        // O Sortable é inicializado no app.js após a renderização do board
+        // --- NOVO: Obtém o agrupamento atual ---
+        const groupBy = $('#kanban-group-by').val() || 'status';
+        renderKanbanBoard(tasks, groupBy);
+        
+        // *** NOVO: Dispara evento para re-inicializar o Sortable ***
+        document.dispatchEvent(new CustomEvent('kanbanRendered'));
     }
     
     // 3. Aplica atualizações e filtros

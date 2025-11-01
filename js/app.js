@@ -146,14 +146,16 @@ export function switchView(viewId) {
             }
         }, 0); // Atraso de 0ms garante o recalculamento do layout
     } else if (viewId === 'board') {
-        // *** NOVO: Renderiza o Kanban ao selecionar a view 'board' ***
-        renderKanbanBoard(getTasks());
-        // *** NOVO: Inicializa o Sortable APÓS a renderização do Kanban ***
-        // Adicionando um pequeno delay para garantir que o DOM esteja renderizado antes de inicializar o Sortable
+        // *** NOVO: Obtém o agrupamento atual antes de renderizar ***
+        const groupBy = $('#kanban-group-by').val() || 'status';
+        renderKanbanBoard(getTasks(), groupBy);
+        
+        // *** NOVO: Inicializa o Sortable IMEDIATAMENTE após a renderização do Kanban
+        // CORREÇÃO: Usar setTimeout(0) garante que a fila de eventos termine a renderização do DOM
         setTimeout(() => {
              initKanbanSortable(); 
              console.log("Visualização Kanban selecionada. Renderizando tarefas e inicializando Sortable.");
-        }, 50); 
+        }, 0); 
     } else if (viewId === 'overview') { // <-- NOVO: Ação para Visão Geral
          // Dispara um evento para que o overview.js redesenhe o conteúdo
          document.dispatchEvent(new CustomEvent('viewSwitched', { detail: { viewId: 'overview' } }));
@@ -171,6 +173,19 @@ export function initializeViewOnLoad() {
     switchView(currentView);
 }
 
+
+// ===============================================
+// NOVO: Listener para re-inicializar o Sortable
+// CORREÇÃO: Chama initKanbanSortable() imediatamente
+// ===============================================
+document.addEventListener('kanbanRendered', () => {
+    console.log("app.js ouviu 'kanbanRendered'. Re-inicializando Sortable...");
+    // Atraso de 0ms é o mais rápido que garante que a fila de eventos termine o render do DOM.
+    // Isso garante que o Sortable seja reiniciado imediatamente no novo DOM.
+    setTimeout(() => {
+        initKanbanSortable(); 
+    }, 0);
+});
 
 // ===============================================
 // OUTRAS FUNÇÕES ÚTEIS (Mantidas)

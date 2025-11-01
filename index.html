@@ -26,7 +26,7 @@
 
     <header class="task-form-header">
         <h1 id="workspace-title">Carregando...</h1>
-        <p>Organize as tarefas da sua equipa de forma eficiente!</p>
+        <p>Organize as tarefas da sua equipe de forma eficiente!</p>
     </header>
 
     <div class="workspace-layout">
@@ -96,22 +96,16 @@
             </main>
             
             <main class="kanban-board-view" id="task-view-board" style="display: none;">
-                <div class="kanban-container">
-                    <div class="kanban-column" data-status="todo">
-                        <div class="column-header column-header-todo">A Fazer</div>
-                        <ul class="kanban-list"></ul>
-                    </div>
-                    
-                    <div class="kanban-column" data-status="in_progress">
-                        <div class="column-header column-header-progress">Em Progresso</div>
-                        <ul class="kanban-list"></ul>
-                    </div>
-                    
-                    <div class="kanban-column" data-status="done">
-                        <div class="column-header column-header-done">Concluída</div>
-                        <ul class="kanban-list"></ul>
-                    </div>
+                <div class="kanban-controls">
+                    <label for="kanban-group-by">Agrupar por:</label>
+                    <select id="kanban-group-by">
+                        <option value="status">Status (Padrão)</option>
+                        <option value="priority">Prioridade</option>
+                        <option value="category">Categoria</option>
+                    </select>
                 </div>
+                <div class="kanban-container">
+                    </div>
             </main>
             
             <main class="calendar-view" id="task-view-calendar" style="display: none; padding: 20px;">

@@ -27,6 +27,7 @@ export function initKanbanSortable() {
     
     // Destrói Sortable anterior nos elementos kanban-list
     $('.kanban-list').each(function() {
+        // CORREÇÃO: Destrói o Sortable se ele já estiver inicializado para evitar duplicidade
         if ($(this).data('ui-sortable')) {
             $(this).sortable('destroy');
         }
@@ -43,23 +44,49 @@ export function initKanbanSortable() {
         // CORREÇÃO CRÍTICA PARA MOVIMENTO SUAVE E PRECISO
         helper: 'clone', 
         cursorAt: { left: 10, top: 10 }, 
+        revert: 200, // Adicionado para um retorno suave ao largar em local inválido
         
-        // Evento start: Ajusta a largura do helper para ser igual ao card original
+        // CORREÇÃO DE FLUIDEZ: Garante que a largura do helper seja correta e esconde o original
         start: function(event, ui) {
-             // Usamos outerWidth() para incluir padding/borda na largura do clone.
              ui.helper.width(ui.item.outerWidth()); 
+             ui.item.addClass('dragging-item'); // NOVO: Adiciona classe para ocultar o original
         },
         
         stop: function(event, ui) {
+            ui.item.removeClass('dragging-item'); // NOVO: Remove classe ao parar
+            
             const $item = ui.item;
             const taskId = $item.data('id');
             // Pega o status do *novo* pai (a coluna onde foi solto)
             const newStatus = $item.closest('.kanban-column').data('status');
+            const groupBy = $item.closest('.kanban-column').data('group-by'); // Novo: Obtém o agrupamento atual
             
             if (taskId && newStatus) {
-                // Chama a função da taskStore para atualizar o status e completed
-                updateTaskStatus(taskId, newStatus);
+                // Se estiver agrupando por status, usa o status da coluna
+                if(groupBy === 'status') {
+                     updateTaskStatus(taskId, newStatus);
+                } else {
+                     // Se estiver agrupando por Priority ou Category, o movimento de arrastar
+                     // *entre colunas* que não são de status precisa atualizar a propriedade correta.
+                     
+                     const updatedField = groupBy;
+                     const updatedValue = newStatus;
+                     const updatedData = { [updatedField]: updatedValue };
+
+                     // Adiciona uma exceção para manter o status em 'todo' se for movido
+                     // para outra prioridade/categoria, a não ser que já estivesse 'in_progress' ou 'done'.
+                     const currentTask = getTasks().find(t => t.id === taskId);
+                     if(currentTask && currentTask.status !== 'in_progress' && currentTask.status !== 'done') {
+                         updatedData.status = 'todo';
+                     }
+                     
+                     updateTask(taskId, updatedData);
+                }
             }
+            
+            // Lógica de salvamento de ordem para o grupo atual
+            const orderedIds = $item.parent().children('.kanban-card').map(function() { return $(this).attr('data-id'); }).get();
+            // A ordem é mantida visualmente, e o saveTaskOrder para a lista principal lida com a ordem de "todo"
         }
     }).disableSelection();
 }
@@ -100,6 +127,7 @@ export function setupCommonEventListeners() {
     $('#empty-trash-btn').off('click');
     $(document).off('click', '.task-options-btn');
     $(document).off('click', '.view-list .view-link');
+    $(document).off('change', '#kanban-group-by'); // NOVO: Remove listener antigo
     
     // REMOVIDOS OS LISTENERS DELEGADOS DE .kanban-card .edit-btn e .kanban-card .remove-btn
 
@@ -130,6 +158,13 @@ export function setupCommonEventListeners() {
         e.preventDefault();
         const viewId = $(this).data('view');
         switchView(viewId);
+    });
+    
+    // ** NOVO: Listener para o seletor de Agrupamento Kanban **
+    $(document).on('change', '#kanban-group-by', function() {
+        const groupBy = $(this).val();
+        // Disparar o switchView para a mesma view força a atualização.
+        switchView('board'); 
     });
 
     // Fechamento de Modais
@@ -165,7 +200,7 @@ export function setupCommonEventListeners() {
         let subLi = $(this).closest('li'); let subId = subLi.attr('data-id'); let taskLi = subLi.closest('li[data-id][data-category]'); let taskId = taskLi.attr('data-id');
         const task = getTasks().find(t => t.id === taskId); if (!task || !task.subtasks) return;
         const isCompleted = $(this).prop('checked');
-        const updateTargetAndChildren = (subtasks) => { if (!subtasks) return []; return subtasks.map(st => { if (st.id === subId) { st.completed = isCompleted; const updateChildren = (children) => (!children ? [] : children.map(child => ({ ...child, completed: isCompleted, subtasks: updateChildren(child.subtasks) }))); st.subtasks = updateChildren(st.subtasks); } else if (st.subtasks?.length > 0) { st.subtasks = updateTargetAndChildren(st.subtasks); } return st; }); };
+        const updateTargetAndChildren = (subtasks) => { if (!subtasks) return []; return subtasks.map(st => { if (st.id === subId) { st.completed = isCompleted; const updateChildren = (children) => (!children ? [] : children.map(child => ({ ...child, completed: isCompleted, subtasks: updateChildren(child.subtasks) }))); st.subtasks = updateChildren(child.subtasks); } else if (st.subtasks?.length > 0) { st.subtasks = updateTargetAndChildren(st.subtasks); } return st; }); };
         let updatedSubtasks = updateTargetAndChildren([...task.subtasks]);
         await updateSubtasks(taskId, updatedSubtasks);
     });

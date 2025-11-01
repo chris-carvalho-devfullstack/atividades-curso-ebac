@@ -63,7 +63,9 @@
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     cursor: grab; /* Cursor para indicar arrastar */
-    transition: all 0.1s; 
+    
+    /* GARANTE QUE O ITEM ORIGINAL NÃO TENHA TRANSIÇÕES */
+    
     border-left: 4px solid #ddd;
     min-height: 70px;
 }
@@ -71,31 +73,30 @@
 .kanban-card:hover {
     background-color: #f9f9f9;
     box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    /* Adicionando transição APENAS no hover */
+    transition: transform 0.1s, box-shadow 0.1s, background-color 0.1s;
+    transform: translateY(-1px);
 }
 
-/* NOVO: Estilo do texto dentro do card para multiline truncate (resolve o "erro") */
-.kanban-card-text {
-    font-weight: 500;
-    margin-bottom: 8px;
-    max-height: 38px; /* Altura máxima para 2 linhas (aprox.) */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box; /* Necessário para -webkit-line-clamp */
-    -webkit-box-orient: vertical; /* Necessário para -webkit-line-clamp */
-    -webkit-line-clamp: 2; /* Mantido para truncamento */
-    display: block; 
+/* NOVO: Esconde o item original enquanto ele está sendo arrastado */
+.kanban-card.dragging-item {
+    visibility: hidden;
 }
-
 
 /* ESTILO DO CLONE SENDO ARRASTADO (HELPER) */
 .ui-sortable-helper {
     /* CORREÇÃO CRÍTICA: Sobrescreve estilos para um arrasto suave */
     transition: none !important; 
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
+    
+    /* OTIMIZAÇÃO: Reduz a sombra para cálculo mais rápido pelo navegador */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important;
+    
     opacity: 0.95 !important;
     background-color: #fcfcfc !important; /* Torna o clone mais leve visualmente */
-    /* Garante que o clone não gire ou mude de posição de forma inesperada */
-    transform: none !important; 
+    
+    /* OTIMIZAÇÃO DE HARDWARE: Adiciona esta linha para forçar o uso da GPU (melhora a fluidez) */
+    transform: translateZ(0) !important; 
+    
     cursor: grabbing !important; 
 }
 
@@ -117,6 +118,19 @@
     -webkit-line-clamp: 2; 
     -webkit-box-orient: vertical;
 }
+
+.kanban-card-text {
+    font-weight: 500;
+    margin-bottom: 8px;
+    max-height: 38px; /* Altura máxima para 2 linhas (aprox.) */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box; /* Necessário para -webkit-line-clamp */
+    -webkit-box-orient: vertical; /* Necessário para -webkit-line-clamp */
+    -webkit-line-clamp: 2; /* Mantido para truncamento */
+    display: block; 
+}
+
 
 .kanban-card .card-footer {
     display: flex;
